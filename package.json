@@ -1,12 +1,15 @@
 {
   "name": "sillon-rse",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "13 copilotes RSE pour PME et ETI : calculs sourcés, seuils réglementaires 2026, analyse par Claude, exports PDF et Excel.",
   "private": true,
   "license": "MIT",
+  "type": "module",
   "scripts": {
-    "test": "node --test tests/calculs.test.mjs",
-    "start": "npx --yes serve ."
+    "test": "node --test tests/calculs.test.mjs tests/fonction.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
   },
   "engines": { "node": ">=18" }
 }

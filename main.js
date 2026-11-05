@@ -67,6 +67,7 @@
     else if (h === "veille") V.watchView();
     else if (h === "methode") V.methodView();
     else if (h === "rapport") V.reportView();
+    else if (h === "confidentialite" || h === "mentions") V.legalView(h);
     else if (h === "presentation") { V.reportView(); C.presentation(); }
     else if (h === "main") return;
     else { V.clearCurrent(); V.home(); }

@@ -2,7 +2,7 @@
 
 **Sillon** aide les PME et ETI françaises à structurer leur démarche RSE avec 13 copilotes. Ils calculent avec des facteurs publics (ADEME, EFRAG, EcoVadis), appliquent les seuils réglementaires en vigueur en novembre 2026, lisent les documents de l'entreprise, rédigent une analyse avec Claude et produisent un rapport PDF, Excel ou une présentation.
 
-**Démo en ligne : https://zakaria1937.github.io/sillon-rse/**
+**Site : https://sillon-rse.netlify.app** (voir [DEPLOIEMENT.md](DEPLOIEMENT.md) pour la mise en ligne)
 
 ![Tests](https://github.com/zakaria1937/sillon-rse/actions/workflows/tests.yml/badge.svg)
 
@@ -58,14 +58,17 @@ Aucune compilation : ce sont des fichiers HTML et JavaScript statiques.
 ```bash
 git clone https://github.com/zakaria1937/sillon-rse.git
 cd sillon-rse
-npx serve .          # ou : python3 -m http.server
-npm test             # tests des calculs (Node 18+)
+npm install
+npm test             # tests (Node 18+)
+npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 ```
 
-### Analyse par Claude
+### Analyse par Claude et contacts
 
-- **Dans claude.ai**, l'analyse utilise le compte Claude de la personne qui ouvre la page, après son accord.
-- **Ailleurs** (GitHub Pages, local), cliquez sur l'icône réglages et collez votre clé API Anthropic. Elle reste dans le navigateur (`localStorage`) et n'est envoyée qu'à `api.anthropic.com`. Pour un usage public, placez plutôt la clé derrière une petite fonction serveur.
+- Les visiteurs n'ont rien à configurer. Avant la première analyse, le premier import ou le premier export, ils renseignent leurs coordonnées (avec consentement RGPD).
+- La fonction serveur `netlify/functions/claude.mjs` appelle l'API Claude avec la clé du propriétaire, stockée dans les variables d'environnement Netlify. Elle vérifie l'origine des appels, limite l'usage par IP et par jour, et restreint l'assistant aux sujets RSE.
+- Les formulaires Netlify envoient au propriétaire un e-mail à chaque nouveau contact, demande d'accompagnement ou rapport téléchargé.
+- Dans claude.ai, la même page utilise le compte Claude de la personne qui l'ouvre.
 
 ## Architecture
 
@@ -77,8 +80,11 @@ npm test             # tests des calculs (Node 18+)
 | `extras.js` | Import de documents, assistant, réglages IA, mode présentation |
 | `exports.js` | Export PDF (jsPDF) et Excel (SheetJS) |
 | `main.js` | Scène 3D (Three.js) et routage |
+| `legal.js` | Politique de confidentialité et mentions légales |
+| `netlify/functions/claude.mjs` | Passerelle sécurisée vers l'API Claude |
+| `netlify.toml` | Configuration Netlify |
 | `i18n.js` | Textes français et anglais |
-| `tests/` | Tests des calculs (`node --test`) |
+| `tests/` | Tests des calculs et de la passerelle (`npm test`) |
 
 Bibliothèques chargées depuis cdnjs : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, pdf.js 3.11.174.
 

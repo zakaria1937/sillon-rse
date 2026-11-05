@@ -7,8 +7,10 @@
   const stamp = () => new Date().toISOString().slice(0, 10);
   const fail = (e) => { if (e && e.code === "declined") return; X.toast(e && e.code === "unavailable" ? (S().lang === "en" ? "Downloads are not available in this view." : "Le téléchargement n'est pas disponible dans cette vue.") : t("toast_fail")); };
 
+  const summary = (ids) => ids.map((id) => { const c = byId[id], r = X.result(c); return `${c.title} : ${r.verdict} — ${r.summary}`; }).join("\n");
   async function pdf(ids) {
     if (!window.jspdf) { X.toast(t("toast_lib")); return; }
+    if (!(await window.SXC.ensureContact())) return;
     const { jsPDF } = window.jspdf, st = S(), p = X.profile();
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const PW = 210, M = 18, CW = PW - 2 * M;
@@ -69,10 +71,11 @@
     });
     const pages = doc.getNumberOfPages();
     for (let i = 1; i <= pages; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(...mut); doc.setFont("helvetica", "normal"); doc.text(`Sillon · ${i}/${pages}`, PW - M, 290, { align: "right" }); }
-    try { await X.saveFile(ids.length > 1 ? `sillon-rapport-${stamp()}.pdf` : `sillon-${ids[0]}-${stamp()}.pdf`, doc.output("blob")); X.toast(t("toast_pdf")); } catch (e) { fail(e); }
+    try { await X.saveFile(ids.length > 1 ? `sillon-rapport-${stamp()}.pdf` : `sillon-${ids[0]}-${stamp()}.pdf`, doc.output("blob")); X.toast(t("toast_pdf")); X.notify(ids.length > 1 ? "Rapport PDF consolidé téléchargé" : "Rapport PDF téléchargé", { copilote: ids.join(", "), resume: summary(ids) }); } catch (e) { fail(e); }
   }
 
   async function xlsx(ids, withPlan) {
+    if (!(await window.SXC.ensureContact())) return;
     try { await X.loadLib("xlsx"); } catch (e) { X.toast(t("toast_lib")); return; }
     const XL = window.XLSX, wb = XL.utils.book_new(), st = S(), p = X.profile();
     const add = (name, rows, widths) => { const ws = XL.utils.aoa_to_sheet(rows); ws["!cols"] = (widths || [30, 50, 18, 14]).map((w) => ({ wch: w })); XL.utils.book_append_sheet(wb, ws, name.slice(0, 31).replace(/[\\/?*[\]:]/g, "")); };
@@ -99,7 +102,7 @@
     if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status)])], [70, 20, 10, 10, 20, 12, 12]);
     const out = XL.write(wb, { bookType: "xlsx", type: "array" });
     const name = ids.length === 1 && !withPlan ? `sillon-${ids[0]}-${stamp()}.xlsx` : `sillon-dossier-rse-${stamp()}.xlsx`;
-    try { await X.saveFile(name, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); X.toast(t("toast_xlsx")); } catch (e) { fail(e); }
+    try { await X.saveFile(name, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); X.toast(t("toast_xlsx")); X.notify("Export Excel téléchargé", { copilote: ids.join(", ") || "plan d'action", resume: summary(ids) }); } catch (e) { fail(e); }
   }
 
   window.SXE = { pdf, xlsx };

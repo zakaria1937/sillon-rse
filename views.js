@@ -39,15 +39,13 @@
         <span class="progress-dots" aria-hidden="true">${copilots.map((c) => `<i class="${st.used[c.id] ? "on" : ""}"></i>`).join("")}</span>
         <div class="top-actions">
           <button class="chip-btn" type="button" id="langBtn" aria-label="Langue / Language">${st.lang === "fr" ? "EN" : "FR"}</button>
-          ${X.inClaude ? "" : `<button class="chip-btn icon-btn" type="button" id="setBtn" aria-label="${esc(t("set_title"))}">${icon("gear")}</button>`}
           <a class="chip-btn primary" href="#presentation">${esc(t("nav_present"))}</a>
         </div>
       </div>
       <nav class="wrap subnav" aria-label="Navigation">${L.map(([k, lab]) => `<a href="#${k}"${h === k ? ' aria-current="page"' : ""}>${esc(t(lab))}</a>`).join("")}</nav>`;
     document.getElementById("langBtn").onclick = () => { S().lang = S().lang === "fr" ? "en" : "fr"; X.save(); window.SXR.route(); };
-    const sb = document.getElementById("setBtn"); if (sb) sb.onclick = () => window.SXC.settingsDialog();
     document.documentElement.lang = st.lang;
-    document.getElementById("foot").innerHTML = `<div class="wrap"><div><b>Sillon</b> · ${esc(t("foot1"))}</div><div>${esc(t("foot2"))}</div><div><a href="#methode">${esc(t("nav_method"))}</a> · <a href="https://github.com/zakaria1937/sillon-rse" rel="noopener" target="_blank" id="ghLink">GitHub</a></div></div>`;
+    document.getElementById("foot").innerHTML = `<div class="wrap"><div><b>Sillon</b> · ${esc(t("foot1"))}</div><div>${esc(t("foot2"))}</div><div class="foot-links"><a href="#methode">${esc(t("nav_method"))}</a><a href="#confidentialite">${esc(t("nav_privacy"))}</a><a href="#mentions">${esc(t("nav_legal"))}</a><button type="button" class="linkish" data-accomp>${esc(t("acc_cta"))}</button></div></div>`;
   }
 
   /* ---------- petits graphiques ---------- */
@@ -242,6 +240,7 @@
         <button class="chip-btn" type="button" id="xlsOne">${esc(t("xlsx"))}</button>
         <button class="chip-btn" type="button" id="baseBtn">${esc(base ? t("baseline_clear") : t("baseline"))}</button>
         <a class="chip-btn" href="#rapport">${esc(t("to_report"))}</a>
+        <button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button>
       </div>
       ${r.hyp ? `<p class="ai-note"><b>${esc(t("method"))}</b> ${esc(r.hyp)}</p>` : ""}
       <div class="sources"><b>${esc(t("sources"))}</b>${r.sources.map((s) => `<span>${esc(s.t)} · <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(t("link"))}</a></span>`).join("")}</div>`;
@@ -338,11 +337,12 @@
   }
   async function runAI() {
     if (!X.aiAvailable()) return;
+    if (!(await window.SXC.ensureContact())) return;
     const cp = current, out = document.getElementById("aiOut"), go = document.getElementById("aiGo"), stop = document.getElementById("aiStop");
     aiCtl = new AbortController(); go.disabled = true; stop.hidden = false;
     out.innerHTML = `<span class="thinking"><i></i><i></i><i></i> ${esc(t("ai_thinking"))}</span>`;
     try {
-      const text = await X.ask(promptFor(cp), { signal: aiCtl.signal, onText: ({ text }) => { if (current === cp) out.innerHTML = md(text); } });
+      const text = await X.ask(promptFor(cp), { kind: "analyse", signal: aiCtl.signal, onText: ({ text }) => { if (current === cp) out.innerHTML = md(text); } });
       S().ai[cp.id] = text; S().used[cp.id] = true; X.record(cp); header(); X.save();
     } catch (e) {
       if (e && e.text && e.code !== "refused") { out.innerHTML = md(e.text); S().ai[cp.id] = e.text; X.save(); }
@@ -364,7 +364,10 @@
           return `<div class="field${f.id === "nom" ? " wide" : ""}"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><input id="${id}" name="${f.id}" type="${f.type}" ${f.type === "number" ? 'step="any" min="0" inputmode="decimal"' : ""} value="${esc(p[f.id])}"></div></div>`;
         }).join("")}</div>
         <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("prof_apply"))}</button></div>
-      </form></div>`;
+      </form>
+      <section class="panel" style="margin:16px 0 56px"><h2>${esc(t("ct_title"))}</h2>${S().contact ? `<p class="sub">${esc(`${S().contact.prenom} ${S().contact.nom} · ${S().contact.email} · ${S().contact.entreprise}`)}</p>` : `<p class="sub">${esc(t("ct_none"))}</p>`}<div class="toolbar"><button class="chip-btn" type="button" id="editContact">${esc(S().contact ? t("ct_edit") : t("ct_go"))}</button>${S().contact ? `<button class="chip-btn" type="button" id="forget">${esc(t("ct_forget"))}</button>` : ""}</div></section></div>`;
+    document.getElementById("editContact").onclick = async () => { await window.SXC.contactDialog(); profileView(); };
+    const fg = document.getElementById("forget"); if (fg) fg.onclick = () => { S().contact = null; S().chat = []; X.save(); X.toast(t("ct_forgotten")); profileView(); };
     document.getElementById("pform").onsubmit = (e) => {
       e.preventDefault();
       const fd = new FormData(e.target), np = {};
@@ -425,12 +428,20 @@
     const st = S(), used = copilots.filter((c) => st.used[c.id]), list = used.length ? used : copilots;
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">${esc(X.profile().nom || "Sillon")} · ${new Date().toLocaleDateString(st.lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric" })}</div><h1 id="pageH" tabindex="-1">${esc(t("rep_title"))}</h1><p>${esc(used.length ? t("rep_sub_used", { n: used.length }) : t("rep_sub_none"))}</p></div>
-      <div class="toolbar" style="margin:0 0 20px"><button class="chip-btn primary" type="button" id="pdfAll">${esc(t("rep_pdf"))}</button><button class="chip-btn" type="button" id="xlsAll">${esc(t("rep_xlsx"))}</button><a class="chip-btn" href="#presentation">${esc(t("nav_present"))}</a></div>
+      <div class="toolbar" style="margin:0 0 20px"><button class="chip-btn primary" type="button" id="pdfAll">${esc(t("rep_pdf"))}</button><button class="chip-btn" type="button" id="xlsAll">${esc(t("rep_xlsx"))}</button><a class="chip-btn" href="#presentation">${esc(t("nav_present"))}</a><button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button></div>
       <div class="grid4" style="padding-bottom:56px">${list.map((c) => { const r = X.result(c); return `<a class="card" href="#${c.id}"><div class="eyebrow">${esc(famT(families.find((f) => f.id === c.fam)).title)}</div><h3>${esc(cpT(c).title)}</h3><p><b style="color:var(--fg)">${esc(r.verdict)}</b><br>${esc(r.summary)}</p><div class="foot"><span class="state ${st.used[c.id] ? "done" : ""}">${esc(st.used[c.id] ? (st.ai[c.id] ? "Claude ✓" : t("st_used")) : t("example"))}</span><span class="mono">${r.gauge ? esc(r.gauge.show || r.gauge.val) : ""}</span></div></a>`; }).join("")}</div>
     </div>`;
     document.getElementById("pdfAll").onclick = () => window.SXE.pdf(list.map((c) => c.id));
     document.getElementById("xlsAll").onclick = () => window.SXE.xlsx(list.map((c) => c.id), true);
   }
 
-  window.SXV = { header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
+  /* ---------- confidentialité et mentions légales ---------- */
+  function legalView(kind) {
+    current = null;
+    const L = window.SILLON_LEGAL[S().lang === "en" ? "en" : "fr"][kind];
+    app.innerHTML = `<div class="wrap narrow"><div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(L.title)}</h1><p>${esc(L.updated)}</p></div><article class="panel legal">${L.html}</article><div style="height:56px"></div></div>`;
+  }
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-accomp]")) window.SXC.accompanyDialog(); });
+
+  window.SXV = { legalView, header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
 })();

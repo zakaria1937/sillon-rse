@@ -9,7 +9,7 @@
   const today = () => new Date().toISOString().slice(0, 10);
 
   /* ---------- état ---------- */
-  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [] });
+  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [], contact: null });
   let state = blank();
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("sillon.v1") || "null");
@@ -124,7 +124,7 @@
     { d: "2030-12-31", t: "Décret tertiaire : -40 % de consommation", s: "Objectif par rapport à l'année de référence choisie (2010 au plus tôt).", ap: (p) => num(p.surf) >= 1000 },
   ];
 
-  /* ---------- IA : claude.ai (sample) ou clé API ---------- */
+  /* ---------- IA : claude.ai (sample) ou passerelle /api/claude ---------- */
   const inClaude = !!(window.claude && typeof window.claude.use === "function");
   let sample = null, downloads = null;
   const capsReady = [];
@@ -134,11 +134,20 @@
     claude.use("sample").then((s) => { sample = s; fire(); }).catch(() => {});
     claude.use("downloads").then((d) => { downloads = d; fire(); }).catch(() => {});
   }
-  const settings = () => { try { return JSON.parse(localStorage.getItem("sillon.ai") || "{}"); } catch (e) { return {}; } };
-  const setSettings = (o) => { try { localStorage.setItem("sillon.ai", JSON.stringify(o)); } catch (e) {} fire(); };
-  const aiAvailable = () => !!sample || (!inClaude && !!settings().key);
-  const blobToB64 = (b) => new Promise((ok, ko) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = ko; r.readAsDataURL(b); });
+  const aiAvailable = () => (inClaude ? !!sample : true);
   const langLine = () => (state.lang === "en" ? "\n\nAnswer in English." : "");
+
+  // Réduit une image avant envoi (1 600 px max, JPEG) pour rester sous les limites du serveur.
+  async function shrink(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+      const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      return { media_type: "image/jpeg", data: c.toDataURL("image/jpeg", 0.85).split(",")[1] };
+    } finally { URL.revokeObjectURL(url); }
+  }
 
   async function ask(input, opt = {}) {
     if (typeof input === "string") input += langLine();
@@ -149,29 +158,47 @@
       if (opt.json) return sample.json(input, o);
       return (await sample(input, o)).text;
     }
-    const s = settings();
-    if (!s.key) throw { code: "not_granted" };
-    const msgs = typeof input === "string" ? [{ role: "user", content: input }] : input.map((m) => ({ ...m }));
-    if (opt.images && opt.images.length) {
-      const last = msgs[msgs.length - 1], blocks = [];
-      for (const im of opt.images) blocks.push({ type: "image", source: { type: "base64", media_type: im.type || "image/png", data: await blobToB64(im) } });
-      last.content = [...blocks, { type: "text", text: last.content }];
-    }
-    const merged = [];
-    msgs.forEach((m) => { const p = merged[merged.length - 1]; if (p && p.role === m.role && typeof p.content === "string" && typeof m.content === "string") p.content += "\n\n" + m.content; else merged.push(m); });
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST", signal: opt.signal,
-      headers: { "content-type": "application/json", "x-api-key": s.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: JSON.stringify({ model: s.model || "claude-sonnet-4-5", max_tokens: 2000, messages: merged }),
-    }).catch((e) => { throw { code: e.name === "AbortError" ? "cancelled" : "upstream_error" }; });
-    if (!res.ok) throw { code: res.status === 401 ? "not_granted" : res.status === 429 ? "rate_limited" : "upstream_error" };
-    const data = await res.json();
-    const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-    opt.onText && opt.onText({ text, delta: text });
-    if (opt.json) { const m = text.match(/[\[{][\s\S]*[\]}]/); if (!m) throw { code: "invalid_json", text }; return JSON.parse(m[0]); }
+    if (inClaude) throw { code: "not_granted" };
+    const messages = typeof input === "string" ? [{ role: "user", content: input }] : input;
+    const images = [];
+    for (const im of opt.images || []) images.push(await shrink(im));
+    let res;
+    try {
+      res = await fetch("/api/claude", { method: "POST", signal: opt.signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: opt.kind || "analyse", messages, images }) });
+    } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "offline" }; }
+    if (!res.ok) { const j = await res.json().catch(() => ({})); throw { code: j.code || (res.status === 404 ? "no_server" : res.status === 429 ? "rate_limited" : "upstream_error") }; }
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    let text = "";
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const delta = dec.decode(value, { stream: true });
+        if (!delta) continue;
+        text += delta;
+        opt.onText && opt.onText({ text, delta });
+      }
+    } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "upstream_error", text }; }
+    if (!text.trim()) throw { code: "upstream_error" };
+    if (opt.json) { const m = text.match(/[\[{][\s\S]*[\]}]/); if (!m) throw { code: "invalid_json", text }; try { return JSON.parse(m[0]); } catch (e) { throw { code: "invalid_json", text }; } }
     return text;
   }
-  const aiError = (e) => ({ cancelled: "", not_granted: state.lang === "en" ? "Analysis not allowed or API key invalid." : "Analyse non autorisée ou clé API invalide.", sampling_disabled: state.lang === "en" ? "Claude is not available for this account." : "Claude n'est pas disponible pour ce compte.", rate_limited: state.lang === "en" ? "Too many requests: try again in a few minutes." : "Trop de demandes : réessayez dans quelques minutes.", refused: state.lang === "en" ? "Claude could not process this request." : "Claude n'a pas pu traiter cette demande." }[e && e.code] ?? (state.lang === "en" ? "The analysis was interrupted. Try again." : "L'analyse a été interrompue. Relancez-la."));
+  const ERR = {
+    fr: { cancelled: "", not_granted: "L'analyse n'a pas été autorisée.", sampling_disabled: "Claude n'est pas disponible pour ce compte.", rate_limited: "Vous avez atteint la limite d'analyses du jour. Revenez demain ou demandez un accompagnement.", global_limit: "Le service d'analyse est très sollicité aujourd'hui. Réessayez demain.", busy: "Le service d'analyse est momentanément surchargé. Réessayez dans une minute.", not_configured: "Le service d'analyse n'est pas encore activé.", no_server: "Le service d'analyse n'est pas disponible à cette adresse.", offline: "Connexion impossible. Vérifiez votre réseau.", refused: "Cette demande n'a pas pu être traitée.", invalid_json: "Le document n'a pas pu être lu correctement. Essayez un autre fichier." },
+    en: { cancelled: "", not_granted: "The analysis was not allowed.", sampling_disabled: "Claude is not available for this account.", rate_limited: "You have reached today's analysis limit. Come back tomorrow or request support.", global_limit: "The analysis service is very busy today. Try again tomorrow.", busy: "The analysis service is busy. Try again in a minute.", not_configured: "The analysis service is not enabled yet.", no_server: "The analysis service is not available at this address.", offline: "Cannot connect. Check your network.", refused: "This request could not be processed.", invalid_json: "The document could not be read. Try another file." },
+  };
+  const aiError = (e) => ERR[state.lang === "en" ? "en" : "fr"][e && e.code] ?? (state.lang === "en" ? "The analysis was interrupted. Try again." : "L'analyse a été interrompue. Relancez-la.");
+
+  /* ---------- notifications (formulaires Netlify → e-mail du propriétaire) ---------- */
+  async function notify(evenement, extra = {}) {
+    if (inClaude) return false;
+    const c = state.contact || {}, p = profile();
+    const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), langue: state.lang, consentement: c.consent ? "oui" : "non", ...extra };
+    try {
+      const r = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() });
+      return r.ok;
+    } catch (e) { return false; }
+  }
 
   /* ---------- téléchargements ---------- */
   async function saveFile(name, blob) {
@@ -202,5 +229,5 @@
 
   window.SX = { copilots, byId, nf, num, esc, state: () => state, setState: (s) => { state = s; }, save, t, cpT, famT, reduce, today,
     PROFILE_FIELDS, profile, defaults, inputs, applyProfile, LINKS, linkKey, resolved, result, record, planItems, TIMELINE,
-    inClaude, ask, aiAvailable, aiError, settings, setSettings, onCaps, isSample: () => !!sample, saveFile, loadLib, toast, blank };
+    inClaude, ask, aiAvailable, aiError, notify, onCaps, isSample: () => !!sample, saveFile, loadLib, toast, blank };
 })();

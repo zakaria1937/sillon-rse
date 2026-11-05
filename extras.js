@@ -29,6 +29,7 @@
   }
   async function importDoc(cp, file) {
     if (!file) return;
+    if (!(await ensureContact())) return;
     const status = document.getElementById("importStatus");
     const say = (m) => status && (status.textContent = m);
     say(S().lang === "en" ? "Reading the document…" : "Lecture du document…");
@@ -40,7 +41,7 @@
       if (!text.trim() && !images.length) { say(""); X.toast(t("toast_import_none")); return; }
       say(S().lang === "en" ? "Claude is extracting the figures…" : "Claude extrait les chiffres…");
       const prompt = `Tu extrais des données d'un document d'entreprise pour remplir un outil RSE (copilote « ${cp.title} »).\nChamps disponibles :\n${schema(cp)}\n\nRéponds uniquement par un objet JSON dont les clés sont des noms de champs ci-dessus et les valeurs ce que le document indique explicitement (nombres sans unité ni espace, en convertissant dans l'unité demandée). N'inclus pas un champ si le document ne permet pas de le renseigner. Exemple : {"elec": 420000, "gaz": 350000}\n\n${text ? "Document :\n" + text : "Le document est l'image jointe."}`;
-      const data = await X.ask(prompt, { json: true, images });
+      const data = await X.ask(prompt, { json: true, images, kind: "import" });
       const v = X.inputs(cp), tch = (S().touched[cp.id] ||= {});
       let n = 0;
       for (const [k, val] of Object.entries(data || {})) {
@@ -61,22 +62,73 @@
     }
   }
 
-  /* ---------- réglages IA (hors claude.ai) ---------- */
-  function settingsDialog() {
-    const s = X.settings();
+  /* ---------- fiche contact (débloque l'IA et les exports) ---------- */
+  function modal(html, labelId) {
     const d = document.createElement("div");
-    d.className = "modal"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "setH");
-    d.innerHTML = `<form class="panel modal-box"><h2 id="setH">${esc(t("set_title"))}</h2><p class="sub">${esc(t("set_note"))}</p>
-      <div class="field"><label for="apiKey">${esc(t("set_key"))}</label><div class="inp"><input id="apiKey" type="password" autocomplete="off" value="${esc(s.key || "")}" placeholder="sk-ant-…"></div></div>
-      <div class="field" style="margin-top:10px"><label for="apiModel">${esc(t("set_model"))}</label><div class="inp"><input id="apiModel" value="${esc(s.model || "claude-sonnet-4-5")}"></div></div>
-      <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("set_save"))}</button><button class="chip-btn" type="button" data-clear>${esc(t("set_clear"))}</button><button class="chip-btn" type="button" data-close>${esc(t("chat_close"))}</button></div></form>`;
-    document.body.appendChild(d);
-    const close = () => { d.remove(); document.getElementById("setBtn")?.focus(); };
-    d.querySelector("form").onsubmit = (e) => { e.preventDefault(); X.setSettings({ key: d.querySelector("#apiKey").value.trim(), model: d.querySelector("#apiModel").value.trim() }); close(); window.SXR.route(); };
-    d.querySelector("[data-clear]").onclick = () => { X.setSettings({}); close(); window.SXR.route(); };
-    d.querySelector("[data-close]").onclick = close;
+    d.className = "modal"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", labelId);
+    d.innerHTML = html; document.body.appendChild(d);
+    const prev = document.activeElement;
+    const close = () => { d.remove(); prev && prev.focus && prev.focus(); };
     d.addEventListener("keydown", (e) => e.key === "Escape" && close());
-    d.querySelector("#apiKey").focus();
+    d.addEventListener("click", (e) => e.target === d && close());
+    return { d, close };
+  }
+  let pending = null;
+  function contactDialog(reason) {
+    if (pending) return pending;
+    pending = new Promise((resolve) => {
+      const c = S().contact || {}, p = X.profile();
+      const f = (id, lab, type = "text", req = false, val = "", ac = "") => `<div class="field${id === "email" ? " wide" : ""}"><label for="c-${id}">${esc(lab)}${req ? " *" : ""}</label><div class="inp"><input id="c-${id}" name="${id}" type="${type}" ${req ? "required" : ""} ${ac ? `autocomplete="${ac}"` : ""} value="${esc(val)}"></div></div>`;
+      const { d, close } = modal(`<form class="panel modal-box wide-box" novalidate><h2 id="cH">${esc(t("ct_title"))}</h2><p class="sub">${esc(t("ct_sub"))}${reason ? " " + esc(reason) : ""}</p>
+        <div class="fgrid">
+          ${f("prenom", t("ct_first"), "text", true, c.prenom, "given-name")}${f("nom", t("ct_last"), "text", true, c.nom, "family-name")}
+          ${f("email", t("ct_email"), "email", true, c.email, "email")}
+          ${f("entreprise", t("ct_company"), "text", true, c.entreprise || p.nom, "organization")}${f("fonction", t("ct_role"), "text", false, c.fonction, "organization-title")}
+          ${f("telephone", t("ct_phone"), "tel", false, c.telephone, "tel")}
+        </div>
+        <label class="consent"><input type="checkbox" id="c-consent" ${c.consent ? "checked" : ""}> <span>${esc(t("ct_consent"))} <a href="#confidentialite" target="_blank">${esc(S().lang === "en" ? "privacy policy" : "politique de confidentialité")}</a>.</span></label>
+        <p class="err" id="cErr" role="alert" hidden></p>
+        <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("ct_go"))}</button><button class="chip-btn" type="button" data-close>${esc(t("chat_close"))}</button></div></form>`, "cH");
+      const done = (v) => { pending = null; close(); resolve(v); };
+      d.querySelector("[data-close]").onclick = () => done(false);
+      d.addEventListener("keydown", (e) => { if (e.key === "Escape") { pending = null; resolve(false); } });
+      d.addEventListener("click", (e) => { if (e.target === d) { pending = null; resolve(false); } });
+      d.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const g = (id) => d.querySelector("#c-" + id).value.trim();
+        const err = d.querySelector("#cErr");
+        const v = { prenom: g("prenom"), nom: g("nom"), email: g("email"), entreprise: g("entreprise"), fonction: g("fonction"), telephone: g("telephone"), consent: d.querySelector("#c-consent").checked };
+        const miss = !v.prenom || !v.nom || !v.entreprise || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email) ? t("ct_err_fields") : !v.consent ? t("ct_err_consent") : "";
+        if (miss) { err.textContent = miss; err.hidden = false; return; }
+        const first = !S().contact;
+        S().contact = { ...v, d: X.today() };
+        if (!S().profile) S().profile = { ...X.profile(), nom: v.entreprise };
+        X.save();
+        X.notify(first ? "Nouveau contact" : "Coordonnées mises à jour", { copilote: location.hash.slice(1) || "accueil" });
+        X.toast(t("ct_thanks", { p: v.prenom }));
+        done(true);
+      };
+      d.querySelector("#c-prenom").focus();
+    });
+    return pending;
+  }
+  const ensureContact = async (reason) => (S().contact && S().contact.email ? true : contactDialog(reason));
+
+  function accompanyDialog() {
+    const { d, close } = modal(`<form class="panel modal-box"><h2 id="aH">${esc(t("acc_title"))}</h2><p class="sub">${esc(t("acc_sub"))}</p>
+      <div class="field"><label for="a-msg">${esc(t("acc_msg"))}</label><textarea class="ta" id="a-msg" rows="5" required placeholder="${esc(t("acc_ph"))}"></textarea></div>
+      <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("acc_send"))}</button><button class="chip-btn" type="button" data-close>${esc(t("chat_close"))}</button></div></form>`, "aH");
+    d.querySelector("[data-close]").onclick = close;
+    d.querySelector("form").onsubmit = async (e) => {
+      e.preventDefault();
+      const msg = d.querySelector("#a-msg").value.trim(); if (!msg) return;
+      close();
+      if (!(await ensureContact())) return;
+      const used = copilots.filter((c) => S().used[c.id]).map((c) => { const r = X.result(c); return `${c.title} : ${r.verdict}`; }).join("\n");
+      const ok = await X.notify("Demande d'accompagnement", { message: msg, resume: used || "Aucun copilote utilisé" });
+      X.toast(ok || X.inClaude ? t("acc_ok") : t("acc_fail"));
+    };
+    d.querySelector("#a-msg").focus();
   }
 
   /* ---------- assistant ---------- */
@@ -115,12 +167,13 @@
     document.getElementById("chatF").onsubmit = async (e) => {
       e.preventDefault();
       const inp = document.getElementById("chatIn"), q = inp.value.trim(); if (!q || !X.aiAvailable()) return;
+      if (!(await ensureContact())) return;
       const st = S(); st.chat.push({ role: "user", content: q }); inp.value = ""; chatRender();
       const log = document.getElementById("chatLog"), bub = document.createElement("div"); bub.className = "msg bot"; bub.innerHTML = `<span class="thinking"><i></i><i></i><i></i></span>`; log.appendChild(bub); log.scrollTop = log.scrollHeight;
       chatCtl = new AbortController();
       try {
         const turns = st.chat.slice(-12);
-        const text = await X.ask([{ role: "user", content: context() }, ...turns], { signal: chatCtl.signal, onText: ({ text }) => { bub.innerHTML = V().md(text); log.scrollTop = log.scrollHeight; } });
+        const text = await X.ask([{ role: "user", content: context() }, ...turns], { kind: "chat", signal: chatCtl.signal, onText: ({ text }) => { bub.innerHTML = V().md(text); log.scrollTop = log.scrollHeight; } });
         st.chat.push({ role: "assistant", content: text }); if (st.chat.length > 30) st.chat.splice(0, st.chat.length - 30); X.save(); chatRender();
       } catch (err) { bub.innerHTML = `<span class="ai-note">${esc(X.aiError(err))}</span>`; st.chat.pop(); X.save(); }
     };
@@ -159,5 +212,5 @@
     show(); ov.querySelector("[data-p='1']").focus();
   }
 
-  window.SXC = { importDoc, settingsDialog, chatInit, chatRender, presentation };
+  window.SXC = { importDoc, contactDialog, ensureContact, accompanyDialog, chatInit, chatRender, presentation };
 })();
