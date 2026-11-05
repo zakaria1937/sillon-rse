@@ -2,14 +2,16 @@
 
 Sillon tourne sur **Netlify** : le site, la passerelle vers Claude (`/api/claude`) et les formulaires qui t'envoient un e-mail à chaque contact. Les visiteurs n'ont rien à configurer : ils remplissent leurs coordonnées une fois et tout fonctionne.
 
-Coût : Netlify est gratuit à ce niveau d'usage. Seules les analyses par l'IA sont facturées par Anthropic sur ton compte (quelques centimes par analyse). Les limites ci-dessous plafonnent la dépense.
+Coût : zéro au démarrage. Netlify est gratuit à ce niveau d'usage et l'IA utilise l'offre gratuite « Experiment » de Mistral AI. Groq (gratuit aussi) peut servir de secours si le quota de Mistral est atteint.
 
-## 1. Clé API Anthropic (5 min)
+## 1. Clé API Mistral (5 min)
 
-1. Va sur https://console.anthropic.com et connecte-toi (ou crée ton compte).
-2. **Billing** : ajoute un moyen de paiement et un crédit (10 € suffisent pour démarrer).
-3. **Limits** : fixe une limite de dépense mensuelle (par exemple 20 $). C'est ton filet de sécurité.
-4. **API Keys → Create Key**, nomme-la `sillon`, copie-la. Ne la partage jamais et ne la colle nulle part ailleurs que dans Netlify (étape 3).
+1. Va sur https://console.mistral.ai et connecte-toi.
+2. Active l'offre **Experiment** (gratuite : un numéro de téléphone vérifié, pas de carte).
+3. **Admin → Privacy** : désactive « Anonymous improvement data » pour que les données de tes visiteurs ne servent pas à entraîner les modèles. La politique de confidentialité du site l'annonce.
+4. **API Keys → Create new key**, nomme-la `sillon`, copie-la. Ne la colle nulle part ailleurs que dans Netlify.
+
+Facultatif, secours gratuit : crée une clé sur https://console.groq.com (API Keys).
 
 ## 2. Brancher le dépôt GitHub sur Netlify (5 min)
 
@@ -24,11 +26,12 @@ Coût : Netlify est gratuit à ce niveau d'usage. Seules les analyses par l'IA s
 
 | Nom | Valeur | Obligatoire |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | ta clé Anthropic (cocher « secret ») | oui |
+| `MISTRAL_API_KEY` | ta clé Mistral (cocher « secret ») | oui |
+| `GROQ_API_KEY` | ta clé Groq, secours si Mistral sature (cocher « secret ») | non |
 | `RATE_LIMIT_PER_IP` | `30` (analyses par visiteur et par jour) | non |
 | `GLOBAL_DAILY_LIMIT` | `800` (analyses par jour pour tout le site) | non |
-| `MODEL_ANALYSE` | modèle des analyses, par défaut `claude-sonnet-5-5` | non |
-| `MODEL_CHAT` | modèle de l'assistant, par défaut `claude-haiku-5-5` | non |
+| `MISTRAL_MODEL_ANALYSE` | modèle des analyses, par défaut `mistral-medium-latest` | non |
+| `MISTRAL_MODEL_CHAT` | modèle de l'assistant et de l'import, par défaut `mistral-small-latest` | non |
 
 Puis **Deploys → Trigger deploy → Deploy site** pour prendre en compte la clé.
 
@@ -50,4 +53,4 @@ Tu reçois un e-mail à chaque événement : nouveau contact, demande d'accompag
 - Chaque modification envoyée sur GitHub redéploie le site automatiquement.
 - Désactive GitHub Pages (**Settings → Pages → None** sur GitHub) pour n'avoir qu'une seule adresse publique.
 - Nom de domaine (facultatif) : **Domain management → Add a domain** dans Netlify.
-- Suivi des coûts : console Anthropic, onglet **Usage**.
+- Suivi de l'usage : console Mistral, onglet **Usage**. Si le quota gratuit devient trop juste, passe à l'offre payante « Scale » sans rien changer au code.

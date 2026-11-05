@@ -20,7 +20,7 @@
 </ul>
 <p>Ces informations sont transmises par le service de formulaires de notre hébergeur Netlify et reçues par e-mail par l'éditeur.</p>
 <h2>Analyses par l'IA</h2>
-<p>Quand vous lancez une analyse, posez une question à l'assistant ou importez un document, le contenu nécessaire (vos réponses, les résultats calculés, le texte ou l'image du document) est transmis à Anthropic, qui fournit le modèle Claude, pour produire la réponse. Selon ses conditions commerciales, Anthropic n'utilise pas les données envoyées par l'API pour entraîner ses modèles et ne les conserve que pour une durée limitée. Évitez d'importer des documents contenant des données personnelles de tiers.</p>
+<p>Quand vous lancez une analyse, posez une question à l'assistant ou importez un document, le contenu nécessaire (vos réponses, les résultats calculés, le texte ou l'image du document) est transmis à Mistral AI (Paris, France), qui fournit le modèle d'IA, pour produire la réponse. L'éditeur a désactivé l'utilisation de ces données pour l'entraînement des modèles de Mistral AI. En cas d'indisponibilité de Mistral AI, la demande peut être traitée par Groq, Inc. (États-Unis). Évitez d'importer des documents contenant des données personnelles de tiers.</p>
 <h2>Adresse IP</h2>
 <p>Votre adresse IP sert à compter le nombre d'analyses par jour, afin de limiter les abus. Ce compteur n'est pas relié à votre identité.</p>
 <h2>Pourquoi et sur quelle base</h2>
@@ -31,7 +31,7 @@
 <h2>Combien de temps</h2>
 <p>Les fiches contact sont conservées 3 ans après le dernier échange, puis supprimées.</p>
 <h2>Qui y a accès</h2>
-<p>L'éditeur uniquement, ainsi que ses prestataires techniques : Netlify, Inc. (hébergement et formulaires) et Anthropic, PBC (analyse par l'IA), situés aux États-Unis. Ces transferts sont encadrés par les garanties prévues dans leurs conditions (clauses contractuelles types ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue.</p>
+<p>L'éditeur uniquement, ainsi que ses prestataires techniques : Netlify, Inc. (hébergement et formulaires, États-Unis), Mistral AI (analyse par l'IA, France) et, en secours, Groq, Inc. (États-Unis). Les transferts hors de l'Union européenne sont encadrés par les garanties prévues dans leurs conditions (clauses contractuelles types ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue.</p>
 <h2>Vos droits</h2>
 <p>Vous pouvez demander l'accès, la rectification, l'effacement de vos données, vous opposer à leur traitement ou retirer votre consentement en écrivant à ${mail}. Vous pouvez aussi saisir la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>).</p>
 <h2>Cookies</h2>
@@ -52,7 +52,7 @@
     },
   };
   window.SILLON_LEGAL.en = {
-    confidentialite: { title: "Privacy policy", updated: "Updated 6 November 2026", html: `<p>The French version of this policy is the reference. In short: your answers stay in your browser; your contact details, report downloads and support requests are sent to the publisher by e-mail through Netlify Forms; AI analyses send the necessary content to Anthropic (Claude API), which does not train on API data; your IP address is only used to count daily analyses. Contacts are kept for 3 years after the last exchange. To exercise your rights, write to ${mail}.</p>` },
+    confidentialite: { title: "Privacy policy", updated: "Updated 6 November 2026", html: `<p>The French version of this policy is the reference. In short: your answers stay in your browser; your contact details, report downloads and support requests are sent to the publisher by e-mail through Netlify Forms; AI analyses send the necessary content to Mistral AI (France), with training on this data switched off, or to Groq (USA) as a backup; your IP address is only used to count daily analyses. Contacts are kept for 3 years after the last exchange. To exercise your rights, write to ${mail}.</p>` },
     mentions: { title: "Legal notice", updated: "Updated 6 November 2026", html: `<p>Publisher: ${OWNER} — ${mail}. Hosting: Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, USA. Results are estimates based on public sources and do not replace a regulatory GHG assessment, a certification audit or legal advice. Code released under the MIT licence.</p>` },
   };
 })();

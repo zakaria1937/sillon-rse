@@ -28,8 +28,8 @@
 
 - **Profil d'entreprise partagé** : renseigné une fois, repris par tous les copilotes.
 - **Copilotes reliés** : le bilan carbone remplit le point B3 de la VSME, le Benchmark et les marchés publics ; le score Greenwashing alimente Visibilité RSE.
-- **Import de documents** : PDF, image ou texte ; Claude extrait les chiffres et remplit les champs.
-- **Analyse par Claude** de chaque copilote, avec un plan à 30 jours, 90 jours et 12 mois.
+- **Import de documents** : PDF, image ou texte ; l'IA (Mistral) extrait les chiffres et remplit les champs.
+- **Analyse par l'IA (Mistral)** de chaque copilote, avec un plan à 30 jours, 90 jours et 12 mois.
 - **Assistant** qui connaît le profil et tous les résultats.
 - **Plan d'action global** trié par impact et effort, avec responsable, échéance et statut.
 - **Historique et référence** : courbe d'évolution des scores et comparaison avant/après.
@@ -63,25 +63,24 @@ npm test             # tests (Node 18+)
 npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 ```
 
-### Analyse par Claude et contacts
+### Analyse par l'IA et contacts
 
 - Les visiteurs n'ont rien à configurer. Avant la première analyse, le premier import ou le premier export, ils renseignent leurs coordonnées (avec consentement RGPD).
-- La fonction serveur `netlify/functions/claude.mjs` appelle l'API Claude avec la clé du propriétaire, stockée dans les variables d'environnement Netlify. Elle vérifie l'origine des appels, limite l'usage par IP et par jour, et restreint l'assistant aux sujets RSE.
+- La fonction serveur `netlify/functions/claude.mjs` appelle l'API de Mistral AI (offre gratuite, entreprise française) avec la clé du propriétaire, et bascule sur Groq si un quota est atteint, stockée dans les variables d'environnement Netlify. Elle vérifie l'origine des appels, limite l'usage par IP et par jour, et restreint l'assistant aux sujets RSE.
 - Les formulaires Netlify envoient au propriétaire un e-mail à chaque nouveau contact, demande d'accompagnement ou rapport téléchargé.
-- Dans claude.ai, la même page utilise le compte Claude de la personne qui l'ouvre.
 
 ## Architecture
 
 | Fichier | Rôle |
 |---|---|
 | `copilots.js` | Les 13 copilotes : champs, calculs, sources (aucune dépendance au DOM, testable sous Node) |
-| `core.js` | État, profil, liens entre copilotes, historique, plan d'action, veille, appels à Claude, téléchargements |
+| `core.js` | État, profil, liens entre copilotes, historique, plan d'action, veille, appels à l'IA, téléchargements |
 | `views.js` | Vues : accueil, copilote, profil, plan, veille, méthode, rapport |
 | `extras.js` | Import de documents, assistant, réglages IA, mode présentation |
 | `exports.js` | Export PDF (jsPDF) et Excel (SheetJS) |
 | `main.js` | Scène 3D (Three.js) et routage |
 | `legal.js` | Politique de confidentialité et mentions légales |
-| `netlify/functions/claude.mjs` | Passerelle sécurisée vers l'API Claude |
+| `netlify/functions/claude.mjs` | Passerelle sécurisée vers l'IA (Mistral, secours Groq) |
 | `netlify.toml` | Configuration Netlify |
 | `i18n.js` | Textes français et anglais |
 | `tests/` | Tests des calculs et de la passerelle (`npm test`) |
@@ -97,6 +96,6 @@ Bibliothèques chargées depuis cdnjs : Three.js r128, jsPDF 2.5.1, SheetJS 0.18
 
 ## Auteur
 
-Projet conçu par **Zakaria Ghannam**, avec Claude (Anthropic).
+Projet conçu par **Zakaria Ghannam**, avec l'aide de Claude (Anthropic).
 
 Licence MIT.

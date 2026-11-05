@@ -39,7 +39,7 @@
       else if (/^image\//.test(file.type)) images = [file];
       else text = (await file.text()).slice(0, 40000);
       if (!text.trim() && !images.length) { say(""); X.toast(t("toast_import_none")); return; }
-      say(S().lang === "en" ? "Claude is extracting the figures…" : "Claude extrait les chiffres…");
+      say(S().lang === "en" ? "AI is extracting the figures…" : "L'IA extrait les chiffres…");
       const prompt = `Tu extrais des données d'un document d'entreprise pour remplir un outil RSE (copilote « ${cp.title} »).\nChamps disponibles :\n${schema(cp)}\n\nRéponds uniquement par un objet JSON dont les clés sont des noms de champs ci-dessus et les valeurs ce que le document indique explicitement (nombres sans unité ni espace, en convertissant dans l'unité demandée). N'inclus pas un champ si le document ne permet pas de le renseigner. Exemple : {"elec": 420000, "gaz": 350000}\n\n${text ? "Document :\n" + text : "Le document est l'image jointe."}`;
       const data = await X.ask(prompt, { json: true, images, kind: "import" });
       const v = X.inputs(cp), tch = (S().touched[cp.id] ||= {});
