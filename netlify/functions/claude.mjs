@@ -6,7 +6,7 @@ const PROVIDERS = {
   mistral: {
     url: "https://api.mistral.ai/v1/chat/completions",
     key: () => process.env.MISTRAL_API_KEY,
-    models: { chat: process.env.MISTRAL_MODEL_CHAT || "mistral-small-latest", analyse: process.env.MISTRAL_MODEL_ANALYSE || "mistral-medium-latest", import: process.env.MISTRAL_MODEL_IMPORT || "mistral-small-latest" },
+    models: { chat: process.env.MISTRAL_MODEL_CHAT || "mistral-small-2603", analyse: process.env.MISTRAL_MODEL_ANALYSE || "mistral-medium-latest", import: process.env.MISTRAL_MODEL_IMPORT || "mistral-small-2603" },
     images: true,
   },
   groq: {
