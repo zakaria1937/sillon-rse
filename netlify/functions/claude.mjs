@@ -129,8 +129,15 @@ export default async (req, context) => {
   if (bad) return json(400, { code: "invalid_request", detail: bad });
 
   const day = new Date().toISOString().slice(0, 10);
-  const ip = context?.ip || req.headers.get("x-nf-client-connection-ip") || "inconnu";
+  const rawIp = context?.ip || req.headers.get("x-nf-client-connection-ip") || "inconnu";
+  // L'adresse IP n'est jamais stockée en clair : seule une empreinte salée, propre au jour, sert de compteur.
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${day}|${process.env.IP_SALT || "sillon"}|${rawIp}`));
+  const ip = [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
   const store = await counters();
+  // Nettoyage occasionnel des compteurs des jours précédents (durée de conservation : 24 h).
+  if (store && Math.random() < 0.05) {
+    try { const { blobs } = await store.list(); await Promise.all(blobs.filter((b) => !b.key.includes(day)).slice(0, 200).map((b) => store.delete(b.key))); } catch { /* sans gravité */ }
+  }
   if (!(await bump(store, `global/${day}`, GLOBAL))) return json(429, { code: "global_limit" });
   if (!(await bump(store, `ip/${day}/${ip}`, PER_IP))) return json(429, { code: "rate_limited" });
 
