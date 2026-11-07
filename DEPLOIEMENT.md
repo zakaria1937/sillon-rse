@@ -48,6 +48,16 @@ Tu reçois un e-mail à chaque événement : nouveau contact, demande d'accompag
 2. Pose une question à l'assistant.
 3. Clique sur « Être accompagné » et envoie un message test.
 
+## Gérer les demandes des visiteurs
+
+- **Désinscription** (e-mail « Désinscription : ne plus contacter ») : ne plus écrire à cette personne, supprimer ses envois dans Netlify (**Forms → sillon →** ouvrir l'envoi **→ Delete**) et dans ta boîte mail.
+- **Demande de suppression** : même chose, puis réponds-lui par e-mail pour confirmer, au plus tard un mois après la demande.
+- **Variable facultative** `IP_SALT` : une chaîne aléatoire (par exemple 32 caractères) pour renforcer le hachage des adresses IP.
+
+## Coordonnées de l'éditeur
+
+Si tu crées une entreprise (micro-entreprise ou société), complète `siret` et `address` dans l'objet `BUSINESS` en haut de `legal.js`, et change `status`.
+
 ## Ensuite
 
 - Chaque modification envoyée sur GitHub redéploie le site automatiquement.

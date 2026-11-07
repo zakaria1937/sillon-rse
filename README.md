@@ -85,7 +85,16 @@ npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 | `i18n.js` | Textes français et anglais |
 | `tests/` | Tests des calculs et de la passerelle (`npm test`) |
 
-Bibliothèques chargées depuis cdnjs : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, pdf.js 3.11.174.
+Bibliothèques et polices hébergées dans le dépôt (`vendor/`, `fonts/`) : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, PDF.js 3.11.174, Bricolage Grotesque et IBM Plex (OFL). Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Conformité
+
+- **Aucun cookie ni traceur**, aucune requête vers un service tiers (polices et scripts auto-hébergés, politique de sécurité CSP stricte dans `netlify.toml`).
+- Pages : confidentialité, CGU, politique cookies, mentions légales, crédits et licences, accessibilité, **Mes données** (export, effacement, désinscription, demande de suppression).
+- Fiche contact : consentement explicite et attestation de majorité et d'usage professionnel, cases non pré-cochées.
+- Adresses IP jamais stockées en clair (empreinte salée, effacée sous 24 h).
+- Accessibilité : audit axe-core WCAG 2.1 A/AA sans violation, navigation clavier, focus piégé dans les fenêtres.
+- Coordonnées de l'éditeur à compléter dans l'objet `BUSINESS` en haut de `legal.js`.
 
 ## Feuille de route
 

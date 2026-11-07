@@ -751,7 +751,7 @@
       return {
         gauge: { val: score, max: 100, label: "CRÉDIBILITÉ" },
         verdict: score >= 75 ? "Communication crédible" : score >= 45 ? "Communication à renforcer" : "Communication peu convaincante",
-        summary: `Score de crédibilité ${score}/100. Les acheteurs et les candidats cherchent d'abord des chiffres datés et des preuves.`,
+        summary: `Score de crédibilité ${score}/100. Des chiffres datés et des preuves rendent une communication RSE plus crédible.`,
         kpis: [
           { l: "Crédibilité", v: score, u: "/100", s: "10 critères pondérés" },
           { l: "Critères remplis", v: it.filter((x) => x.s === 1).length, u: "/10", s: `${it.filter((x) => x.s === 0.5).length} en partie` },

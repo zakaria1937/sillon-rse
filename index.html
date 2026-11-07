@@ -7,15 +7,24 @@
 <title>Sillon RSE</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Sillon : 13 copilotes RSE pour PME et ETI. Bilan carbone, VSME, EcoVadis, réglementation 2026, greenwashing, marchés publics. Calculs sourcés, analyse par Claude, exports PDF et Excel.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/bricolage-grotesque-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* Polices auto-hébergées (licence SIL OFL 1.1, voir fonts/) : aucune requête vers un service tiers. */
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/bricolage-grotesque-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
+
 /* Layout: champ labouré en 3D en tête, tableau de bord, puis trois familles de copilotes ; chaque copilote = formulaire à gauche, résultats vivants à droite. */
 :root{
   --bg:#EDF0EA; --surface:#F8FAF6; --surface-2:#E3E8E0; --line:#CBD4C8;
-  --fg:#15241C; --muted:#56665C; --accent:#2E6A4C; --accent-ink:#F4F8F2; --soil:#B4692A;
-  --ok:#2E7D4F; --warn:#B7791F; --crit:#B23A2E; --hero:#11201A; --hero-fg:#E6EEE7; --hero-line:#7DB896;
+  --fg:#15241C; --muted:#4F5F55; --accent:#2E6A4C; --accent-ink:#F4F8F2; --soil:#8C4A12;
+  --ok:#22633D; --warn:#7A5108; --crit:#9C2D22; --hero:#11201A; --hero-fg:#E6EEE7; --hero-line:#7DB896;
   --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -85,7 +94,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .card p{margin:0;color:var(--muted);font-size:13.5px;flex:1}
 .card .foot{display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
 .state{font-family:var(--f-mono);font-size:11.5px;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
-.state.done{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.state.done{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)}
 .card .calc{font-family:var(--f-mono);font-size:11px;color:var(--soil)}
 .method{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;border-top:1px solid var(--line);padding-top:32px}
 .method h3{font-size:17px;margin-bottom:6px}
@@ -102,7 +111,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .panel h2{font-size:17px;margin-bottom:4px}
 .panel .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
 .sticky{position:sticky;top:calc(env(safe-area-inset-top,0px) + 112px)}
-.ex-flag{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb,var(--soil) 18%,transparent);color:var(--soil);margin-left:6px;vertical-align:middle}
+.ex-flag{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:2px 8px;border-radius:4px;background:color-mix(in srgb,var(--soil) 12%,transparent);color:var(--soil);margin-left:6px;vertical-align:middle}
 .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 14px}
 .fgroup{grid-column:1/-1;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
 .field{display:grid;gap:5px;min-width:0}
@@ -151,9 +160,9 @@ table.ed input:focus,table.ed select:focus{border-color:var(--accent);outline:no
 .findings{list-style:none;margin:0;padding:0;display:grid;gap:7px}
 .findings li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;font-size:13.5px;padding:9px 11px;border-radius:7px;background:var(--bg);border:1px solid var(--line)}
 .pill{font-family:var(--f-mono);font-size:10.5px;padding:2px 7px;border-radius:4px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-.pill.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
-.pill.warn{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
-.pill.crit{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn)}
+.pill.crit{background:color-mix(in srgb,var(--crit) 12%,transparent);color:var(--crit)}
 .pill.info{background:var(--surface-2);color:var(--muted)}
 .res h4{font-family:var(--f-display);font-size:15px;margin:18px 0 8px}
 .actions{margin:0;padding-left:20px;display:grid;gap:5px;font-size:13.5px}
@@ -217,6 +226,18 @@ footer .wrap{display:grid;gap:6px}
 .legal h2{font-size:17px;margin:18px 0 6px}.legal h2:first-child{margin-top:0}
 .legal p,.legal li{color:var(--fg);font-size:14px;max-width:70ch}
 .legal ul{padding-left:20px}
+.ltable{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0}
+.ltable th,.ltable td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+.ltable th{background:var(--surface-2);font-weight:600}
+.legal{overflow-x:auto}
+.fine{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+.chip-btn.danger{border-color:var(--crit);color:var(--crit)}
+.confirm{margin-top:12px;padding:12px;border:1px solid var(--crit);border-radius:8px;background:color-mix(in srgb,var(--crit) 6%,var(--surface))}
+.confirm p{margin:0 0 4px;font-size:14px}
+.md{margin-bottom:14px}.md h2{font-size:18px;margin-bottom:4px}
+.notice{position:fixed;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:42;max-width:min(520px,calc(100vw - 32px));display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:0 18px 40px -20px rgba(10,30,20,.45);font-size:13.5px}
+.notice p{margin:0;flex:1;min-width:200px}
+@media (max-width:560px){.notice{bottom:calc(84px + env(safe-area-inset-bottom,0px))}}
 #pageH:focus{outline:none}
 a.chip-btn{text-decoration:none;color:inherit}
 .hero-cta a.chip-btn{color:var(--hero-fg)}
@@ -315,17 +336,17 @@ fieldset.cl legend{padding:0;margin:10px 0 2px}
 <div id="chatWrap"></div>
 <form name="sillon" data-netlify="true" netlify-honeypot="bot-field" hidden aria-hidden="true">
   <input name="bot-field"><input name="evenement"><input name="prenom"><input name="nom"><input name="email"><input name="entreprise"><input name="fonction"><input name="telephone">
-  <input name="secteur"><input name="effectif"><input name="ca"><input name="langue"><input name="consentement"><input name="copilote"><textarea name="message"></textarea><textarea name="resume"></textarea>
+  <input name="secteur"><input name="effectif"><input name="ca"><input name="consentement"><input name="majeur_pro"><input name="copilote"><textarea name="message"></textarea><textarea name="resume"></textarea>
 </form>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="copilots.js"></script>
-<script src="i18n.js"></script>
-<script src="legal.js"></script>
-<script src="core.js"></script>
-<script src="views.js"></script>
-<script src="extras.js"></script>
-<script src="exports.js"></script>
-<script src="main.js"></script>
+<script src="vendor/three.min.js" defer></script>
+<script src="vendor/jspdf.umd.min.js" defer></script>
+<script src="copilots.js" defer></script>
+<script src="i18n.js" defer></script>
+<script src="legal.js" defer></script>
+<script src="core.js" defer></script>
+<script src="views.js" defer></script>
+<script src="extras.js" defer></script>
+<script src="exports.js" defer></script>
+<script src="main.js" defer></script>
 </body>
 </html>

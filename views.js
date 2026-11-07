@@ -45,7 +45,7 @@
       <nav class="wrap subnav" aria-label="Navigation">${L.map(([k, lab]) => `<a href="#${k}"${h === k ? ' aria-current="page"' : ""}>${esc(t(lab))}</a>`).join("")}</nav>`;
     document.getElementById("langBtn").onclick = () => { S().lang = S().lang === "fr" ? "en" : "fr"; X.save(); window.SXR.route(); };
     document.documentElement.lang = st.lang;
-    document.getElementById("foot").innerHTML = `<div class="wrap"><div><b>Sillon</b> · ${esc(t("foot1"))}</div><div>${esc(t("foot2"))}</div><div class="foot-links"><a href="#methode">${esc(t("nav_method"))}</a><a href="#confidentialite">${esc(t("nav_privacy"))}</a><a href="#mentions">${esc(t("nav_legal"))}</a><button type="button" class="linkish" data-accomp>${esc(t("acc_cta"))}</button></div></div>`;
+    document.getElementById("foot").innerHTML = `<div class="wrap"><div><b>Sillon</b> · ${esc(t("foot1"))}</div><div>${esc(t("foot2"))}</div><div class="foot-links"><a href="#methode">${esc(t("nav_method"))}</a><a href="#confidentialite">${esc(t("nav_privacy"))}</a><a href="#cgu">${esc(t("nav_terms"))}</a><a href="#cookies">${esc(t("nav_cookies"))}</a><a href="#mentions">${esc(t("nav_legal"))}</a><a href="#credits">${esc(t("nav_credits"))}</a><a href="#accessibilite">${esc(t("nav_a11y"))}</a><a href="#mes-donnees">${esc(t("nav_mydata"))}</a><button type="button" class="linkish" data-accomp>${esc(t("acc_cta"))}</button></div></div>`;
   }
 
   /* ---------- petits graphiques ---------- */
@@ -130,7 +130,7 @@
           </div>
           <div class="ledger">
             <div><span>${esc(t("led_cp"))}</span><b>${copilots.length}</b></div>
-            <div><span>${esc(t("led_txt"))}</span><b>${X.TIMELINE.length + 3}</b></div>
+            <div><span>${esc(t("led_txt"))}</span><b>${X.TIMELINE.length}</b></div>
             <div><span>${esc(t("led_src"))}</span><b>${Object.keys(window.SILLON.sources).length}</b></div>
             <div><span>${esc(t("led_calc"))}</span><b>${esc(t("led_calc_v"))}</b></div>
             <div><span>${esc(t("led_out"))}</span><b>${esc(t("led_out_v"))}</b></div>
@@ -443,5 +443,64 @@
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-accomp]")) window.SXC.accompanyDialog(); });
 
-  window.SXV = { legalView, header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
+  /* ---------- mes données : export, effacement, désinscription, suppression ---------- */
+  function myDataView() {
+    current = null;
+    const st = S(), c = st.contact;
+    app.innerHTML = `<div class="wrap narrow"><div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("md_title"))}</h1><p>${esc(t("md_sub"))}</p></div>
+      <section class="panel md" aria-labelledby="mdL"><h2 id="mdL">${esc(t("md_local"))}</h2><p class="sub">${esc(t("md_local_p"))}</p>
+        <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div>
+        <div class="confirm" id="mdConfirm" hidden role="group" aria-labelledby="mdConfirmT"><p id="mdConfirmT">${esc(t("md_erase_confirm"))}</p><div class="toolbar"><button class="chip-btn danger" type="button" id="mdEraseYes">${esc(t("md_erase_yes"))}</button><button class="chip-btn" type="button" id="mdEraseNo">${esc(t("md_cancel"))}</button></div></div>
+      </section>
+      <section class="panel md" aria-labelledby="mdS"><h2 id="mdS">${esc(t("md_sent"))}</h2>
+        <p class="sub">${c ? esc(`${c.prenom} ${c.nom} · ${c.email} · ${c.entreprise}${c.fonction ? " · " + c.fonction : ""}${c.telephone ? " · " + c.telephone : ""}`) : esc(t("md_sent_none"))}</p>
+        ${c ? `<div class="toolbar"><button class="chip-btn" type="button" id="mdUnsub">${esc(t("md_unsub"))}</button></div>` : ""}
+      </section>
+      <section class="panel md" aria-labelledby="mdD"><h2 id="mdD">${esc(t("md_del"))}</h2><p class="sub">${esc(t("md_del_p"))}</p>
+        <form id="mdDelF" novalidate><div class="fgrid">
+          <div class="field wide"><label for="md-email">${esc(t("md_del_email"))} *</label><div class="inp"><input id="md-email" type="email" required autocomplete="email" value="${esc(c ? c.email : "")}"></div></div>
+          <div class="field wide"><label for="md-msg">${esc(t("md_del_msg"))}</label><textarea class="ta" id="md-msg" rows="3"></textarea></div>
+        </div><p class="err" id="mdErr" role="alert" hidden></p><div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("md_del_send"))}</button></div></form>
+        <p class="fine">${esc(t("md_rights"))}</p>
+      </section><div style="height:56px"></div></div>`;
+    document.getElementById("mdExport").onclick = async () => {
+      const data = JSON.stringify({ exporte_le: new Date().toISOString(), source: "Sillon", donnees: S() }, null, 2);
+      try { await X.saveFile(`sillon-mes-donnees-${X.today()}.json`, new Blob([data], { type: "application/json" })); } catch (e) { if (!e || e.code !== "declined") X.toast(t("toast_fail")); }
+    };
+    const box = document.getElementById("mdConfirm");
+    document.getElementById("mdErase").onclick = () => { box.hidden = false; document.getElementById("mdEraseNo").focus(); };
+    document.getElementById("mdEraseNo").onclick = () => { box.hidden = true; document.getElementById("mdErase").focus(); };
+    document.getElementById("mdEraseYes").onclick = () => {
+      const lang = S().lang;
+      try { localStorage.removeItem("sillon.v2"); localStorage.removeItem("sillon.v1"); localStorage.removeItem("sillon.notice"); } catch (e) {}
+      X.setState({ ...X.blank(), lang }); X.toast(t("md_erased")); window.SXR.route();
+    };
+    const un = document.getElementById("mdUnsub");
+    if (un) un.onclick = async () => {
+      un.disabled = true;
+      const ok = await X.notify("Désinscription : ne plus contacter", { message: "La personne retire son consentement et ne souhaite plus être contactée." });
+      if (ok || X.inClaude) { S().contact = null; S().chat = []; X.save(); X.toast(t("md_unsub_ok")); myDataView(); } else { un.disabled = false; X.toast(t("md_fail")); }
+    };
+    document.getElementById("mdDelF").onsubmit = async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("md-email").value.trim(), err = document.getElementById("mdErr");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = t("ct_err_fields"); err.hidden = false; return; }
+      err.hidden = true;
+      const ok = await X.notify("Demande de suppression des données", { email, message: document.getElementById("md-msg").value.trim() || "(aucune précision)" });
+      if (ok || X.inClaude) { X.toast(t("md_del_ok")); document.getElementById("md-msg").value = ""; } else X.toast(t("md_fail"));
+    };
+  }
+
+  /* ---------- bandeau d'information (aucun cookie, aucun traceur) ---------- */
+  function notice() {
+    let seen = false; try { seen = localStorage.getItem("sillon.notice") === "1"; } catch (e) {}
+    if (seen || document.getElementById("notice")) return;
+    const n = document.createElement("div");
+    n.id = "notice"; n.className = "notice"; n.setAttribute("role", "region"); n.setAttribute("aria-label", t("nav_cookies"));
+    n.innerHTML = `<p>${esc(t("nt_text"))} <a href="#cookies">${esc(t("nt_more"))}</a></p><button class="chip-btn primary" type="button">${esc(t("nt_ok"))}</button>`;
+    n.querySelector("button").onclick = () => { try { localStorage.setItem("sillon.notice", "1"); } catch (e) {} n.remove(); };
+    document.body.appendChild(n);
+  }
+
+  window.SXV = { myDataView, notice, legalView, header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
 })();

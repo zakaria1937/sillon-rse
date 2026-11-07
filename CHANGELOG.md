@@ -1,5 +1,17 @@
 # Journal des versions
 
+## 3.2.0 · 7 novembre 2026
+
+- Polices et bibliothèques auto-hébergées : plus aucune requête vers Google Fonts ou cdnjs.
+- En-têtes de sécurité : CSP stricte, HSTS.
+- Nouvelles pages : CGU, politique cookies, crédits et licences, accessibilité, Mes données.
+- Bandeau d'information (aucun cookie, aucun traceur), sans demande d'acceptation inutile.
+- Fiche contact : attestation de majorité et d'usage professionnel ; champ « langue » supprimé.
+- Mes données : export JSON, effacement local avec confirmation, désinscription, demande de suppression envoyée à l'éditeur.
+- Adresses IP hachées et compteurs effacés sous 24 h.
+- Contrastes corrigés (WCAG AA), focus clavier piégé dans les fenêtres, audit axe-core sans violation.
+- Formulations sans promesse non prouvée (délai de réponse, « expert »).
+
 ## 3.1.0 · 6 novembre 2026
 
 - L'IA passe sur Mistral AI (offre gratuite, entreprise française), avec Groq en secours facultatif. Plus aucun coût d'IA au démarrage.

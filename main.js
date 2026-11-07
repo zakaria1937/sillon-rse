@@ -67,11 +67,13 @@
     else if (h === "veille") V.watchView();
     else if (h === "methode") V.methodView();
     else if (h === "rapport") V.reportView();
-    else if (h === "confidentialite" || h === "mentions") V.legalView(h);
+    else if (["confidentialite", "mentions", "cgu", "cookies", "credits", "accessibilite"].includes(h)) V.legalView(h);
+    else if (h === "mes-donnees") V.myDataView();
     else if (h === "presentation") { V.reportView(); C.presentation(); }
     else if (h === "main") return;
     else { V.clearCurrent(); V.home(); }
     C.chatInit();
+    V.notice();
     if (!first) { scrollTo(0, 0); const hd = document.getElementById("pageH"); if (hd) hd.focus({ preventScroll: true }); }
     first = false;
   }

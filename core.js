@@ -193,7 +193,7 @@
   async function notify(evenement, extra = {}) {
     if (inClaude) return false;
     const c = state.contact || {}, p = profile();
-    const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), langue: state.lang, consentement: c.consent ? "oui" : "non", ...extra };
+    const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), consentement: c.consent ? "oui" : "non", majeur_pro: c.adult ? "oui" : "non", ...extra };
     try {
       const r = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() });
       return r.ok;
@@ -211,8 +211,8 @@
 
   /* ---------- modules chargés à la demande ---------- */
   const LIBS = {
-    xlsx: ["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"],
-    pdfjs: ["https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"],
+    xlsx: ["vendor/xlsx.full.min.js"],
+    pdfjs: ["vendor/pdf.min.js"],
   };
   const loaded = {};
   function loadLib(name) {

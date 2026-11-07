@@ -8,7 +8,7 @@
   async function pdfText(file) {
     await X.loadLib("pdfjs");
     const lib = window.pdfjsLib;
-    try { lib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } catch (e) {}
+    try { lib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js"; } catch (e) {}
     const doc = await lib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
     let out = "";
     for (let i = 1; i <= Math.min(doc.numPages, 12); i++) {
@@ -62,6 +62,16 @@
     }
   }
 
+  /* ---------- accessibilité : le focus clavier reste dans la fenêtre ouverte ---------- */
+  function trapTab(e, root) {
+    if (e.key !== "Tab") return;
+    const f = [...root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select,textarea,[tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
   /* ---------- fiche contact (débloque l'IA et les exports) ---------- */
   function modal(html, labelId) {
     const d = document.createElement("div");
@@ -69,7 +79,7 @@
     d.innerHTML = html; document.body.appendChild(d);
     const prev = document.activeElement;
     const close = () => { d.remove(); prev && prev.focus && prev.focus(); };
-    d.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    d.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); else trapTab(e, d); });
     d.addEventListener("click", (e) => e.target === d && close());
     return { d, close };
   }
@@ -86,7 +96,9 @@
           ${f("entreprise", t("ct_company"), "text", true, c.entreprise || p.nom, "organization")}${f("fonction", t("ct_role"), "text", false, c.fonction, "organization-title")}
           ${f("telephone", t("ct_phone"), "tel", false, c.telephone, "tel")}
         </div>
+        <label class="consent"><input type="checkbox" id="c-adult" ${c.adult ? "checked" : ""}> <span>${esc(t("ct_adult"))} *</span></label>
         <label class="consent"><input type="checkbox" id="c-consent" ${c.consent ? "checked" : ""}> <span>${esc(t("ct_consent"))} <a href="#confidentialite" target="_blank">${esc(S().lang === "en" ? "privacy policy" : "politique de confidentialité")}</a>.</span></label>
+        <p class="fine">${esc(t("ct_note"))}</p>
         <p class="err" id="cErr" role="alert" hidden></p>
         <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("ct_go"))}</button><button class="chip-btn" type="button" data-close>${esc(t("chat_close"))}</button></div></form>`, "cH");
       const done = (v) => { pending = null; close(); resolve(v); };
@@ -97,8 +109,8 @@
         e.preventDefault();
         const g = (id) => d.querySelector("#c-" + id).value.trim();
         const err = d.querySelector("#cErr");
-        const v = { prenom: g("prenom"), nom: g("nom"), email: g("email"), entreprise: g("entreprise"), fonction: g("fonction"), telephone: g("telephone"), consent: d.querySelector("#c-consent").checked };
-        const miss = !v.prenom || !v.nom || !v.entreprise || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email) ? t("ct_err_fields") : !v.consent ? t("ct_err_consent") : "";
+        const v = { prenom: g("prenom"), nom: g("nom"), email: g("email"), entreprise: g("entreprise"), fonction: g("fonction"), telephone: g("telephone"), adult: d.querySelector("#c-adult").checked, consent: d.querySelector("#c-consent").checked };
+        const miss = !v.prenom || !v.nom || !v.entreprise || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email) ? t("ct_err_fields") : !v.adult ? t("ct_err_adult") : !v.consent ? t("ct_err_consent") : "";
         if (miss) { err.textContent = miss; err.hidden = false; return; }
         const first = !S().contact;
         S().contact = { ...v, d: X.today() };
@@ -112,7 +124,7 @@
     });
     return pending;
   }
-  const ensureContact = async (reason) => (S().contact && S().contact.email ? true : contactDialog(reason));
+  const ensureContact = async (reason) => (S().contact && S().contact.email && S().contact.adult ? true : contactDialog(reason));
 
   function accompanyDialog() {
     const { d, close } = modal(`<form class="panel modal-box"><h2 id="aH">${esc(t("acc_title"))}</h2><p class="sub">${esc(t("acc_sub"))}</p>
@@ -163,7 +175,7 @@
       </section>`;
     document.getElementById("chatFab").onclick = () => chatToggle();
     document.getElementById("chatX").onclick = () => chatToggle(false);
-    document.getElementById("chat").addEventListener("keydown", (e) => e.key === "Escape" && chatToggle(false));
+    document.getElementById("chat").addEventListener("keydown", (e) => { if (e.key === "Escape") chatToggle(false); else trapTab(e, document.getElementById("chat")); });
     document.getElementById("chatF").onsubmit = async (e) => {
       e.preventDefault();
       const inp = document.getElementById("chatIn"), q = inp.value.trim(); if (!q || !X.aiAvailable()) return;
@@ -203,7 +215,7 @@
     const show = () => { ov.querySelector("#stage").innerHTML = slides[i]; ov.querySelector("#pn").textContent = `${i + 1} / ${slides.length}`; };
     const go = (d) => { i = Math.max(0, Math.min(slides.length - 1, i + d)); show(); };
     const exit = () => { try { document.fullscreenElement && document.exitFullscreen(); } catch (e) {} ov.remove(); document.removeEventListener("keydown", key); history.replaceState(null, "", "#rapport"); window.SXR.route(); };
-    const key = (e) => { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") go(-1); else if (e.key === "Escape") exit(); };
+    const key = (e) => { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") go(-1); else if (e.key === "Escape") exit(); else trapTab(e, ov); };
     document.addEventListener("keydown", key);
     ov.querySelectorAll("[data-p]").forEach((b) => (b.onclick = () => go(+b.dataset.p)));
     ov.querySelector("[data-exit]").onclick = exit;
@@ -212,5 +224,5 @@
     show(); ov.querySelector("[data-p='1']").focus();
   }
 
-  window.SXC = { importDoc, contactDialog, ensureContact, accompanyDialog, chatInit, chatRender, presentation };
+  window.SXC = { importDoc, contactDialog, ensureContact, accompanyDialog, chatInit, chatRender, presentation, modal, trapTab };
 })();
