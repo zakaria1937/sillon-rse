@@ -77,7 +77,7 @@
       if (k("avl") * FE.avl > k("train") * FE.train * 5) F.push({ lvl: "warn", t: `L'avion pèse ${nf(t(k("avc") * FE.avc + k("avl") * FE.avl), 1)} tCO2e. Un trajet en TGV émet environ 90 fois moins par km qu'un vol court-courrier.` });
       F.push({ lvl: "info", t: `Les achats sont estimés par ratios monétaires : précision faible, à affiner avec les données de vos principaux fournisseurs.` });
       return {
-        gauge: { val: Math.round(t(tot)), max: Math.max(1, Math.round(t(tot)) / Math.max(0.01, sc[2] / (tot || 1))), label: "TCO2E · SCOPE 3", raw: true, show: nf(t(tot)) + " t" },
+        gauge: { val: Math.round(t(tot)), max: Math.max(1, Math.round(t(tot)) / Math.max(0.01, sc[2] / (tot || 1))), label: "TCO2E / AN", raw: true, show: nf(t(tot)) + " t" },
         verdict: `${nf(t(tot))} tCO2e par an`,
         summary: `Scope 1 : ${nf(t(sc[0]))} t · Scope 2 : ${nf(t(sc[1]))} t · Scope 3 : ${nf(t(sc[2]))} t. ${nf(per, 1)} tCO2e par salarié.`,
         kpis: [
