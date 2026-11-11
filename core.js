@@ -5,18 +5,52 @@
   const byId = Object.fromEntries(copilots.map((c) => [c.id, c]));
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const KEY = "sillon.v2";
+  const T0 = Date.now();
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const today = () => new Date().toISOString().slice(0, 10);
 
   /* ---------- état ---------- */
-  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [], contact: null });
+  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [], contact: null, cloud: null });
   let state = blank();
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("sillon.v1") || "null");
     if (s && s.inputs) state = { ...blank(), ...s };
   } catch (e) {}
   let saveT;
-  const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 300); };
+  const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 300); cloudLater(); };
+
+  /* ---------- sauvegarde en ligne (facultative, protégée par un code secret créé ici) ---------- */
+  const newCode = () => { const a = new Uint8Array(20); crypto.getRandomValues(a); return [...a].map((b) => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("") + Date.now().toString(36).slice(-6); };
+  const cloudPayload = () => { const { cloud, chat, ...rest } = state; return rest; };
+  let cloudT = null, cloudState = "idle";
+  async function cloudSave() {
+    if (!state.cloud || !state.cloud.code) return false;
+    try {
+      const r = await fetch("/api/dossier", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code, data: cloudPayload() }) });
+      if (!r.ok) { cloudState = "error"; return false; }
+      state.cloud.maj = (await r.json()).maj; cloudState = "ok";
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      return true;
+    } catch (e) { cloudState = "error"; return false; }
+  }
+  function cloudLater() { if (!state.cloud || !state.cloud.code) return; clearTimeout(cloudT); cloudT = setTimeout(cloudSave, 15000); }
+  async function cloudEnable() { state.cloud = { code: newCode(), maj: null }; const ok = await cloudSave(); if (!ok) state.cloud = null; save(); return ok; }
+  async function cloudLoad(code) {
+    code = String(code || "").trim().toLowerCase();
+    if (!/^[a-z0-9]{24,64}$/.test(code)) throw { code: "invalid_code" };
+    const r = await fetch("/api/dossier?code=" + code).catch(() => { throw { code: "offline" }; });
+    if (!r.ok) throw { code: r.status === 404 ? "not_found" : "upstream_error" };
+    const rec = await r.json();
+    state = { ...blank(), ...rec.data, lang: state.lang, cloud: { code, maj: rec.maj }, chat: [] };
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    return true;
+  }
+  async function cloudDelete() {
+    if (!state.cloud) return true;
+    try { const r = await fetch("/api/dossier", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code }) }); if (!r.ok) return false; } catch (e) { return false; }
+    state.cloud = null; save(); return true;
+  }
+
 
   /* ---------- langue ---------- */
   const t = (k, vars) => { let s = (I[state.lang] || I.fr)[k] ?? I.fr[k] ?? k; if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace("{" + a + "}", b); return s; };
@@ -106,23 +140,7 @@
   }
 
   /* ---------- veille ---------- */
-  const TIMELINE = [
-    { d: "2026-02-26", t: "Omnibus I publié au Journal officiel de l'UE", s: "CSRD et CSDDD recentrées sur les grandes entreprises.", ap: () => true },
-    { d: "2026-03-18", t: "Entrée en vigueur de l'Omnibus I", s: "CSRD : plus de 1 000 salariés et plus de 450 M€ de CA. Demandes aux PME plafonnées au niveau VSME.", ap: () => true },
-    { d: "2026-06-07", t: "Transposition de la directive transparence salariale", s: "Directive (UE) 2023/970 : écarts de rémunération et transparence à l'embauche.", ap: (p) => num(p.eff) >= 100, check: true },
-    { d: "2026-08-21", t: "Critère environnemental obligatoire dans les marchés publics", s: "Au moins un critère d'attribution et une condition d'exécution environnementaux.", ap: (p) => p.mp === "oui" },
-    { d: "2026-09-27", t: "Application de la directive EmpCo", s: "Fin des allégations génériques et de la neutralité carbone par compensation.", ap: (p) => p.b2c === "oui" },
-    { d: "2026-09-30", t: "Déclaration annuelle OPERAT (décret tertiaire)", s: "Consommations de l'année précédente pour les bâtiments de 1 000 m² et plus.", ap: (p) => num(p.surf) >= 1000 },
-    { d: "2026-10-11", t: "Audit énergétique selon la nouvelle directive efficacité énergétique", s: "Seuil fondé sur la consommation (environ 2,75 GWh/an).", ap: (p) => num(p.gwh) > 2.75, check: true },
-    { d: "2027-03-01", t: "Publication de l'index égalité professionnelle", s: "Chaque année, dès 50 salariés.", ap: (p) => num(p.eff) >= 50 },
-    { d: "2027-03-19", t: "Transposition de la CSRD révisée", s: "Les États membres intègrent les nouveaux seuils dans leur droit.", ap: (p) => num(p.effM) > 1000 && num(p.ca) > 450 },
-    { d: "2027-06-07", t: "Premiers rapports d'écart de rémunération", s: "Entreprises de 150 salariés et plus, selon la transposition française.", ap: (p) => num(p.eff) >= 150, check: true },
-    { d: "2027-09-30", t: "Déclaration annuelle OPERAT", s: "Consommations 2026.", ap: (p) => num(p.surf) >= 1000 },
-    { d: "2027-10-11", t: "Système de management de l'énergie (ISO 50001)", s: "Au-delà d'environ 23,6 GWh/an.", ap: (p) => num(p.gwh) > 23.6, check: true },
-    { d: "2028-07-26", t: "Transposition de la CSDDD", s: "Devoir de vigilance européen : plus de 5 000 salariés et 1,5 Md€ de CA.", ap: (p) => num(p.effM) > 5000 },
-    { d: "2029-07-26", t: "Application de la CSDDD", s: "Plans de vigilance et due diligence obligatoires.", ap: (p) => num(p.effM) > 5000 },
-    { d: "2030-12-31", t: "Décret tertiaire : -40 % de consommation", s: "Objectif par rapport à l'année de référence choisie (2010 au plus tôt).", ap: (p) => num(p.surf) >= 1000 },
-  ];
+  const TIMELINE = window.SILLON_REF.echeances;
 
   /* ---------- IA : claude.ai (sample) ou passerelle /api/claude ---------- */
   const inClaude = !!(window.claude && typeof window.claude.use === "function");
@@ -194,10 +212,14 @@
     if (inClaude) return false;
     const c = state.contact || {}, p = profile();
     const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), consentement: c.consent ? "oui" : "non", majeur_pro: c.adult ? "oui" : "non", ...extra };
+    const direct = async () => { try { return (await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() })).ok; } catch (e) { return false; } };
+    // Passage par /api/contact (filtre anti-robots et limite d'envois) ; envoi direct si la passerelle est en panne.
     try {
-      const r = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() });
-      return r.ok;
-    } catch (e) { return false; }
+      const r = await fetch("/api/contact", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...fields, piege: "", delai: Date.now() - T0 }) });
+      if (r.ok) return true;
+      if (r.status >= 500 || r.status === 404) return direct();
+      return false;
+    } catch (e) { return direct(); }
   }
 
   /* ---------- téléchargements ---------- */
@@ -211,6 +233,8 @@
 
   /* ---------- modules chargés à la demande ---------- */
   const LIBS = {
+    three: ["vendor/three.min.js"],
+    jspdf: ["vendor/jspdf.umd.min.js"],
     xlsx: ["vendor/xlsx.full.min.js"],
     pdfjs: ["vendor/pdf.min.js"],
   };
@@ -229,5 +253,5 @@
 
   window.SX = { copilots, byId, nf, num, esc, state: () => state, setState: (s) => { state = s; }, save, t, cpT, famT, reduce, today,
     PROFILE_FIELDS, profile, defaults, inputs, applyProfile, LINKS, linkKey, resolved, result, record, planItems, TIMELINE,
-    inClaude, ask, aiAvailable, aiError, notify, onCaps, isSample: () => !!sample, saveFile, loadLib, toast, blank };
+    inClaude, ask, aiAvailable, aiError, notify, onCaps, cloudEnable, cloudSave, cloudLoad, cloudDelete, cloudStatus: () => cloudState, isSample: () => !!sample, saveFile, loadLib, toast, blank };
 })();

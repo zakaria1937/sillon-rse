@@ -48,6 +48,14 @@ Tu reçois un e-mail à chaque événement : nouveau contact, demande d'accompag
 2. Pose une question à l'assistant.
 3. Clique sur « Être accompagné » et envoie un message test.
 
+## Mettre à jour une règle ou un facteur
+
+Tout est dans `referentiels.js` : modifie la valeur, change la date `version`, lance `npm test`, puis envoie le fichier sur GitHub.
+
+## Alertes techniques
+
+Tu reçois un e-mail « Alerte technique » si l'IA ne répond plus ou si le plafond quotidien d'analyses est atteint (une alerte par jour et par type au maximum).
+
 ## Gérer les demandes des visiteurs
 
 - **Désinscription** (e-mail « Désinscription : ne plus contacter ») : ne plus écrire à cette personne, supprimer ses envois dans Netlify (**Forms → sillon →** ouvrir l'envoi **→ Delete**) et dans ta boîte mail.

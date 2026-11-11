@@ -24,7 +24,7 @@
 
 
   /* ---------- 0. Bilan carbone ---------- */
-  const FE = { gaz: 0.227, fioul: 3.25, gazole: 3.16, essence: 2.8, r410a: 2088, elec: 0.052, train: 0.0029, avc: 0.258, avl: 0.152, voit: 0.218 };
+  const FE = window.SILLON_REF.facteurs, SEUIL = window.SILLON_REF.seuils;
   const bilanC = {
     id: "bilan-carbone", fam: "mesurer", title: "Bilan carbone",
     short: "Vos émissions scopes 1, 2 et 3 avec les facteurs ADEME.",
@@ -367,17 +367,17 @@
       if (e >= 50) add("verif", "Mobilité des salariés", "Thème obligatoire de la négociation annuelle si 50 salariés sur un même site.");
       if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Transposition française à suivre : rapports d'écart de rémunération à partir de 100 salariés.");
       if (e >= 300) add("oblig", "Bilan social", "Annuel, dès 300 salariés.");
-      if (e > 500) add("oblig", "BEGES réglementaire", "Bilan des émissions tous les 4 ans et plan de transition (plus de 500 salariés).");
+      if (e > SEUIL.begesEffectif) add("oblig", "BEGES réglementaire", "Bilan des émissions tous les 4 ans et plan de transition (plus de 500 salariés).");
       else add("info", "BEGES réglementaire", "Non obligatoire sous 501 salariés : un bilan volontaire reste attendu par les clients.");
-      if (e >= 500 && ca > 100) add("oblig", "Loi Sapin II", "Programme anticorruption (500 salariés et 100 M€ de CA).");
+      if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("oblig", "Loi Sapin II", "Programme anticorruption (500 salariés et 100 M€ de CA).");
       if (e >= 1000) add("oblig", "Loi Rixain", "Quotas de femmes parmi les cadres dirigeants (dès 1 000 salariés).");
       if (e >= 5000 || em >= 10000) add("oblig", "Devoir de vigilance", "Plan de vigilance publié (5 000 salariés en France ou 10 000 dans le monde).");
-      if (em > 1000 && ca > 450) add("oblig", "CSRD", "Dans le champ après l'Omnibus (plus de 1 000 salariés et plus de 450 M€ de CA).");
+      if (em > SEUIL.csrdEffectif && ca > SEUIL.csrdCA) add("oblig", "CSRD", "Dans le champ après l'Omnibus (plus de 1 000 salariés et plus de 450 M€ de CA).");
       else add("info", "CSRD", "Hors champ depuis l'Omnibus. Vos clients ne peuvent pas exiger plus que le niveau VSME.");
-      if (em > 5000 && ca > 1500) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
-      if (surf >= 1000) add("oblig", "Décret tertiaire", "Réduction des consommations de -40 % en 2030, déclaration annuelle sur OPERAT.");
-      if (g > 23.6) add("oblig", "Système de management de l'énergie", "ISO 50001 au-delà d'environ 23,6 GWh/an (transposition de la directive efficacité énergétique).");
-      else if (g > 2.75) add("verif", "Audit énergétique", "Audit tous les 4 ans au-delà d'environ 2,75 GWh/an, selon la loi DDADUE 2025 : calendrier à confirmer.");
+      if (em > SEUIL.csdddEffectif && ca > SEUIL.csdddCA) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
+      if (surf >= SEUIL.tertiaireSurface) add("oblig", "Décret tertiaire", "Réduction des consommations de -40 % en 2030, déclaration annuelle sur OPERAT.");
+      if (g > SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "ISO 50001 au-delà d'environ 23,6 GWh/an (transposition de la directive efficacité énergétique).");
+      else if (g > SEUIL.auditEnergieGWh) add("verif", "Audit énergétique", "Audit tous les 4 ans au-delà d'environ 2,75 GWh/an, selon la loi DDADUE 2025 : calendrier à confirmer.");
       if (v.mp === "oui") add("oblig", "Marchés publics", "Depuis le 21/08/2026 : au moins un critère d'attribution et une condition d'exécution environnementaux.");
       if (v.b2c === "oui") add("oblig", "Allégations environnementales", "Directive EmpCo applicable depuis le 27/09/2026 ; le droit français sanctionne déjà les pratiques trompeuses.");
       const ob = L.filter((x) => x.st === "oblig"), vf = L.filter((x) => x.st === "verif");

@@ -8,7 +8,7 @@
     address: "", // adresse postale de l'éditeur, à renseigner si une entreprise est créée
     email: "zakariaghannam7@gmail.com",
     host: "Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, États-Unis — netlify.com",
-    updated: "7 novembre 2026",
+    updated: "11 novembre 2026",
   };
   const B = BUSINESS;
   const mail = `<a href="mailto:${B.email}">${B.email}</a>`;
@@ -33,6 +33,9 @@
 <tr><td>Votre message</td><td>Demande d'accompagnement, demande de suppression</td><td>Répondre à votre demande</td></tr>
 </tbody></table>
 <p>Ces informations sont transmises par le service de formulaires de Netlify, stockées dans le tableau de bord Netlify de l'éditeur et envoyées par e-mail à l'éditeur. Les réponses détaillées aux copilotes ne sont jamais transmises.</p>
+
+<h2>Sauvegarde en ligne (facultative)</h2>
+<p>Si vous activez la sauvegarde en ligne depuis la page ${L("mes-donnees", "Mes données")}, votre dossier (réponses, profil, plan d'action, historique, coordonnées) est enregistré chez notre hébergeur Netlify sous un code secret créé dans votre navigateur. Le serveur ne conserve que l'empreinte de ce code : sans lui, le dossier ne peut pas être retrouvé par le site. Le dossier n'est pas chiffré : l'éditeur, qui administre l'hébergement, pourrait techniquement y accéder, mais s'interdit de le consulter. Toute personne à qui vous donnez le code ou le lien peut lire et modifier le dossier. Vous pouvez supprimer la copie en ligne à tout moment ; elle est effacée 12 mois après la dernière sauvegarde. Base légale : l'exécution du service que vous demandez.</p>
 
 <h2>Analyses par l'IA</h2>
 <p>Quand vous lancez une analyse, posez une question à l'assistant ou importez un document, le contenu nécessaire (vos réponses, les résultats calculés, le texte ou l'image du document) est transmis à Mistral AI (Paris, France) ou, en secours, à Groq, Inc. (États-Unis), pour produire la réponse. L'éditeur a désactivé l'utilisation de ces données pour l'entraînement des modèles chez Mistral AI. Ces prestataires conservent les données le temps nécessaire au traitement et selon leurs propres conditions. N'importez pas de documents contenant des données personnelles de tiers (bulletins de paie, listes de salariés…).</p>
@@ -122,6 +125,7 @@
 <p>Sillon utilise le stockage local (<code>localStorage</code>) de votre navigateur, uniquement pour faire fonctionner le service que vous utilisez. Ce stockage ne quitte pas votre appareil.</p>
 <table class="ltable"><thead><tr><th scope="col">Clé</th><th scope="col">Contenu</th><th scope="col">Durée</th></tr></thead><tbody>
 <tr><td><code>sillon.v2</code></td><td>Vos réponses, profil, plan d'action, historique, coordonnées, langue</td><td>Jusqu'à effacement par vous</td></tr>
+<tr><td><code>sillon.v2</code> (champ <code>cloud</code>)</td><td>Le code de votre sauvegarde en ligne, si vous l'avez activée</td><td>Jusqu'à effacement par vous</td></tr>
 <tr><td><code>sillon.notice</code></td><td>Le fait que vous avez fermé le bandeau d'information</td><td>Jusqu'à effacement par vous</td></tr>
 </tbody></table>
 <p>Ce stockage est strictement nécessaire au service que vous demandez : la réglementation (article 82 de la loi Informatique et Libertés, lignes directrices de la CNIL) ne le soumet pas à consentement. C'est pourquoi Sillon affiche un simple bandeau d'information, sans demande d'acceptation.</p>

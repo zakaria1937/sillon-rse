@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 4.0.0 · 11 novembre 2026
+
+- **Sauvegarde en ligne facultative** : dossier enregistré sous un code secret, repris sur un autre appareil ou partagé avec un collègue, sans compte ni mot de passe.
+- **Données de référence séparées** dans `referentiels.js` (facteurs d'émission, seuils réglementaires, échéances), avec une date de version.
+- **Passerelle `/api/contact`** : filtre anti-robots, contrôle de l'e-mail et limite d'envois avant transmission au formulaire.
+- **Alertes techniques** par e-mail au propriétaire (IA indisponible, plafond quotidien atteint), une fois par jour au plus.
+- **Chargement plus léger** : la 3D et le module PDF ne sont chargés qu'au besoin (environ 1 Mo de moins à l'ouverture).
+- **Parcours guidé** en quatre étapes sur l'accueil.
+- **Tests de bout en bout** dans un vrai navigateur (7 scénarios) en plus des tests de calcul et de passerelles, lancés à chaque envoi sur GitHub.
+
 ## 3.2.0 · 7 novembre 2026
 
 - Polices et bibliothèques auto-hébergées : plus aucune requête vers Google Fonts ou cdnjs.

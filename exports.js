@@ -9,7 +9,7 @@
 
   const summary = (ids) => ids.map((id) => { const c = byId[id], r = X.result(c); return `${c.title} : ${r.verdict} — ${r.summary}`; }).join("\n");
   async function pdf(ids) {
-    if (!window.jspdf) { X.toast(t("toast_lib")); return; }
+    try { await X.loadLib("jspdf"); } catch (e) { X.toast(t("toast_lib")); return; }
     if (!(await window.SXC.ensureContact())) return;
     const { jsPDF } = window.jspdf, st = S(), p = X.profile();
     const doc = new jsPDF({ unit: "mm", format: "a4" });

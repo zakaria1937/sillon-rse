@@ -8,7 +8,8 @@
     if (stopField) stopField();
     const cv = document.getElementById("field"); if (!cv) return;
     const hero = cv.parentElement;
-    if (!window.THREE) { cv.remove(); return; }
+    // three.js (600 Ko) est chargé après l'affichage de la page, pour ne pas ralentir l'accueil.
+    if (!window.THREE) { X.loadLib("three").then(() => { if (document.getElementById("field") === cv) start(); }).catch(() => cv.remove()); return; }
     const T = window.THREE;
     let renderer;
     try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); } catch (e) { cv.remove(); return; }
@@ -69,6 +70,7 @@
     else if (h === "rapport") V.reportView();
     else if (["confidentialite", "mentions", "cgu", "cookies", "credits", "accessibilite"].includes(h)) V.legalView(h);
     else if (h === "mes-donnees") V.myDataView();
+    else if (h.startsWith("dossier-")) { V.myDataView(); const inp = document.getElementById("cl-in"); if (inp) { inp.value = h.slice(8); inp.focus(); } }
     else if (h === "presentation") { V.reportView(); C.presentation(); }
     else if (h === "main") return;
     else { V.clearCurrent(); V.home(); }

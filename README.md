@@ -59,7 +59,8 @@ Aucune compilation : ce sont des fichiers HTML et JavaScript statiques.
 git clone https://github.com/zakaria1937/sillon-rse.git
 cd sillon-rse
 npm install
-npm test             # tests (Node 18+)
+npm test             # tests de calcul et de passerelles (Node 18+)
+npm run test:e2e     # tests dans un vrai navigateur (npx playwright install chromium)
 npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 ```
 
@@ -73,6 +74,7 @@ npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 
 | Fichier | Rôle |
 |---|---|
+| `referentiels.js` | Données de référence datées : facteurs d'émission, seuils réglementaires, échéances |
 | `copilots.js` | Les 13 copilotes : champs, calculs, sources (aucune dépendance au DOM, testable sous Node) |
 | `core.js` | État, profil, liens entre copilotes, historique, plan d'action, veille, appels à l'IA, téléchargements |
 | `views.js` | Vues : accueil, copilote, profil, plan, veille, méthode, rapport |
@@ -81,6 +83,8 @@ npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 | `main.js` | Scène 3D (Three.js) et routage |
 | `legal.js` | Politique de confidentialité et mentions légales |
 | `netlify/functions/claude.mjs` | Passerelle sécurisée vers l'IA (Mistral, secours Groq) |
+| `netlify/functions/contact.mjs` | Réception filtrée des contacts et demandes |
+| `netlify/functions/dossier.mjs` | Sauvegarde en ligne des dossiers (Netlify Blobs) |
 | `netlify.toml` | Configuration Netlify |
 | `i18n.js` | Textes français et anglais |
 | `tests/` | Tests des calculs et de la passerelle (`npm test`) |

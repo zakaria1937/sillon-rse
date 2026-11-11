@@ -140,6 +140,7 @@
       <div class="wrap section">
         ${t("en_note") ? `<p class="note">${esc(t("en_note"))}</p>` : ""}
         ${dash}
+        <section class="guide" aria-labelledby="gpT"><h2 id="gpT">${esc(t("gp_title"))}</h2><ol class="steps">${[["profil", "gp_1", !!st.profile], ["reglementation", "gp_2", !!st.used["reglementation"]], ["bilan-carbone", "gp_3", !!st.used["bilan-carbone"]], ["plan", "gp_4", used.length > 0 && Object.keys(st.plan).length > 0]].map(([h, k, ok], n) => `<li class="${ok ? "ok" : ""}"><a href="#${h}"><span class="n">${ok ? "✓" : n + 1}</span><b>${esc(t(k))}</b><small>${esc(ok ? t("gp_done") : t(k + "s"))}</small></a></li>`).join("")}</ol></section>
         ${fams}
         <div class="method">
           <div><h3>${esc(t("m1h"))}</h3><p>${esc(t("m1p"))}</p></div>
@@ -452,6 +453,12 @@
         <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div>
         <div class="confirm" id="mdConfirm" hidden role="group" aria-labelledby="mdConfirmT"><p id="mdConfirmT">${esc(t("md_erase_confirm"))}</p><div class="toolbar"><button class="chip-btn danger" type="button" id="mdEraseYes">${esc(t("md_erase_yes"))}</button><button class="chip-btn" type="button" id="mdEraseNo">${esc(t("md_cancel"))}</button></div></div>
       </section>
+      <section class="panel md" aria-labelledby="mdC"><h2 id="mdC">${esc(t("cl_title"))}</h2><p class="sub">${esc(t("cl_p"))}</p>
+        ${st.cloud ? `<p class="codebox"><span class="eyebrow">${esc(t("cl_code"))}</span><code id="clCode">${esc(st.cloud.code)}</code></p><p class="fine">${esc(t("cl_last"))} : ${st.cloud.maj ? new Date(st.cloud.maj).toLocaleString(st.lang === "en" ? "en-GB" : "fr-FR") : "–"}. ${esc(t("cl_auto"))}</p>
+        <div class="toolbar"><button class="chip-btn primary" type="button" id="clCopy">${esc(t("cl_copy"))}</button><button class="chip-btn" type="button" id="clNow">${esc(t("cl_now"))}</button><button class="chip-btn danger" type="button" id="clOff">${esc(t("cl_off"))}</button></div>`
+        : `<div class="toolbar"><button class="chip-btn primary" type="button" id="clOn">${esc(t("cl_on"))}</button></div>`}
+        <form id="clF" class="restore" novalidate><h3>${esc(t("cl_restore"))}</h3><p class="sub">${esc(t("cl_restore_p"))}</p><div class="field"><label for="cl-in">${esc(t("cl_code"))}</label><div class="inp"><input id="cl-in" autocomplete="off" spellcheck="false"></div></div><p class="err" id="clErr" role="alert" hidden></p><div class="toolbar"><button class="chip-btn" type="submit">${esc(t("cl_restore_go"))}</button></div></form>
+      </section>
       <section class="panel md" aria-labelledby="mdS"><h2 id="mdS">${esc(t("md_sent"))}</h2>
         <p class="sub">${c ? esc(`${c.prenom} ${c.nom} · ${c.email} · ${c.entreprise}${c.fonction ? " · " + c.fonction : ""}${c.telephone ? " · " + c.telephone : ""}`) : esc(t("md_sent_none"))}</p>
         ${c ? `<div class="toolbar"><button class="chip-btn" type="button" id="mdUnsub">${esc(t("md_unsub"))}</button></div>` : ""}
@@ -466,6 +473,21 @@
     document.getElementById("mdExport").onclick = async () => {
       const data = JSON.stringify({ exporte_le: new Date().toISOString(), source: "Sillon", donnees: S() }, null, 2);
       try { await X.saveFile(`sillon-mes-donnees-${X.today()}.json`, new Blob([data], { type: "application/json" })); } catch (e) { if (!e || e.code !== "declined") X.toast(t("toast_fail")); }
+    };
+    const on = document.getElementById("clOn");
+    if (on) on.onclick = async () => { on.disabled = true; const ok = await X.cloudEnable(); X.toast(ok ? t("cl_saved") : t("cl_fail")); myDataView(); };
+    const cp = document.getElementById("clCopy");
+    if (cp) {
+      cp.onclick = async () => { const link = location.origin + location.pathname + "#dossier-" + S().cloud.code; try { await navigator.clipboard.writeText(link); X.toast(t("cl_copied")); } catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById("clCode")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
+      document.getElementById("clNow").onclick = async () => { const ok = await X.cloudSave(); X.toast(ok ? t("cl_saved") : t("cl_fail")); myDataView(); };
+      document.getElementById("clOff").onclick = async () => { const ok = await X.cloudDelete(); X.toast(ok ? t("cl_deleted") : t("cl_fail")); myDataView(); };
+    }
+    document.getElementById("clF").onsubmit = async (e) => {
+      e.preventDefault();
+      const raw = document.getElementById("cl-in").value.trim(), err = document.getElementById("clErr");
+      const code = (raw.match(/dossier-([a-z0-9]{24,64})/i) || [, raw])[1];
+      try { await X.cloudLoad(code); X.toast(t("cl_restored")); location.hash = "#accueil"; window.SXR.route(); }
+      catch (e2) { err.textContent = e2 && (e2.code === "not_found" || e2.code === "invalid_code") ? t("cl_notfound") : t("cl_fail"); err.hidden = false; }
     };
     const box = document.getElementById("mdConfirm");
     document.getElementById("mdErase").onclick = () => { box.hidden = false; document.getElementById("mdEraseNo").focus(); };
