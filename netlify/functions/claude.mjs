@@ -1,6 +1,7 @@
 // Sillon — passerelle vers l'IA (Mistral, avec Groq en secours facultatif).
 // Les clés restent sur le serveur : les visiteurs n'ont rien à configurer.
 // Limites : par adresse IP et par jour, plus un plafond global quotidien.
+import { json, store as counters, kv, bump, today, ipKey, sameOrigin, alertOwner } from "../lib/shared.mjs";
 
 const PROVIDERS = {
   mistral: {
@@ -34,29 +35,6 @@ Repères (ne pas contredire) :
 - Marchés publics : critère d'attribution et condition d'exécution environnementaux obligatoires depuis le 21/08/2026.
 - EcoVadis : thèmes Environnement, Social et droits humains, Éthique, Achats responsables ; médailles au percentile (Platine top 1 %, Or 5 %, Argent 15 %, Bronze 35 %), aucune médaille si un thème est sous 30.
 - Scopes : 1 émissions directes, 2 énergie achetée, 3 autres émissions indirectes (achats, déplacements, usage des produits…).`;
-
-const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
-
-/* ---------- limites d'usage ---------- */
-const memory = new Map();
-async function counters() {
-  try { const { getStore } = await import("@netlify/blobs"); return getStore({ name: "sillon-limits", consistency: "strong" }); }
-  catch { return null; }
-}
-async function bump(store, key, limit) {
-  if (store) {
-    try {
-      const cur = Number((await store.get(key)) || 0);
-      if (cur >= limit) return false;
-      await store.set(key, String(cur + 1));
-      return true;
-    } catch { /* bascule en mémoire */ }
-  }
-  const cur = memory.get(key) || 0;
-  if (cur >= limit) return false;
-  memory.set(key, cur + 1);
-  return true;
-}
 
 /* ---------- validation ---------- */
 function validate(body) {
@@ -117,32 +95,26 @@ async function callAI(kind, msgs, imgs) {
 export default async (req, context) => {
   if (req.method !== "POST") return json(405, { code: "method" });
 
-  const origin = req.headers.get("origin");
-  const host = new URL(req.url).host;
-  const allowed = (process.env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-  let originHost = null; try { originHost = origin && new URL(origin).host; } catch {}
-  if (!originHost || (originHost !== host && !allowed.includes(origin))) return json(403, { code: "origin" });
+  if (!sameOrigin(req)) return json(403, { code: "origin" });
 
   let body;
   try { body = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
   const bad = validate(body);
   if (bad) return json(400, { code: "invalid_request", detail: bad });
 
-  const day = new Date().toISOString().slice(0, 10);
-  const rawIp = context?.ip || req.headers.get("x-nf-client-connection-ip") || "inconnu";
-  // L'adresse IP n'est jamais stockée en clair : seule une empreinte salée, propre au jour, sert de compteur.
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${day}|${process.env.IP_SALT || "sillon"}|${rawIp}`));
-  const ip = [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const day = today();
+  const ip = await ipKey(req, context);
   const store = await counters();
   // Nettoyage occasionnel des compteurs des jours précédents (durée de conservation : 24 h).
   if (store && Math.random() < 0.05) {
-    try { const { blobs } = await store.list(); await Promise.all(blobs.filter((b) => !b.key.includes(day)).slice(0, 200).map((b) => store.delete(b.key))); } catch { /* sans gravité */ }
+    try { const { blobs } = await store.list(); await Promise.all(blobs.filter((x) => !x.key.includes(day)).slice(0, 200).map((x) => store.delete(x.key))); } catch { /* sans gravité */ }
   }
-  if (!(await bump(store, `global/${day}`, GLOBAL))) return json(429, { code: "global_limit" });
+  if (!(await bump(store, `global/${day}`, GLOBAL))) { await alertOwner(req, store, "plafond_global", `Le plafond de ${GLOBAL} analyses par jour est atteint.`); return json(429, { code: "global_limit" }); }
   if (!(await bump(store, `ip/${day}/${ip}`, PER_IP))) return json(429, { code: "rate_limited" });
 
   const r = await callAI(body.kind, body.messages, body.images || []);
   if (!r.res) {
+    await alertOwner(req, store, "ia_indisponible", `Aucun fournisseur d'IA n'a répondu (statut ${r.status}${r.code ? ", " + r.code : ""}).`);
     if (r.code) return json(r.status, { code: r.code });
     return json(r.status === 429 || r.status === 529 ? 429 : 502, { code: r.status === 401 ? "not_configured" : r.status === 429 || r.status === 529 ? "busy" : "upstream_error" });
   }
