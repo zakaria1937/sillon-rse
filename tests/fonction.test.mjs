@@ -25,7 +25,7 @@ test("relaie la réponse de Mistral en texte continu, avec le prompt système RS
   assert.equal(c.auth, "Bearer test-mistral");
   assert.equal(c.body.messages[0].role, "system");
   assert.match(c.body.messages[0].content, /RSE/);
-  assert.equal(c.body.model, "mistral-small-latest");
+  assert.equal(c.body.model, "mistral-small-2603");
 });
 
 test("utilise le modèle d'analyse et transmet les images au format attendu", async () => {

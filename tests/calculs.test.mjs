@@ -6,6 +6,7 @@ import vm from "node:vm";
 
 const ctx = { window: {} };
 vm.createContext(ctx);
+vm.runInContext(readFileSync(new URL("../referentiels.js", import.meta.url), "utf8"), ctx);
 vm.runInContext(readFileSync(new URL("../copilots.js", import.meta.url), "utf8"), ctx);
 const { copilots } = ctx.window.SILLON;
 const byId = Object.fromEntries(copilots.map((c) => [c.id, c]));
@@ -78,4 +79,12 @@ test("VSME : 70 % de complétude sur l'exemple du module de base", () => {
 test("ROI : VAN positive et retour inférieur à 1 an sur l'exemple", () => {
   const r = run("roi-rse");
   assert.equal(r.verdict, "Démarche rentable sur 5 ans");
+});
+
+test("Référentiel : daté, et les échéances sont triées par date", () => {
+  const ref = ctx.window.SILLON_REF;
+  assert.match(ref.version, /^\d{4}-\d{2}-\d{2}$/);
+  const d = ref.echeances.map((e) => e.d);
+  assert.equal(d.join(), [...d].sort().join());
+  assert.equal(ref.seuils.csrdEffectif, 1000);
 });
