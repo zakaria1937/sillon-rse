@@ -35,7 +35,7 @@
 - **Historique et référence** : courbe d'évolution des scores et comparaison avant/après.
 - **Veille réglementaire** : frise des échéances 2026-2030, celles qui concernent l'entreprise sont mises en avant.
 - **Exports** : PDF consolidé, classeur Excel, mode présentation plein écran.
-- **Français et anglais**, thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
+- **Français** (version anglaise en préparation), thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
 
 ## Méthode
 

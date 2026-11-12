@@ -8,7 +8,7 @@
     address: "", // adresse postale de l'éditeur, à renseigner si une entreprise est créée
     email: "zakariaghannam7@gmail.com",
     host: "Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, États-Unis — netlify.com",
-    updated: "11 novembre 2026",
+    updated: "12 novembre 2026",
   };
   const B = BUSINESS;
   const mail = `<a href="mailto:${B.email}">${B.email}</a>`;
@@ -27,9 +27,9 @@
 
 <h2>Ce qui est transmis à l'éditeur</h2>
 <table class="ltable"><thead><tr><th scope="col">Données</th><th scope="col">Quand</th><th scope="col">Pourquoi</th></tr></thead><tbody>
-<tr><td>Prénom, nom, e-mail professionnel, entreprise ; fonction et téléphone si vous les donnez</td><td>Avant la première analyse par l'IA, le premier import de document ou le premier export</td><td>Vous recontacter au sujet de votre démarche RSE</td></tr>
+<tr><td>Prénom, nom, e-mail professionnel, entreprise ; fonction et téléphone si vous les donnez</td><td>Avant la première analyse par l'IA, la première question à l'assistant ou le premier import de document</td><td>Ouvrir l'accès aux fonctions d'IA et connaître les utilisateurs du service. Vous recontacter, uniquement si vous avez coché la case facultative</td></tr>
 <tr><td>Secteur, effectif et chiffre d'affaires de votre profil</td><td>Avec la fiche contact</td><td>Comprendre votre contexte avant de vous répondre</td></tr>
-<tr><td>Résumé des résultats (verdict de chaque copilote utilisé)</td><td>Téléchargement d'un rapport, demande d'accompagnement</td><td>Préparer un échange utile</td></tr>
+<tr><td>Résumé des résultats (verdict de chaque copilote utilisé)</td><td>Demande d'accompagnement ; téléchargement d'un rapport, seulement si vous avez accepté d'être recontacté</td><td>Préparer un échange utile</td></tr>
 <tr><td>Votre message</td><td>Demande d'accompagnement, demande de suppression</td><td>Répondre à votre demande</td></tr>
 </tbody></table>
 <p>Ces informations sont transmises par le service de formulaires de Netlify, stockées dans le tableau de bord Netlify de l'éditeur et envoyées par e-mail à l'éditeur. Les réponses détaillées aux copilotes ne sont jamais transmises.</p>
@@ -45,7 +45,9 @@
 
 <h2>Bases légales</h2>
 <ul>
-<li>Fiche contact et recontact : votre consentement, que vous pouvez retirer à tout moment.</li>
+<li>Transmission des coordonnées pour accéder aux fonctions d'IA : votre consentement, donné par une case dédiée.</li>
+<li>Recontact par e-mail : un consentement séparé et facultatif, que vous pouvez retirer à tout moment. Sans lui, l'éditeur ne vous écrit pas.</li>
+<li>Les calculs et les exports PDF et Excel se font dans votre navigateur, sans collecte de coordonnées.</li>
 <li>Analyses par l'IA : l'exécution du service que vous demandez.</li>
 <li>Limitation des abus et sécurité : l'intérêt légitime de l'éditeur.</li>
 </ul>
@@ -84,7 +86,7 @@
 <p>Sillon s'adresse aux professionnels : dirigeants, salariés, consultants agissant pour une entreprise ou une organisation. Il est réservé aux personnes âgées de 18 ans ou plus.</p>
 
 <h2>4. Accès et coordonnées</h2>
-<p>Les calculs sont accessibles sans inscription. L'analyse par l'IA, l'assistant, l'import de documents et les exports demandent une fiche contact (prénom, nom, e-mail professionnel, entreprise), avec votre consentement. Il n'y a pas de compte ni de mot de passe.</p>
+<p>Les calculs sont accessibles sans inscription. Les exports PDF et Excel aussi. L'analyse par l'IA, l'assistant et l'import de documents demandent une fiche contact (prénom, nom, e-mail professionnel, entreprise), avec votre consentement ; l'accord pour être recontacté est séparé et facultatif. Il n'y a pas de compte ni de mot de passe.</p>
 
 <h2>5. Nature des résultats</h2>
 <p>Les résultats sont des estimations calculées à partir de vos réponses et de sources publiques citées dans chaque copilote. Ils ne remplacent ni un bilan d'émissions de gaz à effet de serre réglementaire, ni un audit de certification, ni une notation officielle (EcoVadis ou autre), ni un conseil juridique, comptable ou financier. Les analyses rédigées par l'IA peuvent contenir des erreurs : vérifiez-les avant toute décision ou communication.</p>

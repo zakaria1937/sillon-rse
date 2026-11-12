@@ -15,6 +15,9 @@
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("sillon.v1") || "null");
     if (s && s.inputs) state = { ...blank(), ...s };
+    state.custom = (state.custom || []).filter((a) => a && a.text && a.text.trim());
+    if (state.contact && state.contact.consent && state.contact.recontact === undefined) state.contact.recontact = true; // fiches créées avant la séparation des deux accords
+    state.lang = "fr"; // la version anglaise est désactivée tant qu'elle n'est pas complète
   } catch (e) {}
   let saveT;
   const save = () => { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }, 300); cloudLater(); };
@@ -134,7 +137,7 @@
         out.push({ id, cp: c.id, text: a, impact, effort, owner: meta.owner || "", due: meta.due || "", status: meta.status || "todo" });
       });
     });
-    state.custom.forEach((x) => out.push({ ...x, cp: "", custom: true }));
+    state.custom.filter((x) => x.text && x.text.trim()).forEach((x) => out.push({ ...x, cp: "", custom: true }));
     const w = { high: 3, mid: 2, low: 1 };
     return out.sort((a, b) => (a.status === "done") - (b.status === "done") || w[b.impact] - w[a.impact] || w[a.effort] - w[b.effort]);
   }
@@ -211,7 +214,7 @@
   async function notify(evenement, extra = {}) {
     if (inClaude) return false;
     const c = state.contact || {}, p = profile();
-    const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), consentement: c.consent ? "oui" : "non", majeur_pro: c.adult ? "oui" : "non", ...extra };
+    const fields = { "form-name": "sillon", "bot-field": "", evenement, prenom: c.prenom || "", nom: c.nom || "", email: c.email || "", entreprise: c.entreprise || p.nom || "", fonction: c.fonction || "", telephone: c.telephone || "", secteur: p.secteur || "", effectif: String(p.eff ?? ""), ca: String(p.ca ?? ""), consentement: c.recontact ? "oui, accepte d'être recontacté" : "NON : ne pas recontacter", majeur_pro: c.adult ? "oui" : "non", ...extra };
     const direct = async () => { try { return (await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() })).ok; } catch (e) { return false; } };
     // Passage par /api/contact (filtre anti-robots et limite d'envois) ; envoi direct si la passerelle est en panne.
     try {

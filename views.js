@@ -38,12 +38,10 @@
         <span class="eyebrow used-lbl">${esc(t("used", { n, t: copilots.length }))}</span>
         <span class="progress-dots" aria-hidden="true">${copilots.map((c) => `<i class="${st.used[c.id] ? "on" : ""}"></i>`).join("")}</span>
         <div class="top-actions">
-          <button class="chip-btn" type="button" id="langBtn" aria-label="Langue / Language">${st.lang === "fr" ? "EN" : "FR"}</button>
           <a class="chip-btn primary" href="#presentation">${esc(t("nav_present"))}</a>
         </div>
       </div>
       <nav class="wrap subnav" aria-label="Navigation">${L.map(([k, lab]) => `<a href="#${k}"${h === k ? ' aria-current="page"' : ""}>${esc(t(lab))}</a>`).join("")}</nav>`;
-    document.getElementById("langBtn").onclick = () => { S().lang = S().lang === "fr" ? "en" : "fr"; X.save(); window.SXR.route(); };
     document.documentElement.lang = st.lang;
     document.getElementById("foot").innerHTML = `<div class="wrap"><div><b>Sillon</b> · ${esc(t("foot1"))}</div><div>${esc(t("foot2"))}</div><div class="foot-links"><a href="#methode">${esc(t("nav_method"))}</a><a href="#confidentialite">${esc(t("nav_privacy"))}</a><a href="#cgu">${esc(t("nav_terms"))}</a><a href="#cookies">${esc(t("nav_cookies"))}</a><a href="#mentions">${esc(t("nav_legal"))}</a><a href="#credits">${esc(t("nav_credits"))}</a><a href="#accessibilite">${esc(t("nav_a11y"))}</a><a href="#mes-donnees">${esc(t("nav_mydata"))}</a><button type="button" class="linkish" data-accomp>${esc(t("acc_cta"))}</button></div></div>`;
   }
@@ -106,7 +104,7 @@
       <section class="dash" aria-labelledby="dashT">
         <div class="fam-head"><h2 id="dashT">${esc(t("dash_title"))}</h2></div>
         <div class="dash-row">
-          <a class="dcell" href="#profil"><span class="l">${esc(t("dash_prof"))}</span><b>${esc(p && p.nom ? p.nom : t("dash_prof_none"))}</b><span class="s">${p ? `${nf(num(p.eff))} sal. · ${nf(num(p.ca))} M€` : ""}</span></a>
+          <a class="dcell" href="#profil"><span class="l">${esc(t("dash_prof"))}</span><b>${esc(p ? p.nom || t("prof_saved_short") : t("dash_prof_none"))}</b><span class="s">${p ? `${nf(num(p.eff))} sal. · ${nf(num(p.ca))} M€${p.nom ? "" : " · " + t("prof_noname")}` : esc(t("gp_1s"))}</span></a>
           <a class="dcell" href="#rapport"><span class="l">${esc(t("nav_report"))}</span><b>${used.length}/${copilots.length}</b><span class="s">${esc(t("used", { n: used.length, t: copilots.length }))}</span></a>
           <a class="dcell" href="#plan"><span class="l">${esc(t("nav_plan"))}</span><b>${open}</b><span class="s">${esc(t("dash_actions"))}</span></a>
           <a class="dcell" href="#veille"><span class="l">${esc(t("dash_deadline"))}</span><b>${nextDl ? new Date(nextDl.d).toLocaleDateString(st.lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "short", year: "numeric" }) : "–"}</b><span class="s">${nextDl ? esc(nextDl.t) : ""}</span></a>
@@ -199,7 +197,7 @@
             <div class="import" data-needs-ai${X.aiAvailable() ? "" : " hidden"}>
               <label class="chip-btn" for="docIn">${icon("up")} ${esc(t("import"))}</label>
               <input type="file" id="docIn" accept=".pdf,.txt,.csv,.md,image/png,image/jpeg,image/webp" class="sr">
-              <span class="help">${esc(t("import_hint"))}</span>
+              <span class="help">${esc(t("import_hint"))}${st.contact || X.inClaude ? "" : " " + esc(t("gate_short"))}</span>
               <span id="importStatus" class="help" aria-live="polite"></span>
             </div>
             <div class="fgrid">${cp.fields.map((f) => fieldHtml(cp, f, v, applied)).join("")}</div>
@@ -235,6 +233,7 @@
         </div>
         <div class="ai-out" id="aiOut">${ai ? md(ai) : `<p class="ai-note" style="margin:0">${esc(t("ai_intro"))}</p>`}</div>
         <p class="ai-note" data-needs-ai-off${X.aiAvailable() ? " hidden" : ""}>${esc(t("ai_off"))}</p>
+        ${st.contact || X.inClaude ? "" : `<p class="ai-note gate">${esc(t("gate_ai"))}</p>`}
       </div>
       <div class="toolbar">
         <button class="chip-btn primary" type="button" id="pdfOne">${esc(t("pdf"))}</button>
@@ -243,8 +242,10 @@
         <a class="chip-btn" href="#rapport">${esc(t("to_report"))}</a>
         <button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button>
       </div>
+      <p class="ai-note">${esc(t("gate_export"))}</p>
+      <p class="export-status" id="exportStatus" role="status" aria-live="polite"></p>
       ${r.hyp ? `<p class="ai-note"><b>${esc(t("method"))}</b> ${esc(r.hyp)}</p>` : ""}
-      <div class="sources"><b>${esc(t("sources"))}</b>${r.sources.map((s) => `<span>${esc(s.t)} · <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(t("link"))}</a></span>`).join("")}</div>`;
+      <div class="sources"><b>${esc(t("sources"))}</b>${r.sources.map((s) => `<span><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.n)}</a> : ${esc(s.t)}</span>`).join("")}</div>`;
     document.getElementById("aiGo").onclick = runAI;
     document.getElementById("aiStop").onclick = () => aiCtl && aiCtl.abort();
     document.getElementById("pdfOne").onclick = () => window.SXE.pdf([cp.id]);
@@ -386,20 +387,33 @@
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("plan_title"))}</h1><p>${esc(t("plan_sub"))}</p></div>
       <div class="toolbar" style="margin:0 0 14px"><button class="chip-btn" type="button" id="addAct">${esc(t("plan_add"))}</button><button class="chip-btn" type="button" id="planX">${esc(t("xlsx"))}</button></div>
+      <form class="panel draft" id="draftF" hidden novalidate><div class="field"><label for="draftT">${esc(t("plan_new"))} *</label><div class="inp"><input id="draftT" maxlength="200" autocomplete="off"></div></div><p class="err" id="draftErr" role="alert" hidden></p><div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("plan_save"))}</button><button class="chip-btn" type="button" id="draftNo">${esc(t("md_cancel"))}</button></div></form>
       ${items.length ? `<div class="tbl-wrap plan"><table class="ed"><thead><tr><th scope="col">Action</th><th scope="col">${esc(t("plan_src"))}</th><th scope="col">${esc(t("plan_impact"))}</th><th scope="col">${esc(t("plan_effort"))}</th><th scope="col">${esc(t("plan_owner"))}</th><th scope="col">${esc(t("plan_due"))}</th><th scope="col">${esc(t("plan_status"))}</th></tr></thead><tbody>
-      ${items.map((a) => `<tr class="${a.status === "done" ? "done" : ""}"><td class="act">${a.custom ? `<input aria-label="Action" data-plan="${a.id}" data-k="text" value="${esc(a.text)}">` : esc(a.text)}</td><td>${a.cp ? `<a href="#${a.cp}">${esc(cpT(byId[a.cp]).title)}</a>` : esc(t("plan_custom"))}</td><td><span class="dot ${a.impact}"></span>${sel(a.id, "impact", a.impact, LV)}</td><td>${sel(a.id, "effort", a.effort, LV)}</td><td><input aria-label="${esc(t("plan_owner"))}" data-plan="${a.id}" data-k="owner" placeholder="—" value="${esc(a.owner)}"></td><td><input type="date" aria-label="${esc(t("plan_due"))}" data-plan="${a.id}" data-k="due" value="${esc(a.due)}"></td><td>${sel(a.id, "status", a.status, ST)}</td></tr>`).join("")}
+      ${items.map((a) => `<tr class="${a.status === "done" ? "done" : ""}"><td class="act">${a.custom ? `<input aria-label="Action" data-plan="${a.id}" data-k="text" value="${esc(a.text)}">` : esc(a.text)}</td><td>${a.cp ? `<a href="#${a.cp}">${esc(cpT(byId[a.cp]).title)}</a>` : `${esc(t("plan_custom"))} <button class="rm" type="button" data-delact="${a.id}" aria-label="${esc(t("plan_del"))} : ${esc(a.text)}">×</button>`}</td><td><span class="dot ${a.impact}"></span>${sel(a.id, "impact", a.impact, LV)}</td><td>${sel(a.id, "effort", a.effort, LV)}</td><td><input aria-label="${esc(t("plan_owner"))}" data-plan="${a.id}" data-k="owner" placeholder="—" value="${esc(a.owner)}"></td><td><input type="date" aria-label="${esc(t("plan_due"))}" data-plan="${a.id}" data-k="due" value="${esc(a.due)}"></td><td>${sel(a.id, "status", a.status, ST)}</td></tr>`).join("")}
       </tbody></table></div>` : `<p class="panel">${esc(t("plan_empty"))}</p>`}
     </div>`;
     const upd = (e) => {
       const el = e.target; if (!el.dataset.plan) return;
       const id = el.dataset.plan, k = el.dataset.k, st = S();
       const c = st.custom.find((x) => x.id === id);
-      if (c) c[k] = el.value; else (st.plan[id] ||= {})[k] = el.value;
+      if (c) { if (k === "text" && !el.value.trim()) return; c[k] = k === "text" ? el.value.trim() : el.value; } else (st.plan[id] ||= {})[k] = el.value;
       X.save(); if (k === "status" || k === "impact" || k === "effort") planView();
     };
     app.querySelector(".wrap").addEventListener("change", upd);
-    app.querySelectorAll("input[data-plan]").forEach((i) => i.addEventListener("input", (e) => { const el = e.target, st = S(); const c = st.custom.find((x) => x.id === el.dataset.plan); if (c) c[el.dataset.k] = el.value; else (st.plan[el.dataset.plan] ||= {})[el.dataset.k] = el.value; X.save(); }));
-    document.getElementById("addAct").onclick = () => { S().custom.push({ id: "c" + Date.now().toString(36), text: "", impact: "mid", effort: "mid", owner: "", due: "", status: "todo" }); X.save(); planView(); const ins = app.querySelectorAll("td.act input"); if (ins.length) ins[ins.length - 1].focus(); };
+    app.querySelectorAll("input[data-plan]").forEach((i) => i.addEventListener("input", (e) => { const el = e.target, st = S(); const c = st.custom.find((x) => x.id === el.dataset.plan); if (c) { if (el.dataset.k === "text" && !el.value.trim()) return; c[el.dataset.k] = el.value; } else (st.plan[el.dataset.plan] ||= {})[el.dataset.k] = el.value; X.save(); }));
+    // Une action n'est enregistrée qu'avec un intitulé : le brouillon vit dans ce formulaire, jamais dans les données.
+    const df = document.getElementById("draftF"), dt = document.getElementById("draftT");
+    document.getElementById("addAct").onclick = () => { df.hidden = false; dt.focus(); };
+    document.getElementById("draftNo").onclick = () => { df.hidden = true; dt.value = ""; document.getElementById("draftErr").hidden = true; document.getElementById("addAct").focus(); };
+    df.onsubmit = (e) => {
+      e.preventDefault();
+      const text = dt.value.trim(), err = document.getElementById("draftErr");
+      if (!text) { err.textContent = t("plan_need"); err.hidden = false; dt.focus(); return; }
+      S().custom.push({ id: "c" + Date.now().toString(36), text, impact: "mid", effort: "mid", owner: "", due: "", status: "todo" }); X.save(); X.toast(t("plan_added")); planView();
+    };
+    app.querySelectorAll("[data-delact]").forEach((b) => (b.onclick = () => { const st = S(); st.custom = st.custom.filter((x) => x.id !== b.dataset.delact); X.save(); planView(); }));
+    // Un intitulé vidé n'est pas enregistré : l'ancien texte est rétabli.
+    app.querySelectorAll('input[data-k="text"]').forEach((i) => i.addEventListener("blur", () => { if (!i.value.trim()) { const c = S().custom.find((x) => x.id === i.dataset.plan); if (c) i.value = c.text; } }));
     document.getElementById("planX").onclick = () => window.SXE.xlsx([], true);
   }
 
@@ -418,7 +432,7 @@
     current = null;
     app.innerHTML = `<div class="wrap narrow">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("method_title"))}</h1><p>${esc(t("method_sub"))}</p></div>
-      ${copilots.map((c) => { const r = c.compute(X.defaults(c)); return `<section class="panel mth"><h2>${esc(cpT(c).title)} <span class="calc">${esc(c.calc)}</span></h2><p>${esc(cpT(c).intro)}</p>${r.hyp ? `<p><b>${esc(t("method"))}</b> ${esc(r.hyp)}</p>` : ""}<div class="sources">${r.sources.map((s) => `<span>${esc(s.t)} · <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(t("link"))}</a></span>`).join("")}</div></section>`; }).join("")}
+      ${copilots.map((c) => { const r = c.compute(X.defaults(c)); return `<section class="panel mth"><h2>${esc(cpT(c).title)} <span class="calc">${esc(c.calc)}</span></h2><p>${esc(cpT(c).intro)}</p>${r.hyp ? `<p><b>${esc(t("method"))}</b> ${esc(r.hyp)}</p>` : ""}<div class="sources">${r.sources.map((s) => `<span><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.n)}</a> : ${esc(s.t)}</span>`).join("")}</div></section>`; }).join("")}
       <section class="panel mth"><h2>${esc(t("nav_watch"))}</h2><p>${X.LINKS.map((l) => `${esc(cpT(byId[l.from]).title)} → ${esc(cpT(byId[l.to]).title)} (${esc(l.item)})`).join(" · ")}</p></section>
     </div>`;
   }
@@ -461,7 +475,7 @@
       </section>
       <section class="panel md" aria-labelledby="mdS"><h2 id="mdS">${esc(t("md_sent"))}</h2>
         <p class="sub">${c ? esc(`${c.prenom} ${c.nom} · ${c.email} · ${c.entreprise}${c.fonction ? " · " + c.fonction : ""}${c.telephone ? " · " + c.telephone : ""}`) : esc(t("md_sent_none"))}</p>
-        ${c ? `<div class="toolbar"><button class="chip-btn" type="button" id="mdUnsub">${esc(t("md_unsub"))}</button></div>` : ""}
+        ${c ? (c.recontact ? `<div class="toolbar"><button class="chip-btn" type="button" id="mdUnsub">${esc(t("md_unsub"))}</button></div>` : `<p class="fine">${esc(t("md_norecontact"))}</p>`) : ""}
       </section>
       <section class="panel md" aria-labelledby="mdD"><h2 id="mdD">${esc(t("md_del"))}</h2><p class="sub">${esc(t("md_del_p"))}</p>
         <form id="mdDelF" novalidate><div class="fgrid">

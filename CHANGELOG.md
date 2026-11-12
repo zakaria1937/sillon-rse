@@ -1,5 +1,16 @@
 # Journal des versions
 
+## 4.1.0 · 12 novembre 2026
+
+- Plan d'action : une action n'est enregistrée qu'avec un intitulé (formulaire Enregistrer / Annuler) ; les actions vides ne sont plus comptées ni exportées ; suppression possible d'une action personnalisée.
+- Exports PDF et Excel libres, sans coordonnées, avec un message de confirmation ou d'échec affiché sous les boutons.
+- Coordonnées : besoin annoncé avant le clic ; l'accord pour être recontacté devient une case séparée et facultative.
+- Profil : un profil enregistré sans nom est affiché comme enregistré, avec la mention du nom à compléter.
+- Sources : libellés descriptifs à la place des liens « lien ».
+- Version anglaise retirée de l'interface tant qu'elle n'est pas complète.
+- Correction d'un débordement en largeur sur téléphone (page Fournisseurs).
+- Tests navigateur étendus : 13 copilotes (champs vides, valeurs négatives, exports), téléphone et tablette, politique de sécurité de production.
+
 ## 4.0.0 · 11 novembre 2026
 
 - **Sauvegarde en ligne facultative** : dossier enregistré sous un code secret, repris sur un autre appareil ou partagé avec un collègue, sans compte ni mot de passe.

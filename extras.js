@@ -97,7 +97,8 @@
           ${f("telephone", t("ct_phone"), "tel", false, c.telephone, "tel")}
         </div>
         <label class="consent"><input type="checkbox" id="c-adult" ${c.adult ? "checked" : ""}> <span>${esc(t("ct_adult"))} *</span></label>
-        <label class="consent"><input type="checkbox" id="c-consent" ${c.consent ? "checked" : ""}> <span>${esc(t("ct_consent"))} <a href="#confidentialite" target="_blank">${esc(S().lang === "en" ? "privacy policy" : "politique de confidentialité")}</a>.</span></label>
+        <label class="consent"><input type="checkbox" id="c-consent" ${c.consent ? "checked" : ""}> <span>${esc(t("ct_service"))} <a href="#confidentialite" target="_blank">${esc(S().lang === "en" ? "privacy policy" : "politique de confidentialité")}</a>. *</span></label>
+        <label class="consent opt"><input type="checkbox" id="c-recontact" ${c.recontact ? "checked" : ""}> <span><b>${esc(t("ct_optional"))}</b> ${esc(t("ct_recontact"))}</span></label>
         <p class="fine">${esc(t("ct_note"))}</p>
         <p class="err" id="cErr" role="alert" hidden></p>
         <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("ct_go"))}</button><button class="chip-btn" type="button" data-close>${esc(t("chat_close"))}</button></div></form>`, "cH");
@@ -109,7 +110,7 @@
         e.preventDefault();
         const g = (id) => d.querySelector("#c-" + id).value.trim();
         const err = d.querySelector("#cErr");
-        const v = { prenom: g("prenom"), nom: g("nom"), email: g("email"), entreprise: g("entreprise"), fonction: g("fonction"), telephone: g("telephone"), adult: d.querySelector("#c-adult").checked, consent: d.querySelector("#c-consent").checked };
+        const v = { prenom: g("prenom"), nom: g("nom"), email: g("email"), entreprise: g("entreprise"), fonction: g("fonction"), telephone: g("telephone"), adult: d.querySelector("#c-adult").checked, consent: d.querySelector("#c-consent").checked, recontact: d.querySelector("#c-recontact").checked };
         const miss = !v.prenom || !v.nom || !v.entreprise || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email) ? t("ct_err_fields") : !v.adult ? t("ct_err_adult") : !v.consent ? t("ct_err_consent") : "";
         if (miss) { err.textContent = miss; err.hidden = false; return; }
         const first = !S().contact;
@@ -137,7 +138,7 @@
       close();
       if (!(await ensureContact())) return;
       const used = copilots.filter((c) => S().used[c.id]).map((c) => { const r = X.result(c); return `${c.title} : ${r.verdict}`; }).join("\n");
-      const ok = await X.notify("Demande d'accompagnement", { message: msg, resume: used || "Aucun copilote utilisé" });
+      const ok = await X.notify("Demande d'accompagnement", { message: msg, resume: used || "Aucun copilote utilisé", consentement: "demande une réponse à ce message" });
       X.toast(ok || X.inClaude ? t("acc_ok") : t("acc_fail"));
     };
     d.querySelector("#a-msg").focus();
@@ -171,6 +172,7 @@
         <div class="chat-head"><h2 id="chatH">${esc(t("chat_title"))}</h2><button class="chip-btn" type="button" id="chatX">${esc(t("chat_close"))}</button></div>
         <div class="chat-log" id="chatLog" aria-live="polite"></div>
         <p class="ai-note" id="chatOff"${X.aiAvailable() ? " hidden" : ""}>${esc(t("ai_off"))}</p>
+        ${S().contact || X.inClaude ? "" : `<p class="ai-note gate">${esc(t("gate_short"))}</p>`}
         <form class="chat-in" id="chatF"><label class="sr" for="chatIn">${esc(t("chat_ph"))}</label><input id="chatIn" placeholder="${esc(t("chat_ph"))}" autocomplete="off"><button class="chip-btn primary" type="submit">${esc(t("chat_send"))}</button></form>
       </section>`;
     document.getElementById("chatFab").onclick = () => chatToggle();

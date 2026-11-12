@@ -5,20 +5,20 @@
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const num = (v, d = 0) => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : d; };
   const S = {
-    google: { t: "Google / MIT Technology Review (août 2025) : requête texte médiane Gemini = 0,24 Wh ; 0,03 gCO2e ; 0,26 ml d'eau", url: "https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/" },
-    altman: { t: "OpenAI (S. Altman, juin 2025) : ≈ 0,34 Wh par requête ChatGPT moyenne", url: "https://blog.samaltman.com/the-gentle-singularity" },
-    luccioni: { t: "Luccioni et al., « Power Hungry Processing » (2023) : ≈ 2,9 kWh pour 1 000 images générées", url: "https://arxiv.org/abs/2311.16863" },
-    ademe: { t: "ADEME, Base Empreinte et impactCO2 (facteurs d'émission France)", url: "https://impactco2.fr" },
-    vsme: { t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
-    omnibus: { t: "Directive Omnibus I, publiée au JOUE le 26/02/2026, en vigueur le 18/03/2026", url: "https://www.lw.com/en/insights/eu-sustainability-omnibus-published-in-the-official-journal" },
-    ecovadis: { t: "EcoVadis, « Understanding EcoVadis Medals and Badges » (règles 2025)", url: "https://support.ecovadis.com/hc/en-us/articles/210460227-Understanding-EcoVadis-Medals-and-Badges" },
-    empco: { t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
-    agec: { t: "Loi AGEC art. 13 et décret 2022-748 : mentions « biodégradable » et « respectueux de l'environnement » interdites sur produits et emballages", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
-    climat12: { t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
-    mp: { t: "Service-Public Entreprendre (18/08/2026) : critère et condition d'exécution environnementaux obligatoires au 21/08/2026", url: "https://entreprendre.service-public.gouv.fr/actualites/A19042" },
-    fs: { t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
-    iso: { t: "ISO, structure harmonisée des normes de systèmes de management (Annexe SL)", url: "https://www.iso.org/management-system-standards.html" },
-    beges: { t: "Code de l'environnement art. L229-25 (BEGES) et ministère de la Transition écologique", url: "https://www.ecologie.gouv.fr/politiques-publiques/bilans-demissions-gaz-effet-serre" },
+    google: { n: "Google — énergie d'une requête Gemini", t: "Google / MIT Technology Review (août 2025) : requête texte médiane Gemini = 0,24 Wh ; 0,03 gCO2e ; 0,26 ml d'eau", url: "https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/" },
+    altman: { n: "OpenAI — énergie d'une requête ChatGPT", t: "OpenAI (S. Altman, juin 2025) : ≈ 0,34 Wh par requête ChatGPT moyenne", url: "https://blog.samaltman.com/the-gentle-singularity" },
+    luccioni: { n: "Luccioni et al. — énergie de la génération d'images", t: "Luccioni et al., « Power Hungry Processing » (2023) : ≈ 2,9 kWh pour 1 000 images générées", url: "https://arxiv.org/abs/2311.16863" },
+    ademe: { n: "ADEME — Base Empreinte et impactCO2", t: "ADEME, Base Empreinte et impactCO2 (facteurs d'émission France)", url: "https://impactco2.fr" },
+    vsme: { n: "EFRAG — norme VSME", t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
+    omnibus: { n: "Union européenne — directive Omnibus I", t: "Directive Omnibus I, publiée au JOUE le 26/02/2026, en vigueur le 18/03/2026", url: "https://www.lw.com/en/insights/eu-sustainability-omnibus-published-in-the-official-journal" },
+    ecovadis: { n: "EcoVadis — médailles et badges", t: "EcoVadis, « Understanding EcoVadis Medals and Badges » (règles 2025)", url: "https://support.ecovadis.com/hc/en-us/articles/210460227-Understanding-EcoVadis-Medals-and-Badges" },
+    empco: { n: "Union européenne — directive EmpCo (2024/825)", t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
+    agec: { n: "Légifrance — loi AGEC, décret 2022-748", t: "Loi AGEC art. 13 et décret 2022-748 : mentions « biodégradable » et « respectueux de l'environnement » interdites sur produits et emballages", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
+    climat12: { n: "Légifrance — loi Climat et résilience, décret 2022-539", t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
+    mp: { n: "Service-Public — critère environnemental des marchés publics", t: "Service-Public Entreprendre (18/08/2026) : critère et condition d'exécution environnementaux obligatoires au 21/08/2026", url: "https://entreprendre.service-public.gouv.fr/actualites/A19042" },
+    fs: { n: "France Stratégie — RSE et compétitivité", t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
+    iso: { n: "ISO — normes de systèmes de management", t: "ISO, structure harmonisée des normes de systèmes de management (Annexe SL)", url: "https://www.iso.org/management-system-standards.html" },
+    beges: { n: "Ministère de la Transition écologique — BEGES", t: "Code de l'environnement art. L229-25 (BEGES) et ministère de la Transition écologique", url: "https://www.ecologie.gouv.fr/politiques-publiques/bilans-demissions-gaz-effet-serre" },
   };
   const YNP = [["1", "Oui"], ["0.5", "En partie"], ["0", "Non"]];
 
