@@ -27,7 +27,9 @@ const fns = {
   "/api/contact": (await import("../netlify/functions/contact.mjs")).default,
   "/api/dossier": (await import("../netlify/functions/dossier.mjs")).default,
 };
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
+// Même politique de sécurité (CSP) qu'en production, lue dans netlify.toml.
+const CSP = fs.readFileSync(path.join(root, "netlify.toml"), "utf8").match(/Content-Security-Policy = "([^"]+)"/)[1];
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".bin": "application/octet-stream" };
 let server, browser;
 
 before(async () => {
@@ -38,7 +40,7 @@ before(async () => {
       const r = await fns[u](new Request(BASE + q.url, { method: q.method, headers: q.headers, body: ["GET", "HEAD"].includes(q.method) ? undefined : body }), { ip: "9.9.9.9" });
       s.writeHead(r.status, Object.fromEntries(r.headers)); s.end(Buffer.from(await r.arrayBuffer())); return;
     }
-    fs.readFile(path.join(root, u === "/" ? "index.html" : u), (e, d) => { if (e) { s.writeHead(404); s.end(); return; } s.writeHead(200, { "Content-Type": TYPES[path.extname(u)] || "text/html" }); s.end(d); });
+    fs.readFile(path.join(root, u === "/" ? "index.html" : u), (e, d) => { if (e) { s.writeHead(404); s.end(); return; } s.writeHead(200, { "Content-Security-Policy": CSP, "Content-Type": TYPES[path.extname(u)] || "text/html" }); s.end(d); });
   }).listen(PORT);
   browser = await chromium.launch();
 });
@@ -50,9 +52,9 @@ async function open(hash = "") {
   await page.goto(BASE + "/" + hash); await page.waitForSelector("h1");
   return { page, errors };
 }
-async function fillContact(page) {
+async function fillContact(page, recontact = false) {
   await page.fill("#c-prenom", "Claire"); await page.fill("#c-nom", "Martin"); await page.fill("#c-email", "claire@atelier.fr"); await page.fill("#c-entreprise", "Atelier");
-  await page.check("#c-adult"); await page.check("#c-consent"); await page.click(".modal button[type=submit]");
+  await page.check("#c-adult"); await page.check("#c-consent"); if (recontact) await page.check("#c-recontact"); await page.click(".modal button[type=submit]");
 }
 
 test("chaque page s'ouvre sans erreur et sans appel à un service tiers", async () => {
@@ -103,7 +105,7 @@ test("la sauvegarde en ligne permet de reprendre le dossier dans un autre naviga
 test("désinscription et demande de suppression arrivent chez l'éditeur ; l'effacement local vide le navigateur", async () => {
   const { page } = await open("#bilan-carbone");
   await page.waitForTimeout(2600);
-  await page.click("#aiGo"); await fillContact(page); await page.waitForTimeout(400);
+  await page.click("#aiGo"); await fillContact(page, true); await page.waitForTimeout(400);
   await page.goto(BASE + "/#mes-donnees");
   await page.fill("#md-msg", "Merci de tout supprimer"); await page.click("#mdDelF button[type=submit]"); await page.waitForTimeout(400);
   await page.click("#mdUnsub"); await page.waitForTimeout(400);
@@ -124,13 +126,91 @@ test("au clavier : le focus reste dans la fenêtre ouverte et Échap la ferme", 
   await page.close();
 });
 
-test("les exports PDF et Excel produisent un fichier", async () => {
-  const { page } = await open("#bilan-carbone");
-  await page.waitForTimeout(2600);
-  await page.click("#pdfOne"); await page.waitForSelector("#c-prenom");
-  const [pdf] = await Promise.all([page.waitForEvent("download"), fillContact(page)]);
+const COPILOTS = ["bilan-carbone", "carbone-ia", "fournisseurs", "benchmark-rse", "reglementation", "reporting-vsme", "ecovadis", "audit-iso", "marches-publics", "greenwashing", "visibilite-rse", "roi-rse", "objections"];
+
+test("les exports PDF et Excel se téléchargent sans donner ses coordonnées, avec un message de confirmation", async () => {
+  const { page, errors } = await open("#bilan-carbone");
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfOne")]);
   assert.match(pdf.suggestedFilename(), /\.pdf$/);
+  assert.ok((await fs.promises.stat(await pdf.path())).size > 3000);
+  assert.match(await page.textContent("#exportStatus"), /Fichier téléchargé/);
   const [xl] = await Promise.all([page.waitForEvent("download"), page.click("#xlsOne")]);
   assert.match(xl.suggestedFilename(), /\.xlsx$/);
+  assert.equal(await page.locator(".modal").count(), 0);
+  assert.equal(forms.filter((f) => /téléchargé/.test(f.evenement)).length, 0);
+  assert.deepEqual(errors, []);
   await page.close();
 });
+
+test("les 13 copilotes : résultats, champs vidés sans valeur aberrante, exports PDF et Excel", async () => {
+  const { page, errors } = await open();
+  for (const id of COPILOTS) {
+    await page.goto(BASE + "/#" + id); await page.waitForSelector("#res .verdict h3");
+    for (const inp of await page.locator('#form input[type="number"]').all()) await inp.fill("");
+    for (const ta of await page.locator("#form textarea").all()) await ta.fill("");
+    await page.waitForTimeout(250);
+    const res = await page.textContent("#res");
+    assert.doesNotMatch(res, /NaN|undefined|Infinity|\[object/, id + " (champs vides)");
+    for (const inp of await page.locator('#form input[type="number"]').all()) await inp.fill("-5");
+    await page.waitForTimeout(250);
+    assert.doesNotMatch(await page.textContent("#res"), /NaN|undefined|Infinity|\[object/, id + " (valeurs négatives)");
+    const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfOne")]);
+    assert.match(pdf.suggestedFilename(), new RegExp(id + ".*\\.pdf$"), id);
+    const [xl] = await Promise.all([page.waitForEvent("download"), page.click("#xlsOne")]);
+    assert.match(xl.suggestedFilename(), /\.xlsx$/, id);
+    assert.equal(await page.locator('#res .sources a:text-is("lien")').count(), 0, id);
+  }
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("plan d'action : une action sans intitulé n'est jamais enregistrée", async () => {
+  const { page } = await open("#plan");
+  await page.click("#addAct"); await page.click("#draftF button[type=submit]");
+  assert.match(await page.textContent("#draftErr"), /intitulé/);
+  await page.click("#draftNo");
+  assert.equal(await page.evaluate(() => (JSON.parse(localStorage.getItem("sillon.v2") || "{}").custom || []).length), 0);
+  await page.click("#addAct"); await page.fill("#draftT", "Former les commerciaux à la RSE"); await page.click("#draftF button[type=submit]");
+  await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom.length), 1);
+  await page.fill('td.act input', ""); await page.locator('td.act input').blur(); await page.waitForTimeout(400);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0].text), "Former les commerciaux à la RSE");
+  await page.goto(BASE + "/#accueil");
+  assert.match(await page.textContent(".dash"), /1\s*actions ouvertes/);
+  await page.close();
+});
+
+test("profil : un profil enregistré sans nom n'est pas affiché comme « non renseigné »", async () => {
+  const { page } = await open("#profil");
+  await page.click("#pform button[type=submit]"); await page.goto(BASE + "/#accueil");
+  const dash = await page.textContent(".dash");
+  assert.doesNotMatch(dash, /non renseigné/);
+  assert.match(dash, /Profil enregistré/); assert.match(dash, /nom de l'entreprise à compléter/);
+  await page.close();
+});
+
+test("les coordonnées sont annoncées avant le clic, et l'accord pour être recontacté est facultatif", async () => {
+  const { page } = await open("#bilan-carbone");
+  assert.match(await page.textContent("#aiBox"), /demandent vos coordonnées/);
+  await page.waitForTimeout(2600);
+  const n = forms.length;
+  await page.click("#aiGo");
+  assert.equal(await page.isChecked("#c-recontact"), false);
+  await fillContact(page);
+  await page.waitForFunction(() => document.getElementById("aiOut").textContent.includes("Réponse simulée"));
+  assert.match(forms.slice(n).find((f) => f.evenement === "Nouveau contact").consentement, /NON/);
+  await page.close();
+});
+
+for (const [nom, w, h] of [["téléphone", 390, 844], ["tablette", 820, 1180]]) {
+  test(`${nom} (${w} px) : aucune page ne déborde en largeur`, async () => {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    for (const hsh of ["", "#profil", "#plan", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cookies", ...COPILOTS.map((c) => "#" + c)]) {
+      await page.goto(BASE + "/" + hsh); await page.waitForSelector("h1"); await page.waitForTimeout(100);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, hsh || "accueil");
+    }
+    await page.goto(BASE + "/#bilan-carbone"); await page.click("#aiGo");
+    assert.equal(await page.evaluate(() => { const m = document.querySelector(".modal-box").getBoundingClientRect(); return m.left >= 0 && m.right <= window.innerWidth; }), true);
+    await page.close();
+  });
+}
