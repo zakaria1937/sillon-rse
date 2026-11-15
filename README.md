@@ -89,7 +89,7 @@ npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 | `i18n.js` | Textes français et anglais |
 | `tests/` | Tests des calculs et de la passerelle (`npm test`) |
 
-Bibliothèques et polices hébergées dans le dépôt (`vendor/`, `fonts/`) : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, PDF.js 3.11.174, Bricolage Grotesque et IBM Plex (OFL). Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Bibliothèques et polices hébergées dans le dépôt (`vendor/`, `fonts/`) : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, PDF.js 3.11.174, Gloock, Newsreader, Atkinson Hyperlegible Next et Martian Mono (OFL). Relief : IGN RGE ALTI, Licence Ouverte 2.0. Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Conformité
 

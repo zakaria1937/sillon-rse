@@ -34,7 +34,7 @@
     document.getElementById("hdr").innerHTML = `
       <a class="skip" href="#main" data-skip>${esc(t("skip"))}</a>
       <div class="wrap top">
-        <a class="logo" href="#accueil" aria-label="Sillon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--accent)"/><path d="M6 21c4-3 6-3 10 0s6 3 10 0M6 15c4-3 6-3 10 0s6 3 10 0M6 9c4-3 6-3 10 0s6 3 10 0" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg>Sillon</a>
+        <a class="logo" href="#accueil" aria-label="Sillon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="1" y="1" width="30" height="30" fill="var(--fg)"/><path d="M6 23c3-1 5-4 8-3s4 2 6 0 3-3 6-2M6 17c3-1 5-4 8-3s4 2 6 0 3-3 6-2M6 11c3-1 5-4 8-3s4 2 6 0 3-3 6-2" stroke="var(--bg)" stroke-width="1.6" stroke-linecap="round"/><rect x="21" y="5" width="4" height="4" fill="var(--soil)" transform="rotate(45 23 7)"/></svg>Sillon</a>
         <span class="eyebrow used-lbl">${esc(t("used", { n, t: copilots.length }))}</span>
         <span class="progress-dots" aria-hidden="true">${copilots.map((c) => `<i class="${st.used[c.id] ? "on" : ""}"></i>`).join("")}</span>
         <div class="top-actions">
@@ -69,7 +69,7 @@
       const rows = ch.items.map((it, k) => {
         const y = k * rh + 6, w = ((W - L - 70) * it.v) / mx, tw = it.max ? ((W - L - 70) * it.max) / mx : 0;
         const val = it.v >= 100 ? nf(it.v) : nf(it.v, it.v < 10 && it.v % 1 ? 1 : 0);
-        return `<text x="${L - 8}" y="${y + 15}" text-anchor="end" font-size="12" fill="var(--muted)">${esc(it.l)}</text>${tw ? `<rect x="${L}" y="${y + 3}" width="${tw}" height="16" rx="3" fill="var(--surface-2)"/>` : ""}<rect x="${L}" y="${y + 3}" width="${Math.max(1.5, w)}" height="16" rx="3" fill="${it.hot ? "var(--soil)" : "var(--accent)"}"/><text x="${L + Math.max(1.5, w, tw) + 6}" y="${y + 15}" font-size="11.5" font-family="IBM Plex Mono, monospace" fill="var(--fg)">${val}</text>`;
+        return `<text x="${L - 8}" y="${y + 15}" text-anchor="end" font-size="12" fill="var(--muted)">${esc(it.l)}</text>${tw ? `<rect x="${L}" y="${y + 3}" width="${tw}" height="16" rx="3" fill="var(--surface-2)"/>` : ""}<rect x="${L}" y="${y + 3}" width="${Math.max(1.5, w)}" height="16" rx="3" fill="${it.hot ? "var(--soil)" : "var(--accent)"}"/><text x="${L + Math.max(1.5, w, tw) + 6}" y="${y + 15}" font-size="11.5" font-family="Martian Mono, monospace" fill="var(--fg)">${val}</text>`;
       }).join("");
       return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ch.unit)}">${rows}</svg><div class="eyebrow" style="text-align:right">${esc(ch.unit)}</div></div>`;
     }
@@ -77,7 +77,7 @@
       const W = 440, H = 320, cx = W / 2, cy = 160, R = 108, n = ch.axes.length;
       const pt = (i, val) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / n; return [cx + (Math.cos(a) * R * val) / 100, cy + (Math.sin(a) * R * val) / 100]; };
       const ring = (val) => ch.axes.map((_, i) => pt(i, val).join(",")).join(" ");
-      const rings = ch.rings.map(([val, l]) => `<polygon points="${ring(val)}" fill="none" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${cx + 4}" y="${cy - (R * val) / 100 - 3}" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${esc(l)}</text>`).join("");
+      const rings = ch.rings.map(([val, l]) => `<polygon points="${ring(val)}" fill="none" stroke="var(--line)" stroke-dasharray="3 3"/><text x="${cx + 4}" y="${cy - (R * val) / 100 - 3}" font-size="10" fill="var(--muted)" font-family="Martian Mono, monospace">${esc(l)}</text>`).join("");
       const axes = ch.axes.map((a, i) => { const [x, y] = pt(i, 100), [lx, ly] = pt(i, 120); const anc = Math.abs(lx - cx) < 8 ? "middle" : lx > cx ? "start" : "end"; return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--line)"/><text x="${lx}" y="${ly + 4}" font-size="11.5" text-anchor="${anc}" fill="var(--fg)">${esc(a)} · ${ch.values[i]}</text>`; }).join("");
       const poly = ch.values.map((val, i) => pt(i, val).join(",")).join(" ");
       return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Radar">${rings}${axes}<polygon points="${ring(100)}" fill="none" stroke="var(--line)"/><polygon points="${poly}" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="2"/>${ch.values.map((val, i) => { const [x, y] = pt(i, val); return `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--accent)"/>`; }).join("")}</svg></div>`;
@@ -86,8 +86,8 @@
       const W = 520, H = 280, L = 44, B = 36, T = 12, Rr = 16;
       const ym = Math.max(30, ...ch.points.map((p) => p.y)) * 1.1;
       const Xf = (x) => L + ((W - L - Rr) * x) / 100, Y = (y) => H - B - ((H - B - T) * y) / ym;
-      const grid = [0, 25, 50, 75, 100].map((x) => `<line x1="${Xf(x)}" y1="${T}" x2="${Xf(x)}" y2="${H - B}" stroke="var(--line)" stroke-dasharray="2 4"/><text x="${Xf(x)}" y="${H - B + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${x}</text>`).join("");
-      const yt = [0, ym / 2, ym].map((y) => `<text x="${L - 6}" y="${Y(y) + 3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${nf(y)}%</text>`).join("");
+      const grid = [0, 25, 50, 75, 100].map((x) => `<line x1="${Xf(x)}" y1="${T}" x2="${Xf(x)}" y2="${H - B}" stroke="var(--line)" stroke-dasharray="2 4"/><text x="${Xf(x)}" y="${H - B + 14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Martian Mono, monospace">${x}</text>`).join("");
+      const yt = [0, ym / 2, ym].map((y) => `<text x="${L - 6}" y="${Y(y) + 3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Martian Mono, monospace">${nf(y)}%</text>`).join("");
       const zone = `<rect x="${Xf(50)}" y="${T}" width="${Xf(100) - Xf(50)}" height="${Y(ym / 2) - T}" fill="var(--crit)" fill-opacity=".07"/><text x="${Xf(100) - 4}" y="${T + 12}" text-anchor="end" font-size="10" fill="var(--crit)">Priorité</text>`;
       const pts = ch.points.map((p) => `<circle cx="${Xf(p.x)}" cy="${Y(p.y)}" r="7" fill="${p.x >= 50 ? "var(--crit)" : p.x >= 25 ? "var(--warn)" : "var(--ok)"}" fill-opacity=".85"/><text x="${Xf(p.x) + (p.x > 70 ? -10 : 10)}" y="${Y(p.y) + 4}" text-anchor="${p.x > 70 ? "end" : "start"}" font-size="10.5" fill="var(--fg)">${esc(p.l.slice(0, 22))}</text>`).join("");
       return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Matrice">${zone}${grid}${yt}<line x1="${L}" y1="${H - B}" x2="${W - Rr}" y2="${H - B}" stroke="var(--muted)"/>${pts}<text x="${(W + L) / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(ch.xl)} (0–100) →</text><text transform="translate(11 ${(H - B) / 2}) rotate(-90)" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(ch.yl)}</text></svg></div>`;
@@ -97,7 +97,7 @@
 
   /* ---------- accueil ---------- */
   function home() {
-    const st = S(), used = copilots.filter((c) => st.used[c.id]), p = st.profile;
+    const st = S(), used = copilots.filter((c) => st.used[c.id]), p = st.profile, tons = window.SXS_carbon ? window.SXS_carbon() : 0;
     const open = X.planItems().filter((a) => a.status !== "done").length;
     const nextDl = X.TIMELINE.filter((e) => e.d >= X.today() && e.ap(X.profile()))[0];
     const dash = `
@@ -117,22 +117,32 @@
         <div class="grid4">${copilots.filter((c) => c.fam === f.id).map(card).join("")}</div>
       </section>`; }).join("");
     app.innerHTML = `
-      <section class="hero" aria-label="Sillon">
-        <canvas id="field" aria-hidden="true"></canvas>
-        <div class="wrap">
-          <div>
-            <div class="eyebrow">${esc(t("hero_eyebrow"))}</div>
-            <h1 id="pageH" tabindex="-1" style="margin-top:14px">${esc(t("hero_h1a"))} <em>${esc(t("hero_h1b"))}</em></h1>
+      <section class="hero" aria-labelledby="pageH">
+        <div class="wrap hero-grid">
+          <div class="hero-txt">
+            <div class="eyebrow"><span>${esc(t("hero_eyebrow2"))}</span><span>${esc(t("hero_eyebrow"))}</span></div>
+            <h1 id="pageH" tabindex="-1">${esc(t("hero_h1a"))} <em>${esc(t("hero_h1b"))}</em></h1>
             <p class="lead">${esc(t("hero_lead"))}</p>
             <div class="hero-cta"><a class="chip-btn primary" href="#profil">${esc(t("hero_cta1"))}</a><a class="chip-btn" href="#reglementation">${esc(t("hero_cta2"))}</a></div>
           </div>
-          <div class="ledger">
-            <div><span>${esc(t("led_cp"))}</span><b>${copilots.length}</b></div>
-            <div><span>${esc(t("led_txt"))}</span><b>${X.TIMELINE.length}</b></div>
-            <div><span>${esc(t("led_src"))}</span><b>${Object.keys(window.SILLON.sources).length}</b></div>
-            <div><span>${esc(t("led_calc"))}</span><b>${esc(t("led_calc_v"))}</b></div>
-            <div><span>${esc(t("led_out"))}</span><b>${esc(t("led_out_v"))}</b></div>
-          </div>
+          <figure class="hero-fig">
+            <div class="hero-map"><canvas id="field" aria-hidden="true"></canvas></div>
+            <figcaption>
+              <p class="fig-read mono" aria-hidden="true"><span class="fig-n">Fig. 1</span><span data-map-read data-idle="${esc(t("fig_idle"))}">${esc(t("fig_idle"))}</span></p>
+              <p>${esc(t("fig_cap"))}</p>
+              <p class="fig-co2">${tons ? esc(t("fig_co2", { t: nf(tons), n: ((k) => k + (st.lang === "en" ? (k > 1 ? " furrows" : " furrow") : (k > 1 ? " sillons" : " sillon")))(Math.max(1, Math.min(100, Math.round(tons / 50)))) })) : `<a href="#bilan-carbone">${esc(t("fig_co2_none"))}</a>`}</p>
+              <p class="fig-src">${esc(t("fig_src"))}</p>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="wrap">
+          <dl class="ledger">
+            <div><dt>${esc(t("led_cp"))}</dt><dd>${copilots.length}</dd></div>
+            <div><dt>${esc(t("led_txt"))}</dt><dd>${X.TIMELINE.length}</dd></div>
+            <div><dt>${esc(t("led_src"))}</dt><dd>${Object.keys(window.SILLON.sources).length}</dd></div>
+            <div><dt>${esc(t("led_calc"))}</dt><dd class="txt">${esc(t("led_calc_v"))}</dd></div>
+            <div><dt>${esc(t("led_out"))}</dt><dd class="txt">${esc(t("led_out_v"))}</dd></div>
+          </dl>
         </div>
       </section>
       <div class="wrap section">

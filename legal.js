@@ -159,8 +159,11 @@
       html: `
 <h2>Polices</h2>
 <ul>
-<li><b>Bricolage Grotesque</b> — The Bricolage Grotesque Project Authors (Atelier Triay). Licence SIL Open Font License 1.1.</li>
-<li><b>IBM Plex Sans</b> et <b>IBM Plex Mono</b> — IBM Corp. Licence SIL Open Font License 1.1.</li>
+<li><b>Gloock</b> — The Gloock Project Authors (Duarte Pinto). Licence SIL Open Font License 1.1.</li>
+<li><b>Newsreader</b> — The Newsreader Project Authors (Production Type). Licence SIL Open Font License 1.1.</li>
+<li><b>Atkinson Hyperlegible Next</b> — Braille Institute of America. Licence SIL Open Font License 1.1.</li>
+<li><b>Martian Mono</b> — The Martian Mono Project Authors (Evil Martians). Licence SIL Open Font License 1.1.</li>
+<li><b>Relief de la Normandie</b> (page d'accueil) — © IGN, RGE ALTI via le service d'altimétrie de la Géoplateforme. Licence Ouverte Etalab 2.0. Grille simplifiée de 128 × 100 points.</li>
 </ul>
 <p>Les polices sont hébergées sur le site, avec leurs licences dans le dossier <code>fonts/</code> du code source.</p>
 <h2>Bibliothèques</h2>
@@ -207,7 +210,7 @@
     cgu: { title: "Terms of use", updated: "Updated " + B.updated, html: `<p>The French version is the reference. Sillon is free, with no subscription, paid option or hidden fees. It is meant for professionals aged 18 or over. Results are estimates based on public sources; AI analyses may contain errors and are not legal, accounting or certification advice. Do not abuse usage limits or upload third-party personal data. Sillon shows no customer reviews or testimonials; pre-filled values are labelled samples. Code under the MIT licence. French law applies. Contact: ${mail}.</p>` },
     cookies: { title: "Cookie policy", updated: "Updated " + B.updated, html: `<p>Sillon sets no cookies and uses no trackers: no analytics, no ads, no third-party content. Fonts and libraries are hosted on the site itself. Your browser's local storage (keys <code>sillon.v2</code> and <code>sillon.notice</code>) keeps your answers on your device only; it is strictly necessary for the service and therefore not subject to consent. Erase it from the ${L("mes-donnees", "My data")} page.</p>` },
     mentions: { title: "Legal notice", updated: "Updated " + B.updated, html: `<p>Publisher: ${B.owner} (${B.status}) — ${mail}. Hosting: ${B.host}. AI providers: Mistral AI (Paris, France), Groq, Inc. (USA, backup).</p>` },
-    credits: { title: "Credits and licences", updated: "Updated " + B.updated, html: `<p>Fonts: Bricolage Grotesque and IBM Plex Sans / Mono (SIL Open Font License 1.1), self-hosted. Libraries: three.js r128 and jsPDF 2.5.1 (MIT), SheetJS CE 0.18.5 and PDF.js 3.11.174 (Apache 2.0). No stock images; icons and logo drawn for Sillon. Data: ADEME, EFRAG, EcoVadis, EU and French law. Sillon code: MIT licence.</p>` },
+    credits: { title: "Credits and licences", updated: "Updated " + B.updated, html: `<p>Fonts: Gloock, Newsreader, Atkinson Hyperlegible Next and Martian Mono (SIL Open Font License 1.1). Relief map: © IGN RGE ALTI, Licence Ouverte 2.0, self-hosted. Libraries: three.js r128 and jsPDF 2.5.1 (MIT), SheetJS CE 0.18.5 and PDF.js 3.11.174 (Apache 2.0). No stock images; icons and logo drawn for Sillon. Data: ADEME, EFRAG, EcoVadis, EU and French law. Sillon code: MIT licence.</p>` },
     accessibilite: { title: "Accessibility", updated: "Updated " + B.updated, html: `<p>Sillon aims for WCAG 2.1 level AA: full keyboard navigation, skip link, visible focus, focus kept inside dialogs (Esc closes), checked colour contrast in both themes, labelled fields, text alternatives for charts, reduced motion respected. Known limits: exported PDFs are not tagged yet (use the Excel export). Report issues to ${mail}.</p>` },
   };
 

@@ -1,5 +1,16 @@
 # Journal des versions
 
+## 5.0.0 · 15 novembre 2026
+
+- Nouvelle direction artistique « carnet de terrain » : papier, encre et un seul rouge de terre, angles nets, filets fins, ombres d'imprimerie, grain léger, sections numérotées.
+- Polices : Gloock (titres), Newsreader italique (accents), Atkinson Hyperlegible Next (texte, conçue pour la lisibilité) et Martian Mono (chiffres). Toutes sous licence OFL et auto-hébergées.
+- Accueil : le champ 3D générique est remplacé par le relief réel de la Normandie (IGN RGE ALTI, Licence Ouverte 2.0), tracé en 100 sillons avec masquage des lignes cachées, villes repérées et lecture de l'altitude sous le pointeur.
+- Accueil : le bilan carbone de l'utilisateur apparaît en bande rouge sur la carte (un sillon pour 50 t CO2e).
+- PDF : couverture papier avec le relief normand en sillons ; palette alignée sur le site.
+- Nouveau logo et nouvelle icône d'onglet.
+- Contrastes vérifiés (au moins 5,8:1 en clair et en sombre) ; animation d'ouverture désactivée si l'utilisateur réduit les animations.
+- Tests : contrôle de la grille d'altitude (taille, mer et terre, altitudes plausibles).
+
 ## 4.1.0 · 12 novembre 2026
 
 - Plan d'action : une action n'est enregistrée qu'avec un intitulé (formulaire Enregistrer / Annuler) ; les actions vides ne sont plus comptées ni exportées ; suppression possible d'une action personnalisée.

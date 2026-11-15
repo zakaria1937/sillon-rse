@@ -18,23 +18,30 @@
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const PW = 210, M = 18, CW = PW - 2 * M;
     let y = 0;
-    const ink = [21, 36, 28], mut = [86, 102, 92], acc = [46, 106, 76], soil = [180, 105, 42];
-    const lvlC = { ok: [46, 125, 79], warn: [183, 121, 31], crit: [178, 58, 46], info: [86, 102, 92] };
+    const ink = [28, 27, 23], mut = [90, 84, 70], acc = [31, 74, 56], soil = [154, 59, 18];
+    const lvlC = { ok: [42, 95, 55], warn: [122, 81, 8], crit: [160, 44, 30], info: [90, 84, 70] };
     const need = (h) => { if (y + h > 280) { doc.addPage(); y = 20; } };
     const text = (s, size, color, style = "normal", indent = 0, lh = 1.45) => {
       doc.setFont("helvetica", style); doc.setFontSize(size); doc.setTextColor(...color);
       doc.splitTextToSize(clean(s), CW - indent).forEach((ln) => { need(size * 0.42 * lh); doc.text(ln, M + indent, y); y += size * 0.3528 * lh; });
     };
-    doc.setFillColor(17, 32, 26); doc.rect(0, 0, PW, 66, "F");
-    doc.setDrawColor(125, 184, 150); doc.setLineWidth(0.4);
-    for (let i = 0; i < 9; i++) { const yy = 14 + i * 5.5; doc.line(120, yy, 196, yy - 6 + Math.sin(i) * 2); }
-    doc.setTextColor(230, 238, 231); doc.setFont("helvetica", "bold"); doc.setFontSize(26); doc.text("Sillon", M, 26);
+    doc.setFillColor(241, 236, 225); doc.rect(0, 0, PW, 74, "F");
+    doc.setDrawColor(...ink); doc.setLineWidth(0.5); doc.line(M, 70, PW - M, 70);
+    const TW = 106;
+    // couverture : le relief réel de la Normandie (IGN) en sillons, si la carte a été chargée sur l'accueil
+    const rel = window.SXS_relief && window.SXS_relief();
+    if (rel) {
+      doc.setLineWidth(0.18);
+      for (let r = 4; r < 100; r += 4) { const pts = []; for (let c = 0; c < 128; c += 2) { const v = rel[r * 128 + c]; pts.push([132 + (c / 127) * 62, 14 + r * 0.5 - (v ? (v - 1) * 2 : 0) * 0.02, !!v]); }
+        doc.setDrawColor(...(r > 84 ? soil : ink)); for (let k = 1; k < pts.length; k++) if (pts[k][2] && pts[k - 1][2]) doc.line(pts[k - 1][0], pts[k - 1][1], pts[k][0], pts[k][1]); }
+    } else { doc.setDrawColor(...ink); doc.setLineWidth(0.3); for (let i = 0; i < 9; i++) { const yy = 14 + i * 5.5; doc.line(120, yy, 196, yy - 6 + Math.sin(i) * 2); } }
+    doc.setTextColor(...ink); doc.setFont("times", "bold"); doc.setFontSize(30); doc.text("Sillon", M, 26);
     doc.setFont("helvetica", "normal"); doc.setFontSize(13);
-    doc.text(clean((p.nom ? p.nom + " · " : "") + (ids.length > 1 ? (st.lang === "en" ? "Consolidated CSR report" : "Rapport RSE consolidé") : cpT(byId[ids[0]]).title)), M, 36);
-    doc.setFontSize(9.5); doc.setTextColor(185, 201, 190);
-    doc.text(clean(`${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} · ${p.secteur} · ${p.eff} salariés · ${p.ca} M€ · ${ids.length} copilote(s)`), M, 45);
-    doc.text(clean(t("foot2")), M, 52, { maxWidth: CW });
-    y = 78;
+    doc.text(clean((p.nom ? p.nom + " · " : "") + (ids.length > 1 ? (st.lang === "en" ? "Consolidated CSR report" : "Rapport RSE consolidé") : cpT(byId[ids[0]]).title)), M, 36, { maxWidth: TW });
+    doc.setFontSize(9.5); doc.setTextColor(...mut);
+    doc.text(clean(`${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} · ${p.secteur} · ${p.eff} salariés · ${p.ca} M€ · ${ids.length} copilote(s)`), M, 45, { maxWidth: TW });
+    doc.setFontSize(8); doc.text(clean(t("foot2")), M, 55, { maxWidth: TW });
+    y = 84;
     if (ids.length > 1) {
       text(st.lang === "en" ? "Summary" : "Synthèse", 14, ink, "bold"); y += 1;
       ids.forEach((id) => { const c = byId[id], r = X.result(c); text(`${cpT(c).title} : ${r.verdict}${r.gauge ? ` (${r.gauge.show || r.gauge.val}${r.gauge.raw || r.gauge.show ? "" : "/100"})` : ""}${st.used[id] ? "" : " [exemple]"}`, 10, mut, "normal", 2); });
