@@ -12,7 +12,7 @@
 |---|---|---|
 | Mesurer | Estimation GES simplifiée | Estimation partielle de postes sélectionnés ; facteurs préremplis à vérifier |
 | Mesurer | Carbone IA | kWh et kgCO2e des usages d'IA générative, matériel compris |
-| Mesurer | Fournisseurs | Risque RSE des achats : zone × catégorie × certification, pondéré par la dépense |
+| Mesurer | Fournisseurs | Indice interne d’exposition des achats : zone × catégorie, pondéré par la dépense |
 | Mesurer | Diagnostic de maturité RSE | Auto-évaluation interne sur 5 piliers et 20 pratiques, sans benchmark sectoriel |
 | Se conformer | Réglementation | Obligations applicables selon la taille (Omnibus, BEGES, Sapin II, décret tertiaire…) |
 | Se conformer | Reporting VSME | Complétude des points B1 à B11 et C1 à C9, charge de travail |
