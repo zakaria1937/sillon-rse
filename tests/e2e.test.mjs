@@ -90,16 +90,31 @@ test("la fiche contact exige majorité et consentement, puis l'analyse IA s'affi
   await page.close();
 });
 
-test("la sauvegarde en ligne permet de reprendre le dossier dans un autre navigateur", async () => {
+test("la sauvegarde en ligne est chiffrée côté navigateur et restaurable dans un autre navigateur", async () => {
   const { page } = await open("#profil");
+  let cloudPayload;
+  page.on("request", req => { if (req.url().includes("/api/dossier") && req.method() === "PUT") cloudPayload = JSON.parse(req.postData()); });
   await page.fill("#p-nom", "Atelier Normand"); await page.click("#pform button[type=submit]");
   await page.goto(BASE + "/#mes-donnees"); await page.click("#clOn"); await page.waitForSelector("#clCode");
+  assert.equal(cloudPayload.data.v, 2);
+  assert.equal(typeof cloudPayload.data.ciphertext, "string");
+  assert.equal(cloudPayload.data.inputs, undefined);
   const code = await page.textContent("#clCode");
   const ctx2 = await browser.newContext(); const p2 = await ctx2.newPage();
   await p2.goto(BASE + "/#dossier-" + code); await p2.waitForSelector("#cl-in");
   await p2.click("#clF button[type=submit]"); await p2.waitForFunction(() => location.hash === "#accueil");
   assert.match(await p2.textContent(".dash"), /Atelier Normand/);
   await ctx2.close(); await page.close();
+});
+
+test("une sauvegarde JSON locale peut être restaurée après confirmation", async () => {
+  const { page } = await open("#mes-donnees");
+  const backup = { source: "Sillon", exporte_le: new Date().toISOString(), donnees: { inputs: {}, profile: { nom: "Entreprise restaurée", secteur: "Industrie", eff: 42, effM: 42, ca: 8, surf: 500, gwh: 1, mp: "oui", b2c: "non" }, used: {}, custom: [], documents: [], plan: {}, hist: {}, ai: {}, touched: {}, base: {}, chat: [], cloud: null } };
+  page.on("dialog", dialog => dialog.accept());
+  await page.setInputFiles("#mdImportFile", { name: "sillon-backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(backup)) });
+  await page.waitForTimeout(400);
+  assert.match(await page.textContent(".dash"), /Entreprise restaurée/);
+  await page.close();
 });
 
 test("désinscription et demande de suppression arrivent chez l'éditeur ; l'effacement local vide le navigateur", async () => {
