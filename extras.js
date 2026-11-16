@@ -51,7 +51,11 @@
           continue;
         }
         const f = cp.fields.find((x) => x.id === k); if (!f) continue;
-        if (f.type === "number" || f.type === "range") { const x = parseFloat(String(val).replace(/[\s ]/g, "").replace(",", ".")); if (isFinite(x)) { v[k] = x; tch[k] = true; n++; } }
+        if (f.type === "number" || f.type === "range") {
+          const x = parseFloat(String(val).replace(/[\s ]/g, "").replace(",", "."));
+          const min = f.min ?? (f.type === "number" ? 0 : -Infinity), max = f.max ?? 1e12;
+          if (Number.isFinite(x) && x >= min && x <= max) { v[k] = x; tch[k] = true; n++; }
+        }
         else if ((f.type === "select" || f.type === "seg") && f.options.some((o) => String(o[0]) === String(val))) { v[k] = String(val); tch[k] = true; n++; }
       }
       if (n) { S().used[cp.id] = true; X.record(cp); X.save(); V().header(); V().view(cp); }
