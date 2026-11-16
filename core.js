@@ -10,7 +10,7 @@
   const today = () => new Date().toISOString().slice(0, 10);
 
   /* ---------- état ---------- */
-  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [], contact: null, cloud: null });
+  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], documents: [], profile: null, lang: "fr", chat: [], contact: null, cloud: null });
   let state = blank();
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("sillon.v1") || "null");
