@@ -33,6 +33,18 @@ test("13 copilotes, chacun calcule sans erreur avec ses valeurs d'exemple", () =
   }
 });
 
+
+test("Bilan carbone : le module signale son périmètre partiel et les facteurs non vérifiés", () => {
+  const cp = byId["bilan-carbone"];
+  assert.match(cp.title, /Estimation GES/);
+  assert.match(cp.intro, /pas un BEGES complet/);
+  const r = run("bilan-carbone");
+  assert.match(r.summary, /Estimation partielle/);
+  assert.ok(r.findings.some((x) => x.t.includes("Périmètre incomplet")));
+  assert.match(r.hyp, /ne constitue ni un BEGES réglementaire/);
+  assert.equal(ctx.window.SILLON_REF.facteursStatut.dateVerification, null);
+});
+
 test("Carbone IA : 25 utilisateurs x 15 requêtes x 220 j, 20 % longues, 200 images/mois", () => {
   const r = run("carbone-ia");
   // 82 500 requêtes : 0,8 x 0,3 Wh + 0,2 x 3 Wh = 69,3 kWh ; images 2 400 x 2,9 Wh = 6,96 kWh
