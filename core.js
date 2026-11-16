@@ -25,11 +25,28 @@
   /* ---------- sauvegarde en ligne (facultative, protégée par un code secret créé ici) ---------- */
   const newCode = () => { const a = new Uint8Array(20); crypto.getRandomValues(a); return [...a].map((b) => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("") + Date.now().toString(36).slice(-6); };
   const cloudPayload = () => { const { cloud, chat, ...rest } = state; return rest; };
+  const b64 = (bytes) => btoa(String.fromCharCode(...bytes));
+  const unb64 = (value) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+  async function cloudKey(code) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+    return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  }
+  async function encryptCloud(data, code) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await cloudKey(code), new TextEncoder().encode(JSON.stringify(data)));
+    return { v: 2, iv: b64(iv), ciphertext: b64(new Uint8Array(cipher)) };
+  }
+  async function decryptCloud(envelope, code) {
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(envelope.iv) }, await cloudKey(code), unb64(envelope.ciphertext));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
   let cloudT = null, cloudState = "idle";
   async function cloudSave() {
     if (!state.cloud || !state.cloud.code) return false;
     try {
-      const r = await fetch("/api/dossier", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code, data: cloudPayload() }) });
+      // Chiffrement côté navigateur : le serveur de stockage ne reçoit jamais le dossier en clair.
+      const data = await encryptCloud(cloudPayload(), state.cloud.code);
+      const r = await fetch("/api/dossier", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code, data }) });
       if (!r.ok) { cloudState = "error"; return false; }
       state.cloud.maj = (await r.json()).maj; cloudState = "ok";
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
@@ -44,7 +61,13 @@
     const r = await fetch("/api/dossier?code=" + code).catch(() => { throw { code: "offline" }; });
     if (!r.ok) throw { code: r.status === 404 ? "not_found" : "upstream_error" };
     const rec = await r.json();
-    state = { ...blank(), ...rec.data, lang: state.lang, cloud: { code, maj: rec.maj }, chat: [] };
+    let restored;
+    try {
+      // Compatibilité avec les anciens dossiers non chiffrés ; les nouvelles sauvegardes sont AES-GCM.
+      restored = rec.data?.v === 2 ? await decryptCloud(rec.data, code) : rec.data;
+    } catch (e) { throw { code: "decrypt_failed" }; }
+    if (!restored || typeof restored !== "object" || !restored.inputs) throw { code: "invalid_backup" };
+    state = { ...blank(), ...restored, lang: state.lang, cloud: { code, maj: rec.maj }, chat: [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
     return true;
   }
