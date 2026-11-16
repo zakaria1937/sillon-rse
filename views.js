@@ -476,9 +476,24 @@
   function reportView() {
     current = null;
     const st = S(), used = copilots.filter((c) => st.used[c.id]), list = used.length ? used : copilots;
+    const reportFindings = list.flatMap((c) => X.result(c).findings).filter((f) => f.lvl === "crit" || f.lvl === "warn");
+    const reportPlan = X.planItems().filter((a) => a.status !== "done");
+    const reportHigh = reportPlan.filter((a) => a.impact === "high").length;
+    const reportNoOwner = reportPlan.filter((a) => !a.owner).length;
+    const reportNoDue = reportPlan.filter((a) => !a.due).length;
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">${esc(X.profile().nom || "Sillon")} · ${new Date().toLocaleDateString(st.lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric" })}</div><h1 id="pageH" tabindex="-1">${esc(t("rep_title"))}</h1><p>${esc(used.length ? t("rep_sub_used", { n: used.length }) : t("rep_sub_none"))}</p></div>
       <div class="toolbar" style="margin:0 0 20px"><button class="chip-btn primary" type="button" id="pdfAll">${esc(t("rep_pdf"))}</button><button class="chip-btn" type="button" id="xlsAll">${esc(t("rep_xlsx"))}</button><a class="chip-btn" href="#presentation">${esc(t("nav_present"))}</a><button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button></div>
+      <section class="dash" aria-label="Synthèse de pilotage">
+        <div class="fam-head"><h2>Synthèse de pilotage</h2><p>${used.length} module(s) renseigné(s) · ${list.length - used.length} module(s) avec valeurs d'exemple</p></div>
+        <div class="dash-row">
+          <div class="dcell"><span class="l">Points de vigilance</span><b>${reportFindings.length}</b><span class="s">Signaux critiques ou à examiner</span></div>
+          <a class="dcell" href="#plan"><span class="l">Actions ouvertes</span><b>${reportPlan.length}</b><span class="s">${reportHigh} à impact élevé</span></a>
+          <a class="dcell" href="#plan"><span class="l">Responsables manquants</span><b>${reportNoOwner}</b><span class="s">Actions à attribuer</span></a>
+          <a class="dcell" href="#plan"><span class="l">Échéances manquantes</span><b>${reportNoDue}</b><span class="s">Actions à planifier</span></a>
+        </div>
+        <p class="ai-note">Les résultats sont des signaux d'auto-évaluation. Les modules non renseignés utilisent des valeurs d'exemple ; les constats doivent être confirmés avant toute décision.</p>
+      </section>
       <div class="grid4" style="padding-bottom:56px">${list.map((c) => { const r = X.result(c); return `<a class="card" href="#${c.id}"><div class="eyebrow">${esc(famT(families.find((f) => f.id === c.fam)).title)}</div><h3>${esc(cpT(c).title)}</h3><p><b style="color:var(--fg)">${esc(r.verdict)}</b><br>${esc(r.summary)}</p><div class="foot"><span class="state ${st.used[c.id] ? "done" : ""}">${esc(st.used[c.id] ? (st.ai[c.id] ? "IA ✓" : t("st_used")) : t("example"))}</span><span class="mono">${r.gauge ? esc(r.gauge.show || r.gauge.val) : ""}</span></div></a>`; }).join("")}</div>
     </div>`;
     document.getElementById("pdfAll").onclick = () => window.SXE.pdf(list.map((c) => c.id));
