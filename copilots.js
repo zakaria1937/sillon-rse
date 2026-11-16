@@ -13,8 +13,9 @@
     omnibus: { n: "EUR-Lex — directive (UE) 2026/470 (Omnibus I)", t: "Texte officiel publié au Journal officiel de l’Union européenne le 26/02/2026 ; modifications CSRD et CSDDD.", url: "https://eur-lex.europa.eu/eli/dir/2026/470/oj?locale=fr" },
     ocde: { n: "OCDE — Guide sur le devoir de diligence pour une conduite responsable des entreprises", t: "Guide OCDE 2018 : diligence fondée sur le risque, proportionnée à la gravité et à la probabilité des impacts négatifs ; processus continu en six étapes.", url: "https://www.oecd.org/en/publications/oecd-due-diligence-guidance-for-responsible-business-conduct_15f5f4b3-en.html" },
     ecovadis: { n: "EcoVadis — médailles, badges et seuils mensuels", t: "EcoVadis : médailles fondées sur les percentiles, seuils de score publiés mensuellement et critères d’éligibilité complémentaires.", url: "https://support.ecovadis.com/hc/fr/articles/39606014723090-Mise-%C3%A0-jour-des-seuils-mensuels-des-m%C3%A9dailles" },
-    empco: { n: "Union européenne — directive EmpCo (2024/825)", t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
-    agec: { n: "Légifrance — Code de l’environnement, art. L.541-21-2 et D.543-281", t: "Tri à la source et collecte séparée des flux de déchets non dangereux applicables, avec règles spécifiques aux déchets de chantier et aux textiles.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041626981" },
+    empco: { n: "EUR-Lex — directive (UE) 2024/825 (EmpCo)", t: "Directive relative à la protection des consommateurs contre les allégations environnementales trompeuses ; application à partir du 27/09/2026.", url: "https://eur-lex.europa.eu/eli/dir/2024/825/oj?locale=fr" },
+    agec: { n: "Légifrance — loi AGEC, art. 13 et décret n° 2022-748", t: "Encadrement des mentions « biodégradable » et « respectueux de l’environnement » sur les produits et emballages.", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
+    dechets: { n: "Légifrance — Code de l’environnement, art. L.541-21-2 et D.543-281", t: "Tri à la source et collecte séparée des flux de déchets non dangereux applicables, avec règles spécifiques aux déchets de chantier et aux textiles.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041626981" },
     climat12: { n: "Légifrance — loi Climat et résilience, décret 2022-539", t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
     mp: { n: "Service-Public — critère environnemental des marchés publics", t: "Service-Public Entreprendre (18/08/2026) : critère et condition d'exécution environnementaux obligatoires au 21/08/2026", url: "https://entreprendre.service-public.gouv.fr/actualites/A19042" },
     fs: { n: "France Stratégie — RSE et compétitivité", t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
@@ -411,7 +412,7 @@
           "Mettre en place une veille réglementaire trimestrielle (transpositions EmpCo et transparence salariale en cours).",
         ],
         hyp: "Seuils simplifiés : certains textes s'apprécient par établissement, sur deux exercices consécutifs ou avec le bilan. Ceci n'est pas un avis juridique.",
-        sources: [S.omnibus, S.beges, S.mp, S.empco, S.energie, S.pay],
+        sources: [S.omnibus, S.beges, S.dechets, S.mp, S.empco, S.energie, S.pay],
       };
     },
   };
