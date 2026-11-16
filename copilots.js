@@ -166,23 +166,23 @@
   const vsmeB = [
     ["B1", "Base d'établissement", "Périmètre, filiales, option retenue", "ok"],
     ["B2", "Pratiques, politiques et initiatives de transition", "", "part"],
-    ["B3", "Énergie et émissions de GES", "Consommations, scopes 1 et 2, intensité", "part"],
-    ["B4", "Pollution de l'air, de l'eau et des sols", "", "na"],
-    ["B5", "Biodiversité", "Sites dans ou près de zones sensibles", "no"],
-    ["B6", "Eau", "Prélèvements, zones de stress hydrique", "ok"],
-    ["B7", "Ressources, économie circulaire et déchets", "", "part"],
-    ["B8", "Effectifs : caractéristiques générales", "Contrats, genre, pays, turnover", "ok"],
-    ["B9", "Effectifs : santé et sécurité", "Accidents, décès", "ok"],
-    ["B10", "Rémunération, négociation collective, formation", "", "part"],
+    ["B3", "Énergie et émissions de GES", "Consommation totale d'énergie (MWh), ventilation renouvelable/non renouvelable si disponible, scopes 1 et 2 location-based, intensité GES", "part"],
+    ["B4", "Pollution de l'air, de l'eau et des sols", "Polluants déclarés aux autorités ou suivis volontairement dans un système de management environnemental", "na"],
+    ["B5", "Biodiversité", "Nombre et surface des sites détenus, loués ou gérés dans ou près de zones sensibles", "no"],
+    ["B6", "Eau", "Prélèvements totaux et prélèvements sur sites en zones de stress hydrique ; consommation si procédés fortement consommateurs", "ok"],
+    ["B7", "Ressources, économie circulaire et déchets", "Principes d'économie circulaire, déchets dangereux/non dangereux, réemploi/recyclage et flux matières significatifs", "part"],
+    ["B8", "Effectifs : caractéristiques générales", "Effectifs par type de contrat et genre, pays si activité multi-pays ; turnover si 50 salariés ou plus", "ok"],
+    ["B9", "Effectifs : santé et sécurité", "Accidents du travail enregistrables, taux d'accidents et décès liés au travail", "ok"],
+    ["B10", "Rémunération, négociation collective, formation", "Rémunération adéquate, couverture de négociation collective et heures de formation", "part"],
     ["B11", "Condamnations et amendes pour corruption", "", "ok"],
   ];
   const vsmeC = [
     ["C1", "Stratégie : modèle d'affaires et durabilité", "", "no"],
     ["C2", "Description des pratiques et politiques", "", "part"],
-    ["C3", "Objectifs GES et transition climatique", "", "no"],
-    ["C4", "Risques climatiques", "", "no"],
+    ["C3", "Objectifs GES et transition climatique", "Cibles absolues scopes 1 et 2, année de base/cible, périmètre et principales actions ; scope 3 significatif si cible fixée", "no"],
+    ["C4", "Risques climatiques", "Aléas physiques et événements de transition identifiés, exposition et horizon temporel", "no"],
     ["C5", "Effectifs : informations complémentaires", "", "part"],
-    ["C6", "Droits humains : politiques et processus", "", "no"],
+    ["C6", "Droits humains : politiques et processus", "Politiques, mécanismes de diligence raisonnable et canaux de signalement", "no"],
     ["C7", "Incidents graves en matière de droits humains", "", "ok"],
     ["C8", "Revenus de certains secteurs, exclusions des indices UE", "", "na"],
     ["C9", "Diversité de genre dans l'organe de gouvernance", "", "ok"],
@@ -298,7 +298,7 @@
         { id: "zone", label: "Zone", type: "select", options: ZONES.map((z) => [z[0], z[1]]) },
         { id: "cat", label: "Catégorie", type: "select", options: CATS.map((c) => [c[0], c[1]]) },
         { id: "dep", label: "Dépense €/an", type: "number" },
-        { id: "cert", label: "Certification", type: "select", options: CERTS.map((c) => [c[0], c[1]]) } ],
+        { id: "cert", label: "Preuve ou démarche déclarée", type: "select", options: CERTS.map((c) => [c[0], c[1]]) } ],
         def: [
           { nom: "Atelier de confection", zone: "high", cat: "textile", dep: 42000, cert: "none" },
           { nom: "Cartes électroniques", zone: "mod", cat: "elec", dep: 65000, cert: "iso" },
@@ -319,7 +319,7 @@
       const hi = sc.filter((s) => s.risk >= 50);
       const hiShare = hi.reduce((a, s) => a + s.share, 0);
       const top = [...sc].sort((a, b) => b.risk * b.share - a.risk * a.share);
-      const F = top.slice(0, 3).map((s) => ({ lvl: s.risk >= 50 ? "crit" : s.risk >= 25 ? "warn" : "ok", t: `${s.nom} : risque ${s.risk}/100 (${s.c}, ${s.z}), ${nf(s.share * 100)} % de la dépense${s.cert === "none" ? ", sans certification" : ""}.` }));
+      const F = top.slice(0, 3).map((s) => ({ lvl: s.risk >= 50 ? "crit" : s.risk >= 25 ? "warn" : "ok", t: `${s.nom} : risque ${s.risk}/100 (${s.c}, ${s.z}), ${nf(s.share * 100)} % de la dépense${s.cert === "none" ? ", sans preuve déclarée" : ""}.` }));
       if (!sc.length) F.push({ lvl: "info", t: "Ajoutez au moins un fournisseur pour lancer l'analyse." });
       return {
         gauge: { val: 100 - w, max: 100, label: "MAÎTRISE" },
@@ -328,7 +328,7 @@
         kpis: [
           { l: "Risque pondéré", v: w, u: "/100", s: "Pondéré par la dépense" },
           { l: "Dépense à risque élevé", v: nf(hiShare * 100), u: "%", s: `${hi.length} fournisseur(s)` },
-          { l: "Dépense analysée", v: nf(tot / 1000), u: "k€", s: `${sc.filter((s) => s.cert !== "none").length} certifié(s)` },
+          { l: "Dépense analysée", v: nf(tot / 1000), u: "k€", s: `${sc.filter((s) => s.cert !== "none").length} avec preuve déclarée` },
         ],
         chart: { type: "matrix", xl: "Risque RSE", yl: "Part de la dépense", points: sc.map((s) => ({ l: s.nom, x: s.risk, y: s.share * 100 })) },
         findings: F,
