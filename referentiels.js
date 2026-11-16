@@ -26,10 +26,10 @@
     { d: "2027-06-07", t: "Premiers rapports sur les écarts de rémunération", s: "Directive (UE) 2023/970, art. 9 : ≥ 250 salariés chaque année ; 150 à 249 salariés tous les trois ans, sur l’année civile précédente. Vérifier les modalités françaises de transposition.", ap: (p) => num(p.eff) >= 150, check: true },
     { d: "2027-09-30", t: "Déclaration annuelle OPERAT", s: "Consommations 2026.", ap: (p) => num(p.surf) >= 1000 },
     { d: "2027-10-11", t: "Échéance du système de management de l’énergie", s: "Directive (UE) 2023/1791, art. 11 : système certifié requis au plus tard le 11/10/2027 pour les entreprises dont la consommation annuelle moyenne des trois années précédentes dépasse 85 TJ (≈ 23,6 GWh). En France, voir le Code de l’énergie, art. L.233-1.", ap: (p) => num(p.gwh) >= 23.6, check: true },
-    { d: "2031-06-07", t: "Rapports sur les écarts de rémunération pour les entreprises de 100 à 149 salariés", s: "Directive (UE) 2023/970, art. 9 : tous les trois ans à compter du 07/06/2031, sur l’année civile précédente. Vérifier les modalités françaises de transposition.", ap: (p) => num(p.eff) >= 100 && num(p.eff) < 150, check: true },
     { d: "2028-07-26", t: "Transposition de la CSDDD", s: "Devoir de vigilance européen : plus de 5 000 salariés et 1,5 Md€ de CA.", ap: (p) => num(p.effM) > 5000 },
     { d: "2029-07-26", t: "Application de la CSDDD", s: "Plans de vigilance et due diligence obligatoires.", ap: (p) => num(p.effM) > 5000 },
     { d: "2030-12-31", t: "Décret tertiaire : -40 % de consommation", s: "Objectif par rapport à l'année de référence choisie (2010 au plus tôt).", ap: (p) => num(p.surf) >= 1000 },
+    { d: "2031-06-07", t: "Rapports sur les écarts de rémunération pour les entreprises de 100 à 149 salariés", s: "Directive (UE) 2023/970, art. 9 : tous les trois ans à compter du 07/06/2031, sur l’année civile précédente. Vérifier les modalités françaises de transposition.", ap: (p) => num(p.eff) >= 100 && num(p.eff) < 150, check: true },
   ],
   };
 })();
