@@ -247,13 +247,12 @@
   };
   const bdef = { g1: "1", g2: "0.5", g3: "0", g4: "0", e1: "0.5", e2: "0", e3: "1", e4: "1", s1: "1", s2: "1", s3: "0.5", s4: "0", t1: "0.5", t2: "0", t3: "1", t4: "0", a1: "0", a2: "0.5", a3: "0", a4: "1" };
   const bench = {
-    id: "benchmark-rse", fam: "mesurer", title: "Benchmark RSE",
-    short: "Votre maturité sur 5 piliers, face à une grille de référence.",
-    intro: "Vingt pratiques concrètes réparties en cinq piliers. Le résultat vous situe sur une grille de maturité en trois paliers : Démarrage, Structuré, Avancé.",
-    calc: "5 piliers · radar · paliers",
+    id: "benchmark-rse", fam: "mesurer", title: "Diagnostic de maturité RSE",
+    short: "Auto-évaluation de 20 pratiques sur 5 piliers.",
+    intro: "Vingt pratiques concrètes réparties en cinq piliers. Le résultat vous situe sur une grille interne de maturité en quatre paliers. Il ne s'agit pas d'un benchmark sectoriel : aucune base de comparaison d'entreprises ou de moyennes sectorielles n'est utilisée.",
+    calc: "5 piliers · radar · indice interne",
     icon: "chart",
     fields: [
-      { type: "select", id: "sect", label: "Secteur", def: "Industrie", prof: "secteur", options: [["Industrie", "Industrie"], ["Services", "Services aux entreprises"], ["BTP", "BTP"], ["Commerce", "Commerce et distribution"], ["Numérique", "Numérique"], ["Transport", "Transport et logistique"], ["Agroalimentaire", "Agroalimentaire"]] },
       ...Object.entries(pillars).map(([k, [lab, items]]) => ({ type: "checklist", id: k, label: lab, states: YNP, items: items.map(([id, label]) => ({ id, label, def: bdef[id] })) })),
     ],
     compute(v) {
@@ -271,12 +270,12 @@
       return {
         gauge: { val: avg, max: 100, label: "MATURITÉ" },
         verdict: `Palier ${stage}`,
-        summary: `Score moyen ${avg}/100 dans le secteur ${v.sect || "Industrie"}. Palier suivant : ${avg >= 80 ? "maintenir et prouver" : avg >= 55 ? "Avancé à 80" : "Structuré à 55"}.`,
+        summary: `Indice interne moyen ${avg}/100. Palier suivant : ${avg >= 80 ? "maintenir et prouver" : avg >= 55 ? "Avancé à 80" : "Structuré à 55"}.`,
         kpis: res.map((r) => ({ l: r.lab, v: r.s, u: "/100", s: r.s >= 80 ? "Avancé" : r.s >= 55 ? "Structuré" : r.s >= 25 ? "Démarrage" : "Initial" })),
         chart: { type: "radar", axes: res.map((r) => r.lab), values: res.map((r) => r.s), rings: [[25, "Démarrage"], [55, "Structuré"], [80, "Avancé"]] },
         findings: F,
         actions: sorted.slice(0, 3).map((r) => `${r.lab} : traiter « ${r.gaps[0] || "consolider les preuves"} » dans les 90 jours.`),
-        hyp: "Grille Sillon : Oui = 1, En partie = 0,5, Non = 0. Les paliers sont des repères de maturité, pas des moyennes sectorielles mesurées.",
+        hyp: "Grille interne Sillon : Oui = 1, En partie = 0,5, Non = 0. Pondération égale des 20 pratiques. Les paliers sont des repères pédagogiques non validés par une étude sectorielle, sans comparaison à des entreprises homologues et sans valeur de certification.",
         sources: [S.vsme, S.ecovadis],
       };
     },
@@ -679,7 +678,7 @@
   const gw = {
     id: "greenwashing", fam: "convaincre", title: "Greenwashing",
     short: "Détecte les formulations à risque avant publication, textes de loi à l'appui.",
-    intro: "Collez un texte : site, plaquette, fiche produit, post. Chaque formulation risquée est surlignée et rattachée à la règle qu'elle enfreint.",
+    intro: "Collez un texte : site, plaquette, fiche produit, post. Le moteur repère certaines expressions et les rapproche de règles ciblées. Il ne vérifie pas exhaustivement le droit applicable ni la véracité des preuves : absence d'alerte ne signifie pas conformité juridique.",
     calc: "10 règles · EmpCo · AGEC · Climat",
     icon: "search",
     fields: [{ type: "textarea", id: "txt", label: "Texte à vérifier", def: gwDef, rows: 9, wide: true }],
@@ -700,8 +699,8 @@
       if (precise) F.push({ lvl: "ok", tag: "Bonne pratique", t: `${precise} allégation(s) chiffrée(s) et datée(s) détectée(s) : c'est le format à généraliser.` });
       if (!hits.length) F.push({ lvl: "ok", t: "Aucune formulation à risque détectée par les règles automatiques." });
       return {
-        gauge: { val: score, max: 100, label: "FIABILITÉ" },
-        verdict: nc >= 3 ? "Risque élevé" : nc >= 1 ? "Risque à corriger" : nw ? "Vigilance" : "Texte sûr",
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: nc >= 3 ? "Signaux de risque nombreux" : nc >= 1 ? "Signaux de risque à revoir" : nw ? "Points à préciser" : "Aucun signal détecté — relecture nécessaire",
         summary: `${nc} formulation(s) à risque juridique, ${nw} à préciser, ${precise} allégation(s) chiffrée(s).`,
         kpis: [
           { l: "À risque", v: nc, u: "", s: "À retirer ou reformuler" },
@@ -715,7 +714,7 @@
           "Retirer toute neutralité carbone fondée sur la compensation ; parler de contribution à des projets, séparément.",
           "Garder un dossier de preuves pour chaque allégation publiée.",
         ],
-        hyp: "Détection par règles : un juriste doit valider les textes à fort enjeu.",
+        hyp: "Indice heuristique interne : pénalités/bonus par expressions repérées et par présence de motifs chiffrés. Ce score n'est ni un score juridique ni une probabilité de conformité. Les règles automatiques peuvent produire des faux positifs et faux négatifs ; elles ne contrôlent ni les preuves, ni le contexte, ni l'ensemble des obligations. Faire relire les allégations à enjeu par un juriste compétent.",
         sources: [S.empco, S.agec, S.climat12],
       };
     },
