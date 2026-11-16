@@ -1,4 +1,4 @@
-/* Sillon — définitions des 12 copilotes : champs, calculs et sources. */
+/* Sillon — définitions des 13 copilotes : champs, calculs et sources. */
 (function () {
   const nf = (x, d = 0) => (isFinite(x) ? Number(x).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–");
   const eur = (x) => nf(Math.round(x)) + " €";
