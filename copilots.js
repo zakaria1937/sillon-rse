@@ -11,7 +11,7 @@
     ademe: { n: "ADEME — Base Empreinte", t: "Base publique de facteurs d’émission et de données d’inventaire. Les valeurs préremplies dans Sillon ne sont pas rapprochées individuellement d’une fiche, d’une version et d’un périmètre ADEME ; elles ne doivent pas être présentées comme des facteurs ADEME certifiés.", url: "https://base-empreinte.ademe.fr/" },
     vsme: { n: "EFRAG — norme VSME", t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
     omnibus: { n: "EUR-Lex — directive (UE) 2026/470 (Omnibus I)", t: "Texte officiel publié au Journal officiel de l’Union européenne le 26/02/2026 ; modifications CSRD et CSDDD.", url: "https://eur-lex.europa.eu/eli/dir/2026/470/oj?locale=fr" },
-    ecovadis: { n: "EcoVadis — médailles et badges", t: "EcoVadis, « Understanding EcoVadis Medals and Badges » (règles 2025)", url: "https://support.ecovadis.com/hc/en-us/articles/210460227-Understanding-EcoVadis-Medals-and-Badges" },
+    ecovadis: { n: "EcoVadis — médailles, badges et seuils mensuels", t: "EcoVadis : médailles fondées sur les percentiles, seuils de score publiés mensuellement et critères d’éligibilité complémentaires.", url: "https://support.ecovadis.com/hc/fr/articles/39606014723090-Mise-%C3%A0-jour-des-seuils-mensuels-des-m%C3%A9dailles" },
     empco: { n: "Union européenne — directive EmpCo (2024/825)", t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
     agec: { n: "Légifrance — loi AGEC, décret 2022-748", t: "Loi AGEC art. 13 et décret 2022-748 : mentions « biodégradable » et « respectueux de l'environnement » interdites sur produits et emballages", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
     climat12: { n: "Légifrance — loi Climat et résilience, décret 2022-539", t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
@@ -416,9 +416,9 @@
   const W = { Industrie: [3, 2, 2, 1], Services: [1, 3, 2, 1], Commerce: [2, 2, 2, 3], BTP: [2, 3, 2, 2], Numérique: [2, 3, 2, 1], Transport: [3, 2, 2, 1], Agroalimentaire: [3, 2, 2, 2] };
   const ecov = {
     id: "ecovadis", fam: "conformer", title: "EcoVadis",
-    short: "Estimation de votre score et de la médaille atteignable.",
-    intro: "Évaluez vos pratiques sur les quatre thèmes EcoVadis. Le copilote estime le score, la pondération de votre secteur et la médaille visée.",
-    calc: "4 thèmes · pondération · médailles 2025",
+    short: "Auto-évaluation pédagogique des pratiques sur les quatre thèmes.",
+    intro: "Évaluez vos pratiques et vos preuves sur quatre thèmes. Le résultat est un indice interne Sillon, non un score EcoVadis : la méthodologie de notation, les pondérations et les percentiles ne sont pas reproduits par cet outil. Aucune médaille ne peut être prédite.",
+    calc: "4 thèmes · indice interne non officiel",
     icon: "medal",
     fields: [
       { type: "select", id: "sect", label: "Secteur", def: "Industrie", prof: "secteur", options: Object.keys(W).map((k) => [k, k]) },
@@ -431,20 +431,14 @@
         return { lab, sc: Math.round(15 + (s / 12) * 80), w: w[i] };
       });
       const tot = Math.round(th.reduce((a, t) => a + t.sc * t.w, 0) / th.reduce((a, t) => a + t.w, 0));
-      const blocked = th.filter((t) => t.sc < 30);
-      let medal = "Aucune médaille";
-      if (!blocked.length) medal = tot >= 81 ? "Platine probable" : tot >= 73 ? "Or probable" : tot >= 66 ? "Argent probable" : tot >= 58 ? "Bronze probable" : tot >= 45 ? "Badge « Committed »" : "Aucune médaille";
-      const next = [[58, "Bronze"], [66, "Argent"], [73, "Or"], [81, "Platine"]].find(([s]) => s > tot);
       const F = [];
-      blocked.forEach((t) => F.push({ lvl: "crit", t: `${t.lab} : ${t.sc}/100. Sous 30 sur un thème, aucune médaille n'est possible.` }));
-      [...th].sort((a, b) => a.sc * b.w - b.sc * a.w).slice(0, 2).forEach((t) => !blocked.includes(t) && F.push({ lvl: "warn", t: `${t.lab} (${t.sc}/100, poids ${t.w}) : thème prioritaire pour gagner des points.` }));
-      if (next) F.push({ lvl: "info", t: `Il manque environ ${next[0] - tot} points pour viser le ${next[1]} (seuil indicatif ${next[0]}).` });
+      F.push({ lvl: "warn", t: "Cet indice est une grille pédagogique interne Sillon : il ne reproduit pas le score EcoVadis et ne permet pas de prédire une médaille. Les percentiles et seuils varient chaque mois ; l’éligibilité dépend aussi de la veille 360° et de restrictions sectorielles." });
       return {
         gauge: { val: tot, max: 100, label: "SCORE EST." },
-        verdict: medal,
-        summary: `Score estimé ${tot}/100 pour le secteur ${v.sect || "Industrie"}. Les médailles se décident au percentile, sur 12 mois glissants.`,
+        verdict: "Indice interne de maturité",
+        summary: "Indice pédagogique Sillon : résultat non officiel, sans équivalence avec le score EcoVadis et sans prédiction de médaille.",
         kpis: th.map((t) => ({ l: t.lab, v: t.sc, u: "/100", s: `Poids ${t.w}` })),
-        chart: { type: "radar", axes: th.map((t) => t.lab), values: th.map((t) => t.sc), rings: [[30, "Seuil 30"], [58, "Bronze"], [73, "Or"]] },
+        chart: { type: "radar", axes: th.map((t) => t.lab), values: th.map((t) => t.sc), rings: [[30, "Repère"], [60, "Intermédiaire"], [80, "Avancé"]] },
         findings: F,
         actions: [
           "Formaliser une politique signée par la direction pour chaque thème : c'est le premier critère noté.",
@@ -452,7 +446,7 @@
           "Publier au moins deux indicateurs chiffrés par thème avec leur évolution sur deux ans.",
           "Lancer une charte achats responsables : le thème Achats est souvent le plus faible des PME.",
         ],
-        hyp: "Médailles 2025 : Platine top 1 %, Or top 5 %, Argent top 15 %, Bronze top 35 %. Seuils de score indicatifs EcoVadis au 1/07/2024 : 81, 73, 66, 58. Estimation non officielle.",
+        hyp: "Grille interne Sillon, sans validation ni équivalence avec le questionnaire ou l’algorithme EcoVadis. EcoVadis attribue les médailles selon des percentiles mondiaux (Top 1 %, 5 %, 15 %, 35 %) et publie des seuils mensuels variables. En novembre 2026, les seuils initiaux publiés étaient 89, 82, 75 et 67, mais ils peuvent évoluer au cours du mois. L’éligibilité dépend aussi du score minimal de 30 dans chacun des quatre thèmes réels, de la veille 360° et de restrictions sectorielles. Aucun résultat du module ne prédit une médaille.",
         sources: [S.ecovadis],
       };
     },
