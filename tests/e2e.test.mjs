@@ -60,7 +60,7 @@ async function fillContact(page, recontact = false) {
 test("chaque page s'ouvre sans erreur et sans appel à un service tiers", async () => {
   const { page, errors } = await open();
   const hosts = new Set(); page.on("request", (r) => hosts.add(new URL(r.url()).host));
-  for (const h of ["", "#profil", "#plan", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cgu", "#cookies", "#mentions", "#credits", "#accessibilite", "#bilan-carbone", "#carbone-ia", "#fournisseurs", "#benchmark-rse", "#reglementation", "#reporting-vsme", "#ecovadis", "#audit-iso", "#marches-publics", "#greenwashing", "#visibilite-rse", "#roi-rse", "#objections"]) {
+  for (const h of ["", "#profil", "#plan", "#preuves", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cgu", "#cookies", "#mentions", "#credits", "#accessibilite", "#bilan-carbone", "#carbone-ia", "#fournisseurs", "#benchmark-rse", "#reglementation", "#reporting-vsme", "#ecovadis", "#audit-iso", "#marches-publics", "#greenwashing", "#visibilite-rse", "#roi-rse", "#objections"]) {
     await page.goto(BASE + "/" + h); await page.waitForTimeout(120);
     assert.ok((await page.textContent("h1")).trim().length > 0, h);
   }
@@ -210,6 +210,32 @@ test("plan d'action : une action sans intitulé n'est jamais enregistrée", asyn
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0].text), "Former les commerciaux à la RSE");
   await page.goto(BASE + "/#accueil");
   assert.match(await page.textContent(".dash"), /1\s*actions ouvertes/);
+  await page.close();
+});
+
+test("registre documentaire : référence GED classée et exportée", async () => {
+  const { page, errors } = await open("#preuves");
+  assert.match(await page.textContent("h1"), /Registre documentaire/);
+  await page.fill("#docTitle", "Bilan carbone 2026");
+  await page.fill("#docRef", "GED/RSE/ENV/BC-2026");
+  await page.selectOption("#docCategory", "environnement");
+  await page.fill("#docDate", "2026-10-31");
+  await page.fill("#docVersion", "V2");
+  await page.fill("#docOwner", "Responsable RSE");
+  await page.selectOption("#docStatus", "valid");
+  await page.fill("#docNote", "Périmètre France, exercice 2026");
+  await page.click('#docForm button[type="submit"]');
+  await page.waitForTimeout(350);
+  assert.match(await page.textContent(".tbl-wrap"), /Bilan carbone 2026/);
+  const doc = await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).documents[0]);
+  assert.equal(doc.ref, "GED/RSE/ENV/BC-2026");
+  assert.equal(doc.category, "environnement");
+  assert.equal(doc.status, "valid");
+  assert.equal(doc.version, "V2");
+  await page.goto(BASE + "/#rapport");
+  const [xlsx] = await Promise.all([page.waitForEvent("download"), page.click("#xlsAll")]);
+  assert.match(xlsx.suggestedFilename(), /\.xlsx$/);
+  assert.deepEqual(errors, []);
   await page.close();
 });
 
