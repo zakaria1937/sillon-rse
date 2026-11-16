@@ -339,7 +339,7 @@
           "Demander une preuve datée : certificat ISO 14001, scorecard EcoVadis ou audit social.",
           "Rechercher une alternative européenne pour les catégories textile et électronique les plus exposées.",
         ],
-        hyp: "Indice interne de présélection : exposition géographique (échelle qualitative Sillon de 1 à 5) × sensibilité de catégorie (échelle qualitative Sillon de 1,5 à 5), normalisées sur 25, puis pondérées par la dépense. Ces coefficients ne sont ni des données statistiques ni une notation pays/secteur validée. Les preuves déclarées (ISO 14001, évaluation EcoVadis, SA8000/BSCI) ne réduisent pas mécaniquement l’indice : leur périmètre, validité, site couvert, date, audit et éventuelles non-conformités doivent être vérifiés. Le résultat n’est pas un score de conformité ni une diligence raisonnable complète.");
+        hyp: "Indice interne de présélection : exposition géographique (échelle qualitative Sillon de 1 à 5) × sensibilité de catégorie (échelle qualitative Sillon de 1,5 à 5), normalisées sur 25, puis pondérées par la dépense. Ces coefficients ne sont ni des données statistiques ni une notation pays/secteur validée. Les preuves déclarées (ISO 14001, évaluation EcoVadis, SA8000/BSCI) ne réduisent pas mécaniquement l’indice : leur périmètre, validité, site couvert, date, audit et éventuelles non-conformités doivent être vérifiés. Le résultat n’est pas un score de conformité ni une diligence raisonnable complète.",
         sources: [S.omnibus, S.ecovadis],
       };
     },
