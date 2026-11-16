@@ -153,7 +153,7 @@ test("VSME : 70 % de complétude sur l'exemple du module de base", () => {
 test("Benchmark RSE : le diagnostic ne se présente pas comme une comparaison sectorielle", () => {
   assert.equal(byId["benchmark-rse"].title, "Diagnostic de maturité RSE");
   assert.match(byId["benchmark-rse"].intro, /pas d'un benchmark sectoriel/);
-  assert.match(run("benchmark-rse").hyp, /pas validés par une étude sectorielle/);
+  assert.match(run("benchmark-rse").hyp, /non validés par une étude sectorielle/);
 });
 
 test("Greenwashing : un résultat sans alerte n'est pas présenté comme une validation juridique", () => {
