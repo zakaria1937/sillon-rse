@@ -229,6 +229,7 @@
     box.innerHTML = `
       <h2>${esc(t("results"))} ${st.used[cp.id] ? "" : `<span class="ex-flag">${esc(t("example"))}</span>`}</h2>
       <p class="sub">${esc(t("recalc"))}${base ? ` · ${esc(t("vs_ref"))} (${esc(base.d)})` : ""}</p>
+      <p class="ai-note">Résultat indicatif fondé sur les informations saisies et les hypothèses affichées. Il ne constitue ni un audit, ni une certification, ni une attestation de conformité, ni un avis juridique. Vérifiez les points réglementaires dans les textes officiels applicables à votre entreprise.</p>
       <div class="score-row">${r.gauge ? gaugeSvg(r.gauge, dG) : ""}<div class="verdict"><h3>${esc(r.verdict)}</h3><p>${esc(r.summary)}</p>${base && base.verdict !== r.verdict ? `<p class="was">${esc(base.verdict)} → <b>${esc(r.verdict)}</b></p>` : ""}${spark(st.hist[cp.id], 160, 34) ? `<div class="hist"><span class="eyebrow">${esc(t("hist"))}</span>${spark(st.hist[cp.id], 160, 34)}</div>` : ""}</div></div>
       ${r.kpis.length ? `<div class="kpis">${r.kpis.map((k, i) => { const b = base && base.k[i] != null && parseNum(k.v) != null ? parseNum(k.v) - base.k[i] : null; return `<div class="kpi"><div class="l">${esc(k.l)}</div><div class="v">${esc(k.v)}<span class="u">${esc(k.u)}</span></div><div class="s">${esc(k.s)}</div>${b ? `<div class="kd ${b > 0 ? "up" : "down"}">${b > 0 ? "+" : ""}${nf(b, Math.abs(b) < 10 && b % 1 ? 1 : 0)} ${esc(t("vs_ref"))}</div>` : ""}</div>`; }).join("")}</div>` : ""}
       ${chartSvg(r.chart)}
