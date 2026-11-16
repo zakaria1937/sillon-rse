@@ -523,8 +523,8 @@
   ];
   const mp = {
     id: "marches-publics", fam: "convaincre", title: "Marchés publics",
-    short: "Votre note probable sur le critère environnemental, devenu obligatoire.",
-    intro: "Depuis le 21 août 2026, chaque marché public comporte au moins un critère environnemental et une condition d'exécution environnementale. Estimez votre note et les points que vous laissez sur la table.",
+    short: "Simulez une note environnementale à partir d'une grille interne.",
+    intro: "Depuis le 21 août 2026, les acheteurs publics doivent intégrer des considérations environnementales dans les critères d'attribution et les conditions d'exécution des marchés concernés. Ce simulateur applique une grille Sillon générique : il ne prédit pas la note d'un appel d'offres réel, dont les critères, la pondération et les preuves exigées figurent dans le règlement de consultation.",
     calc: "note /20 · points perdus",
     icon: "bank",
     fields: [
@@ -547,8 +547,8 @@
         summary: `Note environnementale estimée ${nf(note, 1)}/20, soit ${nf(pts, 1)} points sur les ${w} du critère.`,
         kpis: [
           { l: "Note estimée", v: nf(note, 1), u: "/20", s: "Critère environnemental" },
-          { l: "Points perdus", v: nf(lost, 1), u: "pts", s: `Sur 100 points de notation` },
-          { l: "Volume en jeu", v: nf((num(v.nb) * num(v.ticket)) / 1000), u: "k€/an", s: `${nf(num(v.nb))} consultations` },
+          { l: "Écart au maximum du critère", v: nf(lost, 1), u: "pts", s: `Sur les ${w} points du critère environnemental` },
+          { l: "Montant cumulé ciblé", v: nf((num(v.nb) * num(v.ticket)) / 1000), u: "k€", s: `${nf(num(v.nb))} consultations × montant moyen saisi` },
         ],
         chart: { type: "bars", unit: "pts /20", items: it.map((x) => ({ l: x.sh, v: x.p * x.s, max: x.p })) },
         findings: F,
@@ -557,7 +557,7 @@
           "Proposer 2 ou 3 indicateurs suivis pendant l'exécution, avec un reporting trimestriel à l'acheteur.",
           "Calculer l'empreinte carbone d'une offre type (transport, matériaux, déchets) une fois, puis l'adapter.",
         ],
-        hyp: "Barème Sillon sur 20 points, inspiré des pratiques d'acheteurs publics. Chaque règlement de consultation fixe ses propres sous-critères.",
+        hyp: "Barème fictif Sillon sur 20 points, sans valeur prédictive ni correspondance garantie avec les critères d'un acheteur. Chaque règlement de consultation fixe ses propres sous-critères, pondérations, exigences de preuve et modalités d'évaluation. La note doit être recalculée à partir du dossier réel.",
         sources: [S.mp],
       };
     },
@@ -600,10 +600,10 @@
       F.push({ lvl: "ok", t: `Premier levier : ${parts[0][0]} avec ${eur(parts[0][1])} par an (${nf((parts[0][1] / (gross || 1)) * 100)} % des gains).` });
       if (net <= 0) F.push({ lvl: "crit", t: "Les gains annuels ne couvrent pas le coût de fonctionnement : revoyez le périmètre ou les objectifs." });
       else if (pb > 4) F.push({ lvl: "warn", t: `Retour sur investissement long (${nf(pb, 1)} ans) : commencez par les actions sans investissement.` });
-      F.push({ lvl: "info", t: "France Stratégie a mesuré un écart de performance d'environ 13 % en moyenne en faveur des entreprises engagées en RSE." });
+      F.push({ lvl: "info", t: "Une étude de France Stratégie publiée en 2016 a observé une association moyenne entre engagement RSE et performance économique. Ce résultat historique n'est ni une causalité démontrée pour chaque entreprise ni une prévision de gains pour votre simulation." });
       return {
         gauge: { val: isFinite(pb) ? Math.round(clamp((5 - pb) / 5, 0, 1) * 100) : 0, max: 100, label: "RETOUR", show: isFinite(pb) ? (pb < 1 ? nf(pb * 12) + " mois" : nf(pb, 1) + " ans") : "–" },
-        verdict: van > 0 ? "Démarche rentable sur 5 ans" : "Rentabilité non atteinte sur 5 ans",
+        verdict: van > 0 ? "VAN positive selon les hypothèses" : "VAN non positive selon les hypothèses",
         summary: `${eur(net)} de gains nets par an, VAN à 5 ans de ${eur(van)} au taux de 5 %.`,
         kpis: [
           { l: "Gains nets annuels", v: nf(net / 1000, 1), u: "k€", s: `Brut ${nf(gross / 1000, 1)} k€` },
@@ -617,7 +617,7 @@
           "Suivre chaque gain dans un tableau mensuel pour prouver le ROI à la direction.",
           "Présenter le CA préservé aux commerciaux : c'est souvent l'argument qui débloque le budget.",
         ],
-        hyp: "Le coût d'un départ et le risque client sont vos hypothèses : ajustez-les avec vos chiffres RH et commerciaux.",
+        hyp: "Simulation simplifiée : économies d'énergie et déchets, coûts évités de turnover et marge associée au risque commercial estimé. Les taux de baisse, de perte client, de marge et le coût d'un départ sont des hypothèses utilisateur, non des gains garantis. VAN calculée sur 5 ans avec flux annuels constants et taux d'actualisation fixe de 5 % ; délai de retour simple inv/net. Le modèle n'intègre pas le calendrier réel des investissements, fiscalité, inflation, financement, risques de double comptage ni incertitudes. Construire un business case avec scénarios et données historiques avant décision.",
         sources: [S.fs, S.ademe],
       };
     },
@@ -750,9 +750,9 @@
       }
       score = Math.round(score);
       return {
-        gauge: { val: score, max: 100, label: "CRÉDIBILITÉ" },
-        verdict: score >= 75 ? "Communication crédible" : score >= 45 ? "Communication à renforcer" : "Communication peu convaincante",
-        summary: `Score de crédibilité ${score}/100. Des chiffres datés et des preuves rendent une communication RSE plus crédible.`,
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: score >= 75 ? "Signaux documentaires nombreux" : score >= 45 ? "Signaux à renforcer" : "Peu de signaux documentaires",
+        summary: `Indice interne de présence de signaux documentaires : ${score}/100. Il ne vérifie ni l'authenticité des preuves ni la conformité des allégations.`,
         kpis: [
           { l: "Crédibilité", v: score, u: "/100", s: "10 critères pondérés" },
           { l: "Critères remplis", v: it.filter((x) => x.s === 1).length, u: "/10", s: `${it.filter((x) => x.s === 0.5).length} en partie` },
@@ -765,7 +765,7 @@
           "Afficher chaque objectif avec une date, une valeur cible et l'avancement.",
           "Faire relire la page avec le copilote Greenwashing avant mise en ligne.",
         ],
-        hyp: "Grille Sillon sur 100 points.",
+        hyp: "Grille heuristique interne Sillon sur 100 points. Le texte est seulement analysé par expressions régulières : le module compte certains chiffres, années, périmètres et labels, sans vérifier les sources, les calculs, les pièces justificatives ou la validité d'un label. Un score élevé n'établit pas la crédibilité réelle de la communication.",
         sources: [S.empco, S.vsme],
       };
     },
