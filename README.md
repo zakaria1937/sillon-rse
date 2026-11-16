@@ -10,13 +10,13 @@
 
 | Famille | Copilote | Ce qu'il calcule |
 |---|---|---|
-| Mesurer | Bilan carbone | Scopes 1, 2 et 3 avec les facteurs ADEME |
+| Mesurer | Estimation GES simplifiée | Estimation partielle de postes sélectionnés ; facteurs préremplis à vérifier |
 | Mesurer | Carbone IA | kWh et kgCO2e des usages d'IA générative, matériel compris |
 | Mesurer | Fournisseurs | Risque RSE des achats : zone × catégorie × certification, pondéré par la dépense |
 | Mesurer | Benchmark RSE | Maturité sur 5 piliers et 20 pratiques, radar et paliers |
 | Se conformer | Réglementation | Obligations applicables selon la taille (Omnibus, BEGES, Sapin II, décret tertiaire…) |
 | Se conformer | Reporting VSME | Complétude des points B1 à B11 et C1 à C9, charge de travail |
-| Se conformer | EcoVadis | Score estimé, pondération sectorielle, médaille atteignable |
+| Se conformer | EcoVadis | Auto-évaluation interne non équivalente au score EcoVadis et sans prédiction de médaille |
 | Se conformer | Audit ISO | Conformité ISO 14001, 45001 ou 50001, écarts bloquants |
 | Convaincre | Marchés publics | Note sur le critère environnemental obligatoire depuis le 21/08/2026 |
 | Convaincre | Greenwashing | Formulations à risque (EmpCo, AGEC, loi Climat) surlignées dans le texte |
@@ -27,7 +27,7 @@
 ## Fonctionnalités
 
 - **Profil d'entreprise partagé** : renseigné une fois, repris par tous les copilotes.
-- **Copilotes reliés** : le bilan carbone remplit le point B3 de la VSME, le Benchmark et les marchés publics ; le score Greenwashing alimente Visibilité RSE.
+- **Copilotes reliés** : l’estimation GES peut alimenter une première réflexion sur le point B3 de la VSME, le Benchmark et les marchés publics ; le score Greenwashing alimente Visibilité RSE.
 - **Import de documents** : PDF, image ou texte ; l'IA (Mistral) extrait les chiffres et remplit les champs.
 - **Analyse par l'IA (Mistral)** de chaque copilote, avec un plan à 30 jours, 90 jours et 12 mois.
 - **Assistant** qui connaît le profil et tous les résultats.
@@ -46,10 +46,10 @@ Chaque copilote affiche sa formule, ses hypothèses et ses sources (page « Mét
 - Directive Omnibus I (JOUE du 26/02/2026, en vigueur le 18/03/2026)
 - Directive (UE) 2024/825 « EmpCo », applicable au 27/09/2026
 - Loi Climat et résilience art. 35 : critère environnemental des marchés publics au 21/08/2026
-- EcoVadis, règles des médailles 2025
+- EcoVadis, percentiles et seuils mensuels des médailles
 - Google (0,24 Wh par requête Gemini médiane, 2025), OpenAI (0,34 Wh), Luccioni et al. (2023)
 
-Les résultats sont des estimations. Ils ne remplacent ni un bilan GES réglementaire, ni un audit de certification, ni un conseil juridique. Les barèmes Benchmark, Marchés publics et Visibilité sont des grilles de maturité conçues pour l'outil, pas des moyennes sectorielles mesurées.
+Les résultats sont des estimations ou indices internes. Ils ne remplacent ni un BEGES réglementaire, ni une analyse de risques fournisseurs/diligence raisonnable, ni un audit de certification, ni un conseil juridique. Les barèmes Benchmark, Marchés publics et Visibilité sont des grilles de maturité conçues pour l'outil, pas des moyennes sectorielles mesurées.
 
 ## Lancer en local
 
