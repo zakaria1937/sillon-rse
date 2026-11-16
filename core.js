@@ -93,16 +93,14 @@
     save();
   }
 
-  /* ---------- liens entre copilotes ---------- */
-  const LINKS = [
-    { to: "reporting-vsme", field: "b", item: "B3", from: "bilan-carbone", val: () => "ok" },
-    { to: "benchmark-rse", field: "env", item: "e1", from: "bilan-carbone", val: () => "1" },
-    { to: "marches-publics", field: "ev", item: "bilan", from: "bilan-carbone", val: () => "1" },
-    { to: "ecovadis", field: "env", item: "kpi", from: "bilan-carbone", val: () => "2" },
-    { to: "benchmark-rse", field: "ach", item: "a3", from: "fournisseurs", val: () => "1" },
-    { to: "visibilite-rse", field: "ck", item: "claims", from: "greenwashing", val: (r) => (r.gauge.val >= 75 ? "1" : r.gauge.val >= 45 ? "0.5" : "0") },
-    { to: "marches-publics", field: "ev", item: "lab", from: "audit-iso", val: (r) => (r.gauge.val >= 85 ? "0.5" : null) },
-  ];
+  /* ---------- liens entre copilotes ----------
+     Aucun transfert automatique de points ou de statut de conformité.
+     Un résultat calculé dans un outil n'est pas, à lui seul, une preuve dans un autre
+     (ex. un bilan carbone ne prouve ni une politique de réduction, ni une conformité VSME).
+     Réintroduire une passerelle uniquement si elle transfère une donnée source traçable,
+     conserve sa provenance/date/périmètre et ne crédite jamais une exigence sans preuve.
+  */
+  const LINKS = [];
   const linkKey = (l) => l.field + "." + l.item;
   function resolved(cp) {
     const v = inputs(cp), tch = state.touched[cp.id] || {}, applied = {};
