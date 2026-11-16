@@ -30,7 +30,7 @@
   function header() {
     const st = S(), n = copilots.filter((c) => st.used[c.id]).length;
     const h = location.hash.slice(1) || "accueil";
-    const L = [["accueil", "nav_dash"], ["profil", "nav_profile"], ["plan", "nav_plan"], ["veille", "nav_watch"], ["methode", "nav_method"], ["rapport", "nav_report"]];
+    const L = [["accueil", "nav_dash"], ["profil", "nav_profile"], ["plan", "nav_plan"], ["preuves", "nav_evidence"], ["veille", "nav_watch"], ["methode", "nav_method"], ["rapport", "nav_report"]];
     document.getElementById("hdr").innerHTML = `
       <a class="skip" href="#main" data-skip>${esc(t("skip"))}</a>
       <div class="wrap top">
@@ -452,6 +452,51 @@
     document.getElementById("planX").onclick = () => window.SXE.xlsx([], true);
   }
 
+  /* ---------- registre documentaire RSE (références externes, sans hébergement de fichiers) ---------- */
+  function documentsView() {
+    current = null;
+    const st = S(), docs = Array.isArray(st.documents) ? st.documents : [];
+    const actions = X.planItems();
+    const categories = [["transversal","Transversal"],["environnement","Environnement"],["social","Social"],["gouvernance","Gouvernance"]];
+    const statuses = [["draft","À collecter"],["received","Reçu"],["review","À vérifier"],["valid","Validé en interne"],["obsolete","Obsolète"]];
+    const actionOptions = actions.map(a => [a.id, a.text]);
+    const fmt = d => d ? new Date(d + "T12:00:00").toLocaleDateString("fr-FR") : "—";
+    app.innerHTML = `<div class="wrap">
+      <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">Traçabilité · GED / preuves</div><h1 id="pageH" tabindex="-1">Registre documentaire RSE</h1>
+      <p>Référencez les justificatifs, leur périmètre et leur statut, puis reliez-les aux actions du plan. Les fichiers restent dans votre GED ou espace documentaire habituel : Sillon ne les téléverse pas et ne les héberge pas.</p></div>
+      <section class="panel" style="margin-bottom:16px"><h2>Ajouter une référence documentaire</h2>
+        <form id="docForm" novalidate><div class="fgrid">
+          <div class="field"><label for="docTitle">Intitulé du document *</label><div class="inp"><input id="docTitle" maxlength="160" required placeholder="Ex. Bilan carbone 2026"></div></div>
+          <div class="field"><label for="docCategory">Thématique</label><div class="inp"><select id="docCategory">${categories.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div></div>
+          <div class="field"><label for="docRef">Lien sécurisé ou chemin GED *</label><div class="inp"><input id="docRef" maxlength="500" required placeholder="https://… ou GED/RSE/ENV/BC-2026"></div></div>
+          <div class="field"><label for="docDate">Date du document</label><div class="inp"><input id="docDate" type="date"></div></div>
+          <div class="field"><label for="docVersion">Version / révision</label><div class="inp"><input id="docVersion" maxlength="40" placeholder="V1, 2026-02…"></div></div>
+          <div class="field"><label for="docOwner">Pilote / dépositaire</label><div class="inp"><input id="docOwner" maxlength="100" placeholder="Nom ou fonction"></div></div>
+          <div class="field"><label for="docStatus">Statut documentaire</label><div class="inp"><select id="docStatus">${statuses.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div></div>
+          <div class="field"><label for="docAction">Action associée (facultatif)</label><div class="inp"><select id="docAction"><option value="">Aucune</option>${actionOptions.map(([v,l])=>`<option value="${esc(v)}">${esc(l.slice(0,100))}</option>`).join("")}</select></div></div>
+          <div class="field wide"><label for="docNote">Note de traçabilité</label><textarea id="docNote" class="ta" rows="2" maxlength="500" placeholder="Périmètre, période couverte, version remplacée…"></textarea></div>
+        </div><p id="docErr" class="err" role="alert" hidden></p><div class="toolbar"><button class="chip-btn primary" type="submit">Ajouter au registre</button></div></form>
+      </section>
+      <div class="grid4" style="margin-bottom:14px">
+        <div class="panel"><div class="eyebrow">Références enregistrées</div><strong>${docs.length}</strong></div>
+        <div class="panel"><div class="eyebrow">À collecter</div><strong>${docs.filter(d=>d.status==="draft").length}</strong></div>
+        <div class="panel"><div class="eyebrow">À vérifier</div><strong>${docs.filter(d=>d.status==="review").length}</strong></div>
+        <div class="panel"><div class="eyebrow">Validées en interne</div><strong>${docs.filter(d=>d.status==="valid").length}</strong></div>
+      </div>
+      <section class="panel"><h2>Index des preuves</h2><p class="sub">« Validé en interne » correspond à un statut saisi par l'utilisateur ; ce n'est ni une authentification du fichier ni une certification indépendante.</p>
+      ${docs.length ? `<div class="tbl-wrap"><table class="ed"><thead><tr><th>Document</th><th>Thématique</th><th>Référence / GED</th><th>Date</th><th>Version</th><th>Pilote</th><th>Statut</th><th>Action liée</th><th></th></tr></thead><tbody>${docs.map(d=>{const action=actions.find(a=>a.id===d.actionId);return `<tr><td>${esc(d.title)}</td><td>${esc((categories.find(x=>x[0]===d.category)||[])[1]||d.category)}</td><td>${/^https?:\/\//i.test(d.ref)?`<a href="${esc(d.ref)}" target="_blank" rel="noopener noreferrer">Ouvrir la référence ↗</a>`:`<span class="mono">${esc(d.ref)}</span>`}</td><td>${fmt(d.date)}</td><td>${esc(d.version||"—")}</td><td>${esc(d.owner||"—")}</td><td>${esc((statuses.find(x=>x[0]===d.status)||[])[1]||d.status)}</td><td>${esc(action?action.text:"—")}</td><td><button class="rm" type="button" data-deldoc="${esc(d.id)}" aria-label="Supprimer la référence ${esc(d.title)}">×</button></td></tr>`}).join("")}</tbody></table></div>`:`<p class="sub">Aucune référence enregistrée. Commencez par indexer un document déjà présent dans votre GED.</p>`}
+      </section><div style="height:56px"></div></div>`;
+    document.getElementById("docForm").onsubmit = e => {
+      e.preventDefault();
+      const title=document.getElementById("docTitle").value.trim(), ref=document.getElementById("docRef").value.trim(), err=document.getElementById("docErr");
+      if(!title||!ref){err.textContent="L'intitulé et la référence documentaire sont obligatoires.";err.hidden=false;return;}
+      if(/^https?:\/\//i.test(ref)){try{const u=new URL(ref);if(!["http:","https:"].includes(u.protocol))throw 0;}catch{err.textContent="Le lien fourni n'est pas une URL valide.";err.hidden=false;return;}}
+      const doc={id:"d"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,category:document.getElementById("docCategory").value,ref,date:document.getElementById("docDate").value,version:document.getElementById("docVersion").value.trim(),owner:document.getElementById("docOwner").value.trim(),status:document.getElementById("docStatus").value,actionId:document.getElementById("docAction").value,note:document.getElementById("docNote").value.trim(),createdAt:new Date().toISOString()};
+      (S().documents ||= []).push(doc);X.save();X.toast("Référence documentaire ajoutée.");documentsView();
+    };
+    app.querySelectorAll("[data-deldoc]").forEach(b=>b.onclick=()=>{S().documents=(S().documents||[]).filter(d=>d.id!==b.dataset.deldoc);X.save();documentsView();});
+  }
+
   /* ---------- veille ---------- */
   function watchView() {
     current = null;
@@ -588,5 +633,5 @@
     document.body.appendChild(n);
   }
 
-  window.SXV = { myDataView, notice, legalView, header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
+  window.SXV = { myDataView, notice, legalView, header, home, view, profileView, planView, documentsView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
 })();
