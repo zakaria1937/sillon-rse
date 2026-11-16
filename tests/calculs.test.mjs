@@ -182,6 +182,15 @@ test("ROI : VAN positive et retour inférieur à 1 an sur l'exemple", () => {
   assert.equal(r.verdict, "VAN positive selon les hypothèses");
 });
 
+
+test("Références juridiques : AGEC allégations et tri des déchets ont des sources distinctes", () => {
+  const src = ctx.window.SILLON.sources;
+  assert.match(src.agec.t, /biodégradable/);
+  assert.match(src.dechets.t, /Tri à la source/);
+  assert.ok(run("reglementation").sources.some((x) => x.n.includes("tri") || x.n.includes("déchets")));
+  assert.ok(run("greenwashing").sources.some((x) => x.n.includes("AGEC")));
+});
+
 test("Référentiel : daté, et les échéances sont triées par date", () => {
   const ref = ctx.window.SILLON_REF;
   assert.match(ref.version, /^\d{4}-\d{2}-\d{2}$/);
