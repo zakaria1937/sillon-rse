@@ -12,18 +12,16 @@ export default async (req, context) => {
   const limits = await store();
   if (!(await bump(limits, `dossier/${today()}/${await ipKey(req, context)}`, Number(process.env.DOSSIER_LIMIT_PER_IP || 300)))) return json(429, { code: "rate_limited" });
 
-  if (req.method === "GET") {
-    const code = new URL(req.url).searchParams.get("code");
-    if (!validCode(code)) return json(400, { code: "invalid_code" });
-    const raw = await kv.get(s, await sha(code));
-    if (!raw) return json(404, { code: "not_found" });
-    const rec = JSON.parse(raw);
-    if (Date.now() - Date.parse(rec.maj) > KEEP_DAYS * 864e5) { await kv.del(s, await sha(code)); return json(404, { code: "not_found" }); }
-    return json(200, rec);
-  }
   let b; try { b = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
   if (!validCode(b?.code)) return json(400, { code: "invalid_code" });
   const key = await sha(b.code);
+  if (req.method === "POST") {
+    const raw = await kv.get(s, key);
+    if (!raw) return json(404, { code: "not_found" });
+    const rec = JSON.parse(raw);
+    if (Date.now() - Date.parse(rec.maj) > KEEP_DAYS * 864e5) { await kv.del(s, key); return json(404, { code: "not_found" }); }
+    return json(200, rec);
+  }
   if (req.method === "DELETE") { await kv.del(s, key); return json(200, { ok: true }); }
   if (req.method !== "PUT") return json(405, { code: "method" });
   const encrypted = b.data && b.data.v === 2 && typeof b.data.iv === "string" && /^[A-Za-z0-9+/]{16}$/.test(b.data.iv) && typeof b.data.ciphertext === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(b.data.ciphertext);
