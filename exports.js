@@ -46,6 +46,41 @@
     text("PÉRIMÈTRE ET QUALITÉ DES DONNÉES", 11, acc, "bold");
     text("Périmètre : " + ids.length + " copilote(s) ; " + entered + " avec saisies utilisateur ; " + (ids.length - entered) + " avec valeurs de démonstration.", 9, mut);
     text("Les données saisies ne sont pas vérifiées et les justificatifs ne sont pas audités. Auto-évaluation indicative : ni audit, ni certification, ni avis juridique, ni attestation de conformité.", 8.5, soil);
+
+    // Synthèse de pilotage : constats calculés à partir des modules sélectionnés et plan opérationnel.
+    const results = ids.map((id) => ({ id, cp: byId[id], r: X.result(byId[id]) }));
+    const findings = results.flatMap(({ id, cp, r }) => r.findings
+      .filter((f) => f.lvl === "crit" || f.lvl === "warn")
+      .map((f) => ({ id, title: cpT(cp).title, ...f, demo: !st.used[id] })))
+      .sort((a, b) => (a.lvl === "crit" ? 0 : 1) - (b.lvl === "crit" ? 0 : 1));
+    const plan = X.planItems();
+    const openPlan = plan.filter((a) => a.status !== "done");
+    const highPlan = openPlan.filter((a) => a.impact === "high");
+    const missingOwner = openPlan.filter((a) => !a.owner);
+    const missingDue = openPlan.filter((a) => !a.due);
+    text("SYNTHÈSE EXÉCUTIVE", 14, ink, "bold");
+    text(`Périmètre analysé : ${entered}/${ids.length} module(s) renseigné(s) par l'utilisateur. ${ids.length - entered} module(s) utilisent encore des valeurs d'exemple. Les constats issus de ces derniers sont illustratifs et ne décrivent pas nécessairement l'organisation.`, 9, mut);
+    text(`Points de vigilance détectés : ${findings.filter((f) => f.lvl === "crit").length} critique(s) et ${findings.filter((f) => f.lvl === "warn").length} à examiner. Il s'agit de signaux issus des règles des copilotes, à confirmer avec les données et le contexte réels.`, 9, mut);
+    text(`Pilotage : ${openPlan.length} action(s) ouverte(s), dont ${highPlan.length} à impact élevé ; ${missingOwner.length} sans responsable et ${missingDue.length} sans échéance.`, 9, mut);
+    if (findings.length) {
+      y += 2; text("PRINCIPAUX POINTS DE VIGILANCE", 11, acc, "bold");
+      findings.slice(0, 8).forEach((f, i) => text(`${i + 1}. [${f.lvl === "crit" ? "Priorité critique" : "À examiner"}] ${f.title}${f.demo ? " (exemple)" : ""} — ${f.tag ? f.tag + " : " : ""}${f.t}`, 8.7, ink, "normal", 2));
+      if (findings.length > 8) text(`Et ${findings.length - 8} autre(s) signal(aux) à consulter dans les fiches détaillées.`, 8, mut, "normal", 2);
+    } else {
+      text("Aucun signal critique ou de vigilance n'a été remonté par les règles des modules sélectionnés. Cela ne constitue pas une preuve d'absence de risque ni une validation de conformité.", 8.7, mut);
+    }
+    if (plan.length) {
+      y += 3; text("FEUILLE DE ROUTE PRIORISÉE", 11, acc, "bold");
+      openPlan.slice(0, 12).forEach((a, i) => {
+        const cpName = a.cp && byId[a.cp] ? cpT(byId[a.cp]).title : "Action manuelle";
+        text(`${i + 1}. [${a.impact === "high" ? "Impact élevé" : a.impact === "mid" ? "Impact modéré" : "Impact limité"}] ${a.text} — ${cpName} — ${a.owner || "Responsable à désigner"} — ${a.due || "Échéance à fixer"} — ${t("st_" + a.status)}`, 8.6, ink, "normal", 2);
+        if (a.kpi) text("Indicateur de réussite : " + a.kpi, 8, mut, "normal", 4);
+        if (a.evidence) text("Preuve attendue : " + a.evidence, 8, mut, "normal", 4);
+      });
+      if (openPlan.length > 12) text(`${openPlan.length - 12} autre(s) action(s) figurent dans l'export Excel et le plan d'action de l'application.`, 8, mut);
+    } else {
+      text("Aucune action n'est actuellement enregistrée dans le plan. Construire la feuille de route à partir des constats confirmés.", 8.7, mut);
+    }
     y += 4;
     if (ids.length > 1) {
       text(st.lang === "en" ? "Summary" : "Synthèse", 14, ink, "bold"); y += 1;
