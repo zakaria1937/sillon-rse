@@ -51,7 +51,7 @@
       text(st.lang === "en" ? "Summary" : "Synthèse", 14, ink, "bold"); y += 1;
       ids.forEach((id) => { const c = byId[id], r = X.result(c); text(`${cpT(c).title} : ${r.verdict}${r.gauge ? ` (${r.gauge.show || r.gauge.val}${r.gauge.raw || r.gauge.show ? "" : "/100"})` : ""}${st.used[id] ? "" : " [exemple]"}`, 10, mut, "normal", 2); });
       const pl = X.planItems().filter((a) => a.status !== "done").slice(0, 10);
-      if (pl.length) { y += 4; text(t("plan_title"), 14, ink, "bold"); y += 1; pl.forEach((a, i) => text(`${i + 1}. [${t(a.impact)}] ${a.text}${a.owner ? " · " + a.owner : ""}${a.due ? " · " + a.due : ""}`, 9.5, ink, "normal", 2)); }
+      if (pl.length) { y += 4; text(t("plan_title"), 14, ink, "bold"); y += 1; pl.forEach((a, i) => { text(`${i + 1}. [${t(a.impact)}] ${a.text}${a.owner ? " · Responsable : " + a.owner : " · Responsable à désigner"}${a.due ? " · Échéance : " + a.due : " · Échéance à fixer"}`, 9.5, ink, "normal", 2); if (a.kpi) text("Indicateur : " + a.kpi, 8.5, mut, "normal", 1); if (a.evidence) text("Preuve attendue : " + a.evidence, 8.5, mut, "normal", 1); }); }
     }
     ids.forEach((id, k) => {
       const c = byId[id], r = X.result(c);
@@ -116,7 +116,7 @@
       r.sources.forEach((s) => rows.push(["Source", s.t, s.url, ""]));
       add(cpT(c).title, rows);
     });
-    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status)])], [70, 20, 10, 10, 20, 12, 12]);
+    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut", "Indicateur de réussite", "Preuve attendue"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status), a.kpi || "", a.evidence || ""])], [60, 20, 10, 10, 20, 12, 12, 32, 38]);
     const out = XL.write(wb, { bookType: "xlsx", type: "array" });
     const name = ids.length === 1 && !withPlan ? `sillon-${ids[0]}-${stamp()}.xlsx` : `sillon-dossier-rse-${stamp()}.xlsx`;
     try { await X.saveFile(name, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); X.toast(t("toast_xlsx")); status(t("exp_ok", { f: name })); tell("Export Excel téléchargé", { copilote: ids.join(", ") || "plan d'action", resume: summary(ids) }); } catch (e) { fail(e); }
