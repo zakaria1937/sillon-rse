@@ -97,6 +97,8 @@ test("ISO : auto-évaluation non exhaustive, pas de conclusion de conformité/ce
 test("VSME : la protection de chaîne de valeur n'est pas présentée comme un plafond universel", () => {
   assert.match(byId["reporting-vsme"].intro, /Ce n’est pas un plafond universel/);
   assert.match(run("reporting-vsme").hyp, /n’est pas générale/);
+  assert.match(byId["reporting-vsme"].fields.find((f) => f.id === "b").items.find((i) => i.id === "B3").hint, /location-based/);
+  assert.match(byId["reporting-vsme"].fields.find((f) => f.id === "b").items.find((i) => i.id === "B8").hint, /50 salariés ou plus/);
 });
 
 test("Réglementation : PME de 140 salariés = 7 obligations", () => {
