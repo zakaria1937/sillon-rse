@@ -365,7 +365,9 @@
       if (e >= 20) add("oblig", "Emploi des travailleurs handicapés", "Obligation de 6 % de l'effectif (dès 20 salariés).");
       if (e >= 50) add("oblig", "Index égalité professionnelle", "Publication annuelle avant le 1er mars (dès 50 salariés).");
       if (e >= 50) add("verif", "Mobilité des salariés", "Thème obligatoire de la négociation annuelle si 50 salariés sur un même site.");
-      if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Transposition française à suivre : rapports d'écart de rémunération à partir de 100 salariés.");
+      if (e >= 250) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération chaque année à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
+      else if (e >= 150) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
+      else if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2031 (art. 9). Vérifier les modalités françaises de transposition.");
       if (e >= 300) add("oblig", "Bilan social", "Annuel, dès 300 salariés.");
       if (e > SEUIL.begesEffectif) add("oblig", "BEGES réglementaire", "Bilan des émissions tous les 4 ans et plan de transition (plus de 500 salariés).");
       else add("info", "BEGES réglementaire", "Non obligatoire sous 501 salariés : un bilan volontaire reste attendu par les clients.");
@@ -376,8 +378,8 @@
       else add("info", "CSRD", "Hors champ depuis l'Omnibus. Vos clients ne peuvent pas exiger plus que le niveau VSME.");
       if (em > SEUIL.csdddEffectif && ca > SEUIL.csdddCA) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
       if (surf >= SEUIL.tertiaireSurface) add("oblig", "Décret tertiaire", "Réduction des consommations de -40 % en 2030, déclaration annuelle sur OPERAT.");
-      if (g > SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "ISO 50001 au-delà d'environ 23,6 GWh/an (transposition de la directive efficacité énergétique).");
-      else if (g > SEUIL.auditEnergieGWh) add("verif", "Audit énergétique", "Audit tous les 4 ans au-delà d'environ 2,75 GWh/an, selon la loi DDADUE 2025 : calendrier à confirmer.");
+      if (g >= SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "Système de management de l'énergie certifié requis dès 23,6 GWh/an de consommation annuelle moyenne (Code de l'énergie, art. L.233-1).");
+      else if (g >= SEUIL.auditEnergieGWh) add("verif", "Audit énergétique", "Audit énergétique tous les quatre ans dès 2,75 GWh/an de consommation annuelle moyenne, si l'entreprise n'a pas de système de management de l'énergie certifié (Code de l'énergie, art. L.233-1).");
       if (v.mp === "oui") add("oblig", "Marchés publics", "Depuis le 21/08/2026 : au moins un critère d'attribution et une condition d'exécution environnementaux.");
       if (v.b2c === "oui") add("oblig", "Allégations environnementales", "Directive EmpCo applicable depuis le 27/09/2026 ; le droit français sanctionne déjà les pratiques trompeuses.");
       const ob = L.filter((x) => x.st === "oblig"), vf = L.filter((x) => x.st === "verif");
