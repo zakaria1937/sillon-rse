@@ -151,9 +151,13 @@ test("les 13 copilotes : résultats, champs vidés sans valeur aberrante, export
     await page.waitForTimeout(250);
     const res = await page.textContent("#res");
     assert.doesNotMatch(res, /NaN|undefined|Infinity|\[object/, id + " (champs vides)");
-    for (const inp of await page.locator('#form input[type="number"]').all()) await inp.fill("-5");
+    const numericInputs = await page.locator('#form input[type="number"]').all();
+    for (const inp of numericInputs) await inp.fill("-5");
     await page.waitForTimeout(250);
     assert.doesNotMatch(await page.textContent("#res"), /NaN|undefined|Infinity|\[object/, id + " (valeurs négatives)");
+    for (const inp of numericInputs) {
+      if (await inp.getAttribute("min") === "0") assert.equal(await inp.getAttribute("aria-invalid"), "true", id + " (rejet d'une valeur négative)");
+    }
     const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfOne")]);
     assert.match(pdf.suggestedFilename(), new RegExp(id + ".*\\.pdf$"), id);
     const [xl] = await Promise.all([page.waitForEvent("download"), page.click("#xlsOne")]);
