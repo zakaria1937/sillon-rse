@@ -68,6 +68,37 @@ test("Bilan carbone : électricité 100 000 kWh seule = 5,2 tCO2e", () => {
   assert.equal(r.kpis[0].v, "5,2");
 });
 
+
+test("BEGES : les seuils dépendent du statut et du territoire", () => {
+  const be = (over) => run("reglementation", over).findings.find((f) => f.t.startsWith("BEGES réglementaire"));
+  assert.equal(be({ eff: 500, begesStatut: "prive", begesTerritoire: "metro" }).lvl, "info");
+  assert.equal(be({ eff: 501, begesStatut: "prive", begesTerritoire: "metro" }).lvl, "crit");
+  assert.equal(be({ eff: 251, begesStatut: "prive", begesTerritoire: "outremer" }).lvl, "crit");
+  assert.equal(be({ eff: 251, begesStatut: "public" }).lvl, "crit");
+  assert.equal(be({ eff: 0, begesStatut: "collectivite", begesPop: 50001 }).lvl, "crit");
+});
+
+test("Fournisseurs : une certification déclarée ne réduit pas automatiquement l'indice de risque", () => {
+  const row = { nom: "Fournisseur test", zone: "high", cat: "textile", dep: 10000 };
+  const none = run("fournisseurs", { rows: [{ ...row, cert: "none" }] }).kpis[0].v;
+  const certified = run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).kpis[0].v;
+  assert.equal(none, certified);
+  assert.match(byId.fournisseurs.hyp, /ne réduisent pas mécaniquement/);
+});
+
+test("ISO : auto-évaluation non exhaustive, pas de conclusion de conformité/certification", () => {
+  const r = run("audit-iso");
+  assert.equal(r.gauge.label, "COUVERTURE SILLON");
+  assert.match(r.hyp, /ne préjugent ni d'un écart majeur\/mineur, ni d'une décision de certification/);
+  assert.ok(r.sources.some((x) => x.n.includes("ISO 14001:2026")));
+  assert.match(byId["audit-iso"].intro, /ISO 14001:2026/);
+});
+
+test("VSME : la protection de chaîne de valeur n'est pas présentée comme un plafond universel", () => {
+  assert.match(byId["reporting-vsme"].intro, /Ce n’est pas un plafond universel/);
+  assert.match(run("reporting-vsme").hyp, /n’est pas générale/);
+});
+
 test("Réglementation : PME de 140 salariés = 7 obligations", () => {
   assert.equal(run("reglementation").kpis[0].v, 7);
 });
