@@ -13,15 +13,15 @@
 | Mesurer | Estimation GES simplifiée | Estimation partielle de postes sélectionnés ; facteurs préremplis à vérifier |
 | Mesurer | Carbone IA | kWh et kgCO2e des usages d'IA générative, matériel compris |
 | Mesurer | Fournisseurs | Risque RSE des achats : zone × catégorie × certification, pondéré par la dépense |
-| Mesurer | Benchmark RSE | Maturité sur 5 piliers et 20 pratiques, radar et paliers |
+| Mesurer | Diagnostic de maturité RSE | Auto-évaluation interne sur 5 piliers et 20 pratiques, sans benchmark sectoriel |
 | Se conformer | Réglementation | Obligations applicables selon la taille (Omnibus, BEGES, Sapin II, décret tertiaire…) |
 | Se conformer | Reporting VSME | Complétude des points B1 à B11 et C1 à C9, charge de travail |
 | Se conformer | EcoVadis | Auto-évaluation interne non équivalente au score EcoVadis et sans prédiction de médaille |
 | Se conformer | Audit ISO | Conformité ISO 14001, 45001 ou 50001, écarts bloquants |
-| Convaincre | Marchés publics | Note sur le critère environnemental obligatoire depuis le 21/08/2026 |
-| Convaincre | Greenwashing | Formulations à risque (EmpCo, AGEC, loi Climat) surlignées dans le texte |
-| Convaincre | Visibilité RSE | Crédibilité de la communication RSE en ligne |
-| Convaincre | ROI de la RSE | Gains annuels, VAN sur 5 ans, délai de retour |
+| Convaincre | Marchés publics | Simulation indicative à recalculer selon chaque règlement de consultation |
+| Convaincre | Greenwashing | Repérage heuristique de formulations ciblées ; ne remplace pas une validation juridique |
+| Convaincre | Visibilité RSE | Indice interne de signaux documentaires, sans vérification des preuves |
+| Convaincre | ROI de la RSE | Simulation de gains, VAN sur 5 ans et délai de retour selon hypothèses utilisateur |
 | Convaincre | Objections | Argumentaire sourcé face aux freins internes |
 
 ## Fonctionnalités
