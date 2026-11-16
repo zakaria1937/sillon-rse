@@ -19,6 +19,8 @@
     fs: { n: "France Stratégie — RSE et compétitivité", t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
     iso: { n: "ISO — normes de systèmes de management", t: "ISO, structure harmonisée des normes de systèmes de management (Annexe SL)", url: "https://www.iso.org/management-system-standards.html" },
     beges: { n: "Ministère de la Transition écologique — BEGES", t: "Code de l'environnement art. L229-25 (BEGES) et ministère de la Transition écologique", url: "https://www.ecologie.gouv.fr/politiques-publiques/bilans-demissions-gaz-effet-serre" },
+    energie: { n: "Légifrance — Code de l’énergie, art. L.233-1", t: "Loi n° 2025-391 du 30 avril 2025, art. 25 : seuils de 2,75 et 23,6 GWh, audit quadriennal et système de management certifié.", url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027718472/" },
+    pay: { n: "EUR-Lex — directive (UE) 2023/970, art. 9", t: "Échéances de reporting des écarts de rémunération : 250+, 150–249 et 100–149 salariés.", url: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=celex:32023L0970" },
   };
   const YNP = [["1", "Oui"], ["0.5", "En partie"], ["0", "Non"]];
 
@@ -375,7 +377,7 @@
       if (e >= 1000) add("oblig", "Loi Rixain", "Quotas de femmes parmi les cadres dirigeants (dès 1 000 salariés).");
       if (e >= 5000 || em >= 10000) add("oblig", "Devoir de vigilance", "Plan de vigilance publié (5 000 salariés en France ou 10 000 dans le monde).");
       if (em > SEUIL.csrdEffectif && ca > SEUIL.csrdCA) add("oblig", "CSRD", "Dans le champ après l'Omnibus (plus de 1 000 salariés et plus de 450 M€ de CA).");
-      else add("info", "CSRD", "Hors champ depuis l'Omnibus. Vos clients ne peuvent pas exiger plus que le niveau VSME.");
+      else add("info", "CSRD", "Hors champ selon les seuils CSRD simplifiés ; vérifier le périmètre consolidé et les dispositions applicables. Les demandes de données des clients doivent être examinées au regard du statut d’entreprise protégée et du standard volontaire pertinent.");
       if (em > SEUIL.csdddEffectif && ca > SEUIL.csdddCA) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
       if (surf >= SEUIL.tertiaireSurface) add("oblig", "Décret tertiaire", "Réduction des consommations de -40 % en 2030, déclaration annuelle sur OPERAT.");
       if (g >= SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "Système de management de l'énergie certifié requis dès 23,6 GWh/an de consommation annuelle moyenne (Code de l'énergie, art. L.233-1).");
@@ -401,7 +403,7 @@
           "Mettre en place une veille réglementaire trimestrielle (transpositions EmpCo et transparence salariale en cours).",
         ],
         hyp: "Seuils simplifiés : certains textes s'apprécient par établissement, sur deux exercices consécutifs ou avec le bilan. Ceci n'est pas un avis juridique.",
-        sources: [S.omnibus, S.beges, S.mp, S.empco],
+        sources: [S.omnibus, S.beges, S.mp, S.empco, S.energie, S.pay],
       };
     },
   };
