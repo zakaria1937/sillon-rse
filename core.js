@@ -151,7 +151,7 @@
         const id = hash(c.id + a), meta = state.plan[id] || {};
         const effort = meta.effort || (/(audit|certification|plan de|fournisseurs|alternative|bâtir|lancer)/i.test(a) ? "high" : /(publier|désigner|fixer|choisir|ajouter|demander)/i.test(a) ? "low" : "mid");
         const impact = meta.impact || (i === 0 && sev === 3 ? "high" : sev >= 2 && i < 2 ? "high" : sev >= 2 ? "mid" : "low");
-        out.push({ id, cp: c.id, text: a, impact, effort, owner: meta.owner || "", due: meta.due || "", kpi: meta.kpi || "", evidence: meta.evidence || "", status: meta.status || "todo" });
+        out.push({ id, cp: c.id, text: a, impact, effort, owner: meta.owner || "", due: meta.due || "", kpi: meta.kpi || "", evidence: meta.evidence || "", evidenceRef: meta.evidenceRef || "", evidenceDate: meta.evidenceDate || "", evidenceStatus: meta.evidenceStatus || "pending", evidenceVerifier: meta.evidenceVerifier || "", status: meta.status || "todo" });
       });
     });
     state.custom.filter((x) => x.text && x.text.trim()).forEach((x) => out.push({ ...x, cp: "", custom: true }));
