@@ -142,6 +142,17 @@ test("les exports PDF et Excel se téléchargent sans donner ses coordonnées, a
   await page.close();
 });
 
+test("rapport : la synthèse de pilotage est visible et le PDF exécutif est exportable", async () => {
+  const { page, errors } = await open("#rapport");
+  assert.match(await page.textContent(".dash"), /Synthèse de pilotage/);
+  assert.match(await page.textContent(".dash"), /valeurs d'exemple/);
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfAll")]);
+  assert.match(pdf.suggestedFilename(), /sillon-rapport-.*\\.pdf$/);
+  assert.ok((await fs.promises.stat(await pdf.path())).size > 5000);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("les 13 copilotes : résultats, champs vidés sans valeur aberrante, exports PDF et Excel", async () => {
   const { page, errors } = await open();
   for (const id of COPILOTS) {
