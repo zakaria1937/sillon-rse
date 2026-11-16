@@ -75,7 +75,8 @@
         const cpName = a.cp && byId[a.cp] ? cpT(byId[a.cp]).title : "Action manuelle";
         text(`${i + 1}. [${a.impact === "high" ? "Impact élevé" : a.impact === "mid" ? "Impact modéré" : "Impact limité"}] ${a.text} — ${cpName} — ${a.owner || "Responsable à désigner"} — ${a.due || "Échéance à fixer"} — ${t("st_" + a.status)}`, 8.6, ink, "normal", 2);
         if (a.kpi) text("Indicateur de réussite : " + a.kpi, 8, mut, "normal", 4);
-        if (a.evidence) text("Preuve attendue : " + a.evidence, 8, mut, "normal", 4);
+        if (a.evidence) text("Preuve attendue : " + a.evidence, 8, mut, "normal", 2);
+        if (a.evidenceRef || a.evidenceDate || a.evidenceStatus !== "pending" || a.evidenceVerifier) text("Traçabilité : " + [a.evidenceRef ? "Réf. " + a.evidenceRef : "", a.evidenceDate ? "Date " + a.evidenceDate : "", "Statut " + ({ pending: "à renseigner", received: "reçue", checking: "à vérifier", verified: "vérifiée", rejected: "non recevable" }[a.evidenceStatus] || a.evidenceStatus), a.evidenceVerifier ? "Vérifié par " + a.evidenceVerifier : ""].filter(Boolean).join(" · "), 7.7, mut, "normal", 4);
       });
       if (openPlan.length > 12) text(`${openPlan.length - 12} autre(s) action(s) figurent dans l'export Excel et le plan d'action de l'application.`, 8, mut);
     } else {
@@ -151,7 +152,7 @@
       r.sources.forEach((s) => rows.push(["Source", s.t, s.url, ""]));
       add(cpT(c).title, rows);
     });
-    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut", "Indicateur de réussite", "Preuve attendue"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status), a.kpi || "", a.evidence || ""])], [60, 20, 10, 10, 20, 12, 12, 32, 38]);
+    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut action", "Indicateur de réussite", "Preuve attendue", "Référence / lien preuve", "Date preuve", "Statut preuve", "Vérifié par"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status), a.kpi || "", a.evidence || "", a.evidenceRef || "", a.evidenceDate || "", ({ pending: "À renseigner", received: "Reçue", checking: "À vérifier", verified: "Vérifiée", rejected: "Non recevable" }[a.evidenceStatus] || a.evidenceStatus), a.evidenceVerifier || ""])], [60, 20, 10, 10, 20, 12, 12, 32, 38, 35, 12, 16, 20]);
     const out = XL.write(wb, { bookType: "xlsx", type: "array" });
     const name = ids.length === 1 && !withPlan ? `sillon-${ids[0]}-${stamp()}.xlsx` : `sillon-dossier-rse-${stamp()}.xlsx`;
     try { await X.saveFile(name, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); X.toast(t("toast_xlsx")); status(t("exp_ok", { f: name })); tell("Export Excel téléchargé", { copilote: ids.join(", ") || "plan d'action", resume: summary(ids) }); } catch (e) { fail(e); }
