@@ -89,6 +89,18 @@
       const pl = X.planItems().filter((a) => a.status !== "done").slice(0, 10);
       if (pl.length) { y += 4; text(t("plan_title"), 14, ink, "bold"); y += 1; pl.forEach((a, i) => { text(`${i + 1}. [${t(a.impact)}] ${a.text}${a.owner ? " · Responsable : " + a.owner : " · Responsable à désigner"}${a.due ? " · Échéance : " + a.due : " · Échéance à fixer"}`, 9.5, ink, "normal", 2); if (a.kpi) text("Indicateur : " + a.kpi, 8.5, mut, "normal", 1); if (a.evidence) text("Preuve attendue : " + a.evidence, 8.5, mut, "normal", 1); }); }
     }
+      const docRefs = Array.isArray(st.documents) ? st.documents : [];
+      if (docRefs.length) {
+        const today = X.today();
+        const expiredDocs = docRefs.filter(d => d.validUntil && d.validUntil < today && d.status !== "obsolete");
+        const missingDocs = X.planItems().filter(a => a.evidence && !docRefs.some(d => d.actionId === a.id && ["received","review","valid"].includes(d.status) && !(d.validUntil && d.validUntil < today)));
+        y += 4; text("Registre documentaire et alertes", 14, ink, "bold"); y += 1;
+        text(`Références : ${docRefs.length} · Documents expirés : ${expiredDocs.length} · Actions sans preuve référencée : ${missingDocs.length}`, 9.5, mut);
+        expiredDocs.forEach(d => text(`Expiré : ${d.title} · validité jusqu'au ${d.validUntil}`, 8.5, soil, "normal", 2));
+        missingDocs.forEach(a => text(`Preuve à rattacher : ${a.text} · attendue : ${a.evidence}`, 8.5, mut, "normal", 2));
+        docRefs.forEach(d => text(`[${d.status}] ${d.title} · ${d.version || "sans version"} · validité : ${d.validUntil || "non définie"} · ${d.ref}${(d.history||[]).length ? " · " + d.history.length + " ancienne(s) version(s)" : ""}`, 8.5, ink, "normal", 2));
+        text("Les alertes sont calculées à partir des dates et rattachements renseignés ; elles ne vérifient pas l'existence ni l'authenticité des fichiers dans la GED.", 8, mut, "italic");
+      }
     ids.forEach((id, k) => {
       const c = byId[id], r = X.result(c);
       if (k > 0 || ids.length > 1) { doc.addPage(); y = 22; }
@@ -152,7 +164,7 @@
       r.sources.forEach((s) => rows.push(["Source", s.t, s.url, ""]));
       add(cpT(c).title, rows);
     });
-    if (withPlan && Array.isArray(st.documents) && st.documents.length) add("Registre documentaire", [["Intitulé","Thématique","Référence / GED","Date","Version","Pilote","Statut","Action liée","Note","Ajouté le"], ...st.documents.map(d => [d.title, ({transversal:"Transversal",environnement:"Environnement",social:"Social",gouvernance:"Gouvernance"}[d.category] || d.category), d.ref, d.date || "", d.version || "", d.owner || "", ({draft:"À collecter",received:"Reçu",review:"À vérifier",valid:"Validé en interne",obsolete:"Obsolète"}[d.status] || d.status), X.planItems().find(a=>a.id===d.actionId)?.text || "", d.note || "", d.createdAt || ""])], [32,18,45,12,14,20,18,42,45,22]);
+    if (withPlan && Array.isArray(st.documents) && st.documents.length) add("Registre documentaire", [["Intitulé","Thématique","Référence / GED","Date","Validité","Version actuelle","Pilote","Statut","Action liée","Historique des versions","Note","Ajouté le"], ...st.documents.map(d => [d.title, ({transversal:"Transversal",environnement:"Environnement",social:"Social",gouvernance:"Gouvernance"}[d.category] || d.category), d.ref, d.date || "", d.validUntil || "", d.version || "", d.owner || "", ({draft:"À collecter",received:"Reçu",review:"À vérifier",valid:"Validé en interne",obsolete:"Obsolète"}[d.status] || d.status), X.planItems().find(a=>a.id===d.actionId)?.text || "", (d.history||[]).map(h=>[h.version,h.ref,h.changedAt].filter(Boolean).join(" | ")).join("\n"), d.note || "", d.createdAt || ""])], [32,18,45,12,14,16,20,18,42,48,45,22]);
     if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut action", "Indicateur de réussite", "Preuve attendue", "Référence / lien preuve", "Date preuve", "Statut preuve", "Vérifié par"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status), a.kpi || "", a.evidence || "", a.evidenceRef || "", a.evidenceDate || "", ({ pending: "À renseigner", received: "Reçue", checking: "À vérifier", verified: "Vérifiée", rejected: "Non recevable" }[a.evidenceStatus] || a.evidenceStatus), a.evidenceVerifier || ""])], [60, 20, 10, 10, 20, 12, 12, 32, 38, 35, 12, 16, 20]);
     const out = XL.write(wb, { bookType: "xlsx", type: "array" });
     const name = ids.length === 1 && !withPlan ? `sillon-${ids[0]}-${stamp()}.xlsx` : `sillon-dossier-rse-${stamp()}.xlsx`;
