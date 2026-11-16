@@ -83,7 +83,26 @@
     });
     return v;
   }
-  const inputs = (cp) => { if (!state.inputs[cp.id]) state.inputs[cp.id] = defaults(cp); return state.inputs[cp.id]; };
+  function inputs(cp) {
+    if (!state.inputs[cp.id]) state.inputs[cp.id] = defaults(cp);
+    const v = state.inputs[cp.id];
+    // Défense en profondeur : les données déjà stockées (anciennes versions, import ou édition manuelle)
+    // ne doivent jamais injecter de valeur numérique vide, négative ou démesurée dans un calcul.
+    cp.fields.forEach((f) => {
+      if (f.type === "number" || f.type === "range") {
+        const n = v[f.id] === "" || v[f.id] == null ? NaN : Number(String(v[f.id]).replace(",", "."));
+        const min = f.min ?? (f.type === "number" ? 0 : -Infinity), max = f.max ?? 1e12;
+        if (!Number.isFinite(n) || n < min || n > max) v[f.id] = f.def ?? (Number.isFinite(min) ? min : 0);
+        else v[f.id] = n;
+      } else if (f.type === "table" && Array.isArray(v[f.id])) {
+        v[f.id].forEach((row) => f.columns.filter((c) => c.type === "number").forEach((c) => {
+          const n = row[c.id] === "" || row[c.id] == null ? NaN : Number(String(row[c.id]).replace(",", "."));
+          row[c.id] = Number.isFinite(n) && n >= 0 && n <= 1e12 ? n : 0;
+        }));
+      }
+    });
+    return v;
+  }
   function applyProfile() {
     const p = state.profile; if (!p) return;
     copilots.forEach((cp) => {
