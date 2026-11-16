@@ -175,7 +175,7 @@
     const id = `${cp.id}-${f.id}`;
     const pb = f.prof && S().profile && !(S().touched[cp.id] || {})[f.id] ? `<span class="tag-link">${esc(t("linked", { cp: t("nav_profile") }))}</span>` : "";
     if (f.type === "group") return `<div class="fgroup eyebrow">${esc(f.label)}</div>`;
-    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" min="${f.min ?? 0}" ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}" aria-describedby="${id}-num-error"><span class="u">${esc(f.unit || "")}</span></div><div class="help" id="${id}-num-error" data-num-error="${f.id}" role="alert" hidden>Valeur invalide : saisissez un nombre compris entre ${f.min ?? 0}${f.max != null ? " et " + f.max : " et une valeur raisonnable"}. Le dernier résultat valide est conservé.</div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
+    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" min="${f.min ?? 0}" ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}" aria-describedby="${id}-num-error"><span class="u">${esc(f.unit || "")}</span></div><div class="help" id="${id}-num-error" data-num-error="${f.id}" role="alert" hidden>Valeur invalide : saisissez un nombre compris entre ${f.min ?? 0}${f.max != null ? " et " + f.max : " et 1 000 000 000 000 maximum"}. Le dernier résultat valide est conservé.</div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "select") return `<div class="field wide"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><select id="${id}" data-f="${f.id}">${f.options.map(([k, l]) => `<option value="${esc(k)}"${String(v[f.id]) === String(k) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div></div>`;
     if (f.type === "range") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} <span class="mono" data-out="${f.id}">${esc(v[f.id])} ${esc(f.unit || "")}</span></label><input id="${id}" data-f="${f.id}" type="range" min="${f.min}" max="${f.max}" step="${f.step || 1}" value="${esc(v[f.id])}">${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "seg") return `<div class="field wide"${attrs}><span class="lbl" id="${id}">${esc(f.label)} ${pb}</span><div class="seg" role="group" aria-labelledby="${id}">${f.options.map(([k, l]) => `<button type="button" data-seg="${f.id}" data-v="${esc(k)}" aria-pressed="${v[f.id] === k}">${esc(l)}</button>`).join("")}</div></div>`;
@@ -283,7 +283,7 @@
       const f = current.fields.find((x) => x.id === tg.dataset.f);
       if (f && f.type === "number") {
         const n = tg.value.trim() === "" ? NaN : Number(tg.value);
-        const min = f.min ?? 0, max = f.max ?? Infinity;
+        const min = f.min ?? 0, max = f.max ?? 1e12;
         const valid = Number.isFinite(n) && n >= min && n <= max;
         const err = app.querySelector(`[data-num-error="${tg.dataset.f}"]`);
         tg.setAttribute("aria-invalid", String(!valid));
