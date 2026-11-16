@@ -147,9 +147,36 @@ test("VSME : 70 % de complétude sur l'exemple du module de base", () => {
   assert.equal(run("reporting-vsme").gauge.val, 70);
 });
 
+
+test("Benchmark RSE : le diagnostic ne se présente pas comme une comparaison sectorielle", () => {
+  assert.equal(byId["benchmark-rse"].title, "Diagnostic de maturité RSE");
+  assert.match(byId["benchmark-rse"].intro, /pas d'un benchmark sectoriel/);
+  assert.match(run("benchmark-rse").hyp, /pas validés par une étude sectorielle/);
+});
+
+test("Greenwashing : un résultat sans alerte n'est pas présenté comme une validation juridique", () => {
+  const r = run("greenwashing", { txt: "Nous agissons pour demain." });
+  assert.equal(r.gauge.label, "INDICE INTERNE");
+  assert.match(r.verdict, /relecture nécessaire/);
+  assert.match(byId.greenwashing.intro, /absence d'alerte ne signifie pas conformité juridique/);
+});
+
+test("Marchés publics : la note est une simulation générique, pas une prédiction d'appel d'offres", () => {
+  const r = run("marches-publics");
+  assert.match(byId["marches-publics"].intro, /ne prédit pas la note/);
+  assert.match(r.hyp, /sans valeur prédictive/);
+  assert.match(r.kpis[1].s, /points du critère environnemental/);
+});
+
+test("Visibilité RSE : le score ne valide pas l'authenticité des preuves", () => {
+  const r = run("visibilite-rse");
+  assert.equal(r.gauge.label, "INDICE INTERNE");
+  assert.match(r.hyp, /sans vérifier les sources/);
+});
+
 test("ROI : VAN positive et retour inférieur à 1 an sur l'exemple", () => {
   const r = run("roi-rse");
-  assert.equal(r.verdict, "Démarche rentable sur 5 ans");
+  assert.equal(r.verdict, "VAN positive selon les hypothèses");
 });
 
 test("Référentiel : daté, et les échéances sont triées par date", () => {
