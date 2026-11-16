@@ -45,6 +45,16 @@ test("Bilan carbone : le module signale son périmètre partiel et les facteurs 
   assert.equal(ctx.window.SILLON_REF.facteursStatut.dateVerification, null);
 });
 
+
+test("Carbone IA : l'indice est explicitement interne et les hypothèses sont déclarées", () => {
+  const cp = byId["carbone-ia"];
+  const r = run("carbone-ia");
+  assert.match(cp.intro, /ne mesure pas les consommations réelles/);
+  assert.equal(r.gauge.label, "INDICE INTERNE");
+  assert.match(r.verdict, /Indice interne/);
+  assert.match(r.hyp, /sans référentiel externe/);
+});
+
 test("Carbone IA : 25 utilisateurs x 15 requêtes x 220 j, 20 % longues, 200 images/mois", () => {
   const r = run("carbone-ia");
   // 82 500 requêtes : 0,8 x 0,3 Wh + 0,2 x 3 Wh = 69,3 kWh ; images 2 400 x 2,9 Wh = 6,96 kWh
