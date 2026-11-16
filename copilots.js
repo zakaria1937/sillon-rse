@@ -358,6 +358,9 @@
       { type: "number", id: "ca", label: "Chiffre d'affaires", unit: "M€", def: 28, min: 0, prof: "ca" },
       { type: "number", id: "surf", label: "Surface tertiaire (bureaux, commerces)", unit: "m²", def: 1200, min: 0, prof: "surf" },
       { type: "number", id: "gwh", label: "Consommation d'énergie annuelle", unit: "GWh", def: 3.1, min: 0, step: 0.1, prof: "gwh" },
+      { type: "select", id: "begesStatut", label: "Statut pour le BEGES", def: "prive", options: [["prive", "Entreprise privée"], ["public", "Autre personne morale de droit public"], ["collectivite", "Collectivité territoriale / groupement"]] },
+      { type: "select", id: "begesTerritoire", label: "Territoire (entreprise privée)", def: "metro", options: [["metro", "Métropole"], ["outremer", "Outre-mer"]] },
+      { type: "number", id: "begesPop", label: "Population de la collectivité (si concernée)", unit: "hab.", def: 0, min: 0 },
       { type: "seg", id: "mp", label: "Vous répondez à des marchés publics", def: "oui", prof: "mp", options: [["oui", "Oui"], ["non", "Non"]] },
       { type: "seg", id: "b2c", label: "Vous communiquez des arguments écologiques", def: "oui", prof: "b2c", options: [["oui", "Oui"], ["non", "Non"]] },
     ],
@@ -374,8 +377,10 @@
       else if (e >= 150) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
       else if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2031 (art. 9). Vérifier les modalités françaises de transposition.");
       if (e >= 300) add("oblig", "Bilan social", "Annuel, dès 300 salariés.");
-      if (e > SEUIL.begesEffectif) add("oblig", "BEGES réglementaire", "Bilan des émissions tous les 4 ans et plan de transition (plus de 500 salariés).");
-      else add("info", "BEGES réglementaire", "Non obligatoire sous 501 salariés : un bilan volontaire reste attendu par les clients.");
+      const statut = v.begesStatut || "prive", territoire = v.begesTerritoire || "metro", pop = num(v.begesPop);
+      const seuilBEGES = statut === "collectivite" ? (pop > 50000) : statut === "public" ? (e > 250) : territoire === "outremer" ? (e > 250) : (e > 500);
+      if (seuilBEGES) add("oblig", "BEGES réglementaire", statut === "collectivite" ? "Collectivité de plus de 50 000 habitants : BEGES et plan de transition publics, mise à jour tous les 3 ans." : statut === "public" ? "Personne morale de droit public de plus de 250 salariés : BEGES et plan de transition publics, mise à jour tous les 3 ans." : territoire === "outremer" ? "Personne morale de droit privé de plus de 250 salariés en outre-mer : BEGES et plan de transition publics, mise à jour tous les 4 ans." : "Personne morale de droit privé de plus de 500 salariés en métropole : BEGES et plan de transition publics, mise à jour tous les 4 ans.");
+      else add("info", "BEGES réglementaire", "Seuil non atteint avec les informations saisies. Vérifier le statut juridique, le territoire, l'effectif de référence, le périmètre de groupe et les éventuelles obligations sectorielles avant de conclure.");
       if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("oblig", "Loi Sapin II", "Programme anticorruption (500 salariés et 100 M€ de CA).");
       if (e >= 1000) add("oblig", "Loi Rixain", "Quotas de femmes parmi les cadres dirigeants (dès 1 000 salariés).");
       if (e >= 5000 || em >= 10000) add("oblig", "Devoir de vigilance", "Plan de vigilance publié (5 000 salariés en France ou 10 000 dans le monde).");
