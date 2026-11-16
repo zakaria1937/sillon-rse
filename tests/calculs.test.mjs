@@ -113,6 +113,23 @@ test("Réglementation : CSRD applicable seulement au-delà de 1 000 salariés ET
   assert.equal(csrd(run("reglementation", { eff: 900, effM: 900, ca: 600 })).lvl, "info");
 });
 
+
+test("Sapin II : les seuils déclenchent une vérification, pas une conclusion automatique", () => {
+  const r = run("reglementation", { eff: 500, effM: 500, ca: 101 });
+  const x = r.findings.find((f) => f.t.startsWith("Loi Sapin II"));
+  assert.equal(x.lvl, "warn");
+  assert.match(x.t, /siège est en France/);
+  assert.ok(r.sources.some((x) => x.n.includes("Agence française anticorruption")));
+});
+
+test("Devoir de vigilance : les deux exercices consécutifs et le périmètre des filiales sont rappelés", () => {
+  const r = run("reglementation", { eff: 5000, effM: 5000 });
+  const x = r.findings.find((f) => f.t.startsWith("Devoir de vigilance"));
+  assert.equal(x.lvl, "warn");
+  assert.match(x.t, /deux exercices consécutifs/);
+  assert.match(x.t, /filiales directes\/indirectes/);
+});
+
 test("Réglementation énergie : les seuils français sont inclusifs (>=)", () => {
   const reg = (gwh) => run("reglementation", { gwh }).findings;
   assert.ok(reg(2.749).every((f) => !f.t.startsWith("Audit énergétique")));
