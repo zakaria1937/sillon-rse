@@ -83,6 +83,7 @@ test("Fournisseurs : une certification déclarée ne réduit pas automatiquement
   const none = run("fournisseurs", { rows: [{ ...row, cert: "none" }] }).kpis[0].v;
   const certified = run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).kpis[0].v;
   assert.equal(none, certified);
+  assert.equal(run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).gauge.label, "EXPOSITION");
   assert.match(run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).hyp, /ne réduisent pas mécaniquement/);
 });
 
