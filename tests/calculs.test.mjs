@@ -204,7 +204,7 @@ test("Références juridiques : AGEC allégations et tri des déchets ont des so
   const src = ctx.window.SILLON.sources;
   assert.match(src.agec.t, /biodégradable/);
   assert.match(src.dechets.t, /Tri à la source/);
-  assert.ok(run("reglementation").sources.some((x) => x.n.toLowerCase().includes("tri") || x.n.toLowerCase().includes("déchets")));
+  assert.ok(run("reglementation").sources.some((x) => x.n.toLowerCase().includes("déchets") || x.t.toLowerCase().includes("tri à la source")));
   assert.ok(run("greenwashing").sources.some((x) => x.n.includes("AGEC")));
 });
 
