@@ -11,6 +11,7 @@
     ademe: { n: "ADEME — Base Empreinte", t: "Base publique de facteurs d’émission et de données d’inventaire. Les valeurs préremplies dans Sillon ne sont pas rapprochées individuellement d’une fiche, d’une version et d’un périmètre ADEME ; elles ne doivent pas être présentées comme des facteurs ADEME certifiés.", url: "https://base-empreinte.ademe.fr/" },
     vsme: { n: "EFRAG — norme VSME", t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
     omnibus: { n: "EUR-Lex — directive (UE) 2026/470 (Omnibus I)", t: "Texte officiel publié au Journal officiel de l’Union européenne le 26/02/2026 ; modifications CSRD et CSDDD.", url: "https://eur-lex.europa.eu/eli/dir/2026/470/oj?locale=fr" },
+    ocde: { n: "OCDE — Guide sur le devoir de diligence pour une conduite responsable des entreprises", t: "Guide OCDE 2018 : diligence fondée sur le risque, proportionnée à la gravité et à la probabilité des impacts négatifs ; processus continu en six étapes.", url: "https://www.oecd.org/en/publications/oecd-due-diligence-guidance-for-responsible-business-conduct_15f5f4b3-en.html" },
     ecovadis: { n: "EcoVadis — médailles, badges et seuils mensuels", t: "EcoVadis : médailles fondées sur les percentiles, seuils de score publiés mensuellement et critères d’éligibilité complémentaires.", url: "https://support.ecovadis.com/hc/fr/articles/39606014723090-Mise-%C3%A0-jour-des-seuils-mensuels-des-m%C3%A9dailles" },
     empco: { n: "Union européenne — directive EmpCo (2024/825)", t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
     agec: { n: "Légifrance — Code de l’environnement, art. L.541-21-2 et D.543-281", t: "Tri à la source et collecte séparée des flux de déchets non dangereux applicables, avec règles spécifiques aux déchets de chantier et aux textiles.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041626981" },
@@ -322,11 +323,11 @@
       const F = top.slice(0, 3).map((s) => ({ lvl: s.risk >= 50 ? "crit" : s.risk >= 25 ? "warn" : "ok", t: `${s.nom} : risque ${s.risk}/100 (${s.c}, ${s.z}), ${nf(s.share * 100)} % de la dépense${s.cert === "none" ? ", sans preuve déclarée" : ""}.` }));
       if (!sc.length) F.push({ lvl: "info", t: "Ajoutez au moins un fournisseur pour lancer l'analyse." });
       return {
-        gauge: { val: 100 - w, max: 100, label: "MAÎTRISE" },
-        verdict: w >= 45 ? "Exposition élevée" : w >= 25 ? "Exposition modérée" : "Exposition contenue",
-        summary: `${sc.length} fournisseurs, ${eur(tot)} de dépenses. ${nf(hiShare * 100)} % de la dépense est à risque élevé.`,
+        gauge: { val: w, max: 100, label: "EXPOSITION" },
+        verdict: w >= 45 ? "Exposition présumée élevée" : w >= 25 ? "Exposition présumée modérée" : "Exposition présumée contenue",
+        summary: `${sc.length} fournisseurs, ${eur(tot)} de dépenses. ${nf(hiShare * 100)} % de la dépense est associée à une exposition élevée selon la grille interne.`,
         kpis: [
-          { l: "Risque pondéré", v: w, u: "/100", s: "Pondéré par la dépense" },
+          { l: "Indice d'exposition pondéré", v: w, u: "/100", s: "Indice interne pondéré par la dépense" },
           { l: "Dépense à risque élevé", v: nf(hiShare * 100), u: "%", s: `${hi.length} fournisseur(s)` },
           { l: "Dépense analysée", v: nf(tot / 1000), u: "k€", s: `${sc.filter((s) => s.cert !== "none").length} avec preuve déclarée` },
         ],
@@ -339,7 +340,7 @@
           "Rechercher une alternative européenne pour les catégories textile et électronique les plus exposées.",
         ],
         hyp: "Indice interne de présélection : exposition géographique (échelle qualitative Sillon de 1 à 5) × sensibilité de catégorie (échelle qualitative Sillon de 1,5 à 5), normalisées sur 25, puis pondérées par la dépense. Ces coefficients ne sont ni des données statistiques ni une notation pays/secteur validée. Les preuves déclarées (ISO 14001, évaluation EcoVadis, SA8000/BSCI) ne réduisent pas mécaniquement l’indice : leur périmètre, validité, site couvert, date, audit et éventuelles non-conformités doivent être vérifiés. Le résultat n’est pas un score de conformité ni une diligence raisonnable complète.",
-        sources: [S.omnibus, S.ecovadis],
+        sources: [S.ocde, S.omnibus],
       };
     },
   };
