@@ -57,6 +57,23 @@ test("Réglementation : CSRD applicable seulement au-delà de 1 000 salariés ET
   assert.equal(csrd(run("reglementation", { eff: 900, effM: 900, ca: 600 })).lvl, "info");
 });
 
+test("Réglementation énergie : les seuils français sont inclusifs (>=)", () => {
+  const reg = (gwh) => run("reglementation", { gwh }).findings;
+  assert.ok(reg(2.749).every((f) => !f.t.startsWith("Audit énergétique")));
+  assert.ok(reg(2.75).some((f) => f.t.startsWith("Audit énergétique")));
+  assert.ok(reg(23.599).some((f) => f.t.startsWith("Audit énergétique")));
+  assert.ok(reg(23.6).some((f) => f.t.startsWith("Système de management de l'énergie")));
+  assert.ok(reg(23.6).every((f) => !f.t.startsWith("Audit énergétique")));
+});
+
+test("Réglementation : les échéances de transparence salariale distinguent les tranches", () => {
+  const timeline = ctx.window.SILLON_REF.echeances;
+  const at = (eff) => timeline.filter((e) => e.t.includes("rapports") && e.ap({ eff })).map((e) => e.d);
+  assert.deepEqual(at(120), ["2031-06-07"]);
+  assert.deepEqual(at(180), ["2027-06-07"]);
+  assert.deepEqual(at(300), ["2027-06-07"]);
+});
+
 test("EcoVadis : un thème sous 30 bloque toute médaille", () => {
   const r = run("ecovadis", { eth: { pol: "0", act: "0", kpi: "0", cert: "0" } });
   assert.equal(r.verdict, "Aucune médaille");
