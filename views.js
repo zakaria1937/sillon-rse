@@ -175,7 +175,7 @@
     const id = `${cp.id}-${f.id}`;
     const pb = f.prof && S().profile && !(S().touched[cp.id] || {})[f.id] ? `<span class="tag-link">${esc(t("linked", { cp: t("nav_profile") }))}</span>` : "";
     if (f.type === "group") return `<div class="fgroup eyebrow">${esc(f.label)}</div>`;
-    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}"><span class="u">${esc(f.unit || "")}</span></div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
+    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" min="${f.min ?? 0}" ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}" aria-describedby="${id}-num-error"><span class="u">${esc(f.unit || "")}</span></div><div class="help" id="${id}-num-error" data-num-error="${f.id}" role="alert" hidden>Valeur invalide : saisissez un nombre compris entre ${f.min ?? 0}${f.max != null ? " et " + f.max : " et une valeur raisonnable"}. Le dernier résultat valide est conservé.</div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "select") return `<div class="field wide"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><select id="${id}" data-f="${f.id}">${f.options.map(([k, l]) => `<option value="${esc(k)}"${String(v[f.id]) === String(k) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div></div>`;
     if (f.type === "range") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} <span class="mono" data-out="${f.id}">${esc(v[f.id])} ${esc(f.unit || "")}</span></label><input id="${id}" data-f="${f.id}" type="range" min="${f.min}" max="${f.max}" step="${f.step || 1}" value="${esc(v[f.id])}">${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "seg") return `<div class="field wide"${attrs}><span class="lbl" id="${id}">${esc(f.label)} ${pb}</span><div class="seg" role="group" aria-labelledby="${id}">${f.options.map(([k, l]) => `<button type="button" data-seg="${f.id}" data-v="${esc(k)}" aria-pressed="${v[f.id] === k}">${esc(l)}</button>`).join("")}</div></div>`;
@@ -183,7 +183,7 @@
     if (f.type === "checklist") return `<fieldset class="field wide cl"${attrs}><legend class="eyebrow">${esc(f.label)}</legend>${f.items.map((it) => { const src = applied[f.id + "." + it.id]; return `
       <div class="check"><div class="t">${it.code ? `<span class="code">${esc(it.code)}</span>` : ""}${esc(it.label)}${src ? ` <span class="tag-link">${esc(t("linked", { cp: cpT(byId[src]).title }))}</span>` : ""}${it.hint ? `<small>${esc(it.hint)}</small>` : ""}</div>
       <div class="seg" role="group" aria-label="${esc(it.label)}">${f.states.map(([k, l]) => `<button type="button" data-ck="${f.id}" data-item="${esc(it.id)}" data-v="${esc(k)}" aria-pressed="${String((v[f.id] || {})[it.id]) === String(k)}">${esc(l)}</button>`).join("")}</div></div>`; }).join("")}</fieldset>`;
-    if (f.type === "table") return `<div class="field wide"${attrs}><div class="eyebrow" style="margin-bottom:6px">${esc(f.label)}</div><div class="tbl-wrap"><table class="ed"><thead><tr>${f.columns.map((c) => `<th scope="col">${esc(c.label)}</th>`).join("")}<th><span class="sr">Supprimer</span></th></tr></thead><tbody>${(v[f.id] || []).map((r, i) => `<tr>${f.columns.map((c) => `<td>${c.type === "select" ? `<select aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}">${c.options.map(([k, l]) => `<option value="${esc(k)}"${r[c.id] === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : `<input aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}" type="${c.type === "number" ? "number" : "text"}" value="${esc(r[c.id])}">`}</td>`).join("")}<td><button class="rm" type="button" data-rm="${f.id}" data-row="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`).join("")}</tbody></table></div><button class="chip-btn add" type="button" data-add="${f.id}">+ Ajouter un fournisseur</button></div>`;
+    if (f.type === "table") return `<div class="field wide"${attrs}><div class="eyebrow" style="margin-bottom:6px">${esc(f.label)}</div><div class="tbl-wrap"><table class="ed"><thead><tr>${f.columns.map((c) => `<th scope="col">${esc(c.label)}</th>`).join("")}<th><span class="sr">Supprimer</span></th></tr></thead><tbody>${(v[f.id] || []).map((r, i) => `<tr>${f.columns.map((c) => `<td>${c.type === "select" ? `<select aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}">${c.options.map(([k, l]) => `<option value="${esc(k)}"${r[c.id] === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : `<input aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}" type="${c.type === "number" ? "number" : "text"}" ${c.type === "number" ? 'min="0" step="any"' : ""} value="${esc(r[c.id])}">`}</td>`).join("")}<td><button class="rm" type="button" data-rm="${f.id}" data-row="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`).join("")}</tbody></table></div><button class="chip-btn add" type="button" data-add="${f.id}">+ Ajouter un fournisseur</button></div>`;
     return "";
   }
 
@@ -280,11 +280,28 @@
     if (!current) return;
     const tg = e.target, v = X.inputs(current);
     if (tg.dataset.f) {
-      v[tg.dataset.f] = tg.value;
+      const f = current.fields.find((x) => x.id === tg.dataset.f);
+      if (f && f.type === "number") {
+        const n = tg.value.trim() === "" ? NaN : Number(tg.value);
+        const min = f.min ?? 0, max = f.max ?? Infinity;
+        const valid = Number.isFinite(n) && n >= min && n <= max;
+        const err = app.querySelector(`[data-num-error="${tg.dataset.f}"]`);
+        tg.setAttribute("aria-invalid", String(!valid));
+        if (err) err.hidden = valid;
+        if (!valid) return; // conserver la dernière valeur valide, ne pas recalculer sur une donnée vide/incohérente
+        v[tg.dataset.f] = n;
+      } else v[tg.dataset.f] = tg.value;
       const o = app.querySelector(`[data-out="${tg.dataset.f}"]`); if (o) { const f = current.fields.find((x) => x.id === tg.dataset.f); o.textContent = `${tg.value} ${f.unit || ""}`; }
       markUsed(tg.dataset.f);
-    } else if (tg.dataset.tbl) { v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = tg.value; markUsed(tg.dataset.tbl); }
-    else return;
+    } else if (tg.dataset.tbl) {
+      const cell = tg.closest("input");
+      if (cell && cell.type === "number") {
+        const n = tg.value.trim() === "" ? NaN : Number(tg.value);
+        if (!Number.isFinite(n) || n < 0) { tg.setAttribute("aria-invalid", "true"); return; }
+        tg.removeAttribute("aria-invalid"); v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = n;
+      } else v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = tg.value;
+      markUsed(tg.dataset.tbl);
+    } else return;
     recompute();
   });
   app.addEventListener("change", (e) => {
@@ -373,7 +390,7 @@
           const id = "p-" + f.id;
           if (f.type === "select") return `<div class="field"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><select id="${id}" name="${f.id}">${f.options.map((o) => `<option${p[f.id] === o ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div></div>`;
           if (f.type === "seg") return `<div class="field"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><select id="${id}" name="${f.id}"><option value="oui"${p[f.id] === "oui" ? " selected" : ""}>${esc(t("yes"))}</option><option value="non"${p[f.id] === "non" ? " selected" : ""}>${esc(t("no"))}</option></select></div></div>`;
-          return `<div class="field${f.id === "nom" ? " wide" : ""}"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><input id="${id}" name="${f.id}" type="${f.type}" ${f.type === "number" ? 'step="any" min="0" inputmode="decimal"' : ""} value="${esc(p[f.id])}"></div></div>`;
+          return `<div class="field${f.id === "nom" ? " wide" : ""}"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><input id="${id}" name="${f.id}" type="${f.type}" ${f.type === "number" ? 'step="any" min="0" inputmode="decimal" required' : ""} value="${esc(p[f.id])}"></div></div>`;
         }).join("")}</div>
         <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("prof_apply"))}</button></div>
       </form>
@@ -382,6 +399,7 @@
     const fg = document.getElementById("forget"); if (fg) fg.onclick = () => { S().contact = null; S().chat = []; X.save(); X.toast(t("ct_forgotten")); profileView(); };
     document.getElementById("pform").onsubmit = (e) => {
       e.preventDefault();
+      if (!e.target.reportValidity()) return;
       const fd = new FormData(e.target), np = {};
       X.PROFILE_FIELDS.forEach((f) => (np[f.id] = f.type === "number" ? num(fd.get(f.id)) : String(fd.get(f.id) || "")));
       S().profile = np; X.applyProfile(); X.save(); X.toast(t("prof_saved")); header();
