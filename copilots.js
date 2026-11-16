@@ -17,7 +17,9 @@
     climat12: { n: "Légifrance — loi Climat et résilience, décret 2022-539", t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
     mp: { n: "Service-Public — critère environnemental des marchés publics", t: "Service-Public Entreprendre (18/08/2026) : critère et condition d'exécution environnementaux obligatoires au 21/08/2026", url: "https://entreprendre.service-public.gouv.fr/actualites/A19042" },
     fs: { n: "France Stratégie — RSE et compétitivité", t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
-    iso: { n: "ISO — normes de systèmes de management", t: "ISO, structure harmonisée des normes de systèmes de management (Annexe SL)", url: "https://www.iso.org/management-system-standards.html" },
+    iso14001: { n: "ISO 14001:2026", t: "Édition 4 publiée en avril 2026 ; remplace ISO 14001:2015.", url: "https://www.iso.org/standard/14001" },
+    iso45001: { n: "ISO 45001:2018", t: "Édition actuelle confirmée en 2024 ; amendement climat 2024.", url: "https://www.iso.org/standard/63787.html" },
+    iso50001: { n: "ISO 50001:2018", t: "Édition actuelle confirmée en 2024 ; amendement climat 2024.", url: "https://www.iso.org/standard/69426.html" },
     beges: { n: "Ministère de la Transition écologique — BEGES", t: "Code de l'environnement art. L229-25 (BEGES) et ministère de la Transition écologique", url: "https://www.ecologie.gouv.fr/politiques-publiques/bilans-demissions-gaz-effet-serre" },
     energie: { n: "Légifrance — Code de l’énergie, art. L.233-1", t: "Loi n° 2025-391 du 30 avril 2025, art. 25 : seuils de 2,75 et 23,6 GWh, audit quadriennal et système de management certifié.", url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027718472/" },
     pay: { n: "EUR-Lex — directive (UE) 2023/970, art. 9", t: "Échéances de reporting des écarts de rémunération : 250+, 150–249 et 100–149 salariés.", url: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=celex:32023L0970" },
@@ -364,10 +366,10 @@
       const L = [];
       const add = (st, name, t) => L.push({ st, name, t });
       add("oblig", "DUERP", "Document unique d'évaluation des risques, obligatoire dès le 1er salarié.");
-      add("oblig", "Loi AGEC : tri des déchets", "Tri 7 flux (papier, métal, plastique, verre, bois, minéraux, textiles) et biodéchets.");
+      add("oblig", "Tri à la source des déchets", "Tri à la source et collecte séparée des déchets non dangereux selon les flux effectivement produits : papier/carton, métal, plastique, verre, bois et textiles ; fractions minérales et plâtre pour les déchets de chantier. Tri à la source des biodéchets selon les règles applicables. Vérifier les exceptions, seuils et modalités propres au site.");
       if (e >= 20) add("oblig", "Emploi des travailleurs handicapés", "Obligation de 6 % de l'effectif (dès 20 salariés).");
       if (e >= 50) add("oblig", "Index égalité professionnelle", "Publication annuelle avant le 1er mars (dès 50 salariés).");
-      if (e >= 50) add("verif", "Mobilité des salariés", "Thème obligatoire de la négociation annuelle si 50 salariés sur un même site.");
+      if (e >= 50) add("verif", "Mobilité des salariés", "À vérifier : la négociation sur les mobilités vise notamment les entreprises concernées par la négociation obligatoire et employant au moins 50 salariés sur un même site ; l’effectif total France seul ne suffit pas à conclure.");
       if (e >= 250) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération chaque année à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
       else if (e >= 150) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
       else if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2031 (art. 9). Vérifier les modalités françaises de transposition.");
