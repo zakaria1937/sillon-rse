@@ -264,7 +264,7 @@ test("les coordonnées sont annoncées avant le clic, et l'accord pour être rec
 for (const [nom, w, h] of [["téléphone", 390, 844], ["tablette", 820, 1180]]) {
   test(`${nom} (${w} px) : aucune page ne déborde en largeur`, async () => {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
-    for (const hsh of ["", "#profil", "#plan", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cookies", ...COPILOTS.map((c) => "#" + c)]) {
+    for (const hsh of ["", "#profil", "#plan", "#preuves", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cookies", ...COPILOTS.map((c) => "#" + c)]) {
       await page.goto(BASE + "/" + hsh); await page.waitForSelector("h1"); await page.waitForTimeout(100);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, hsh || "accueil");
     }
