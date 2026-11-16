@@ -535,6 +535,9 @@
     const reportHigh = reportPlan.filter((a) => a.impact === "high").length;
     const reportNoOwner = reportPlan.filter((a) => !a.owner).length;
     const reportNoDue = reportPlan.filter((a) => !a.due).length;
+    const reportDocs = Array.isArray(st.documents) ? st.documents : [];
+    const reportExpiredDocs = reportDocs.filter(d => d.validUntil && d.validUntil < X.today() && d.status !== "obsolete").length;
+    const reportMissingProofs = reportPlan.filter(a => a.evidence && !reportDocs.some(d => d.actionId === a.id && ["received","review","valid"].includes(d.status) && !(d.validUntil && d.validUntil < X.today()))).length;
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">${esc(X.profile().nom || "Sillon")} · ${new Date().toLocaleDateString(st.lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric" })}</div><h1 id="pageH" tabindex="-1">${esc(t("rep_title"))}</h1><p>${esc(used.length ? t("rep_sub_used", { n: used.length }) : t("rep_sub_none"))}</p></div>
       <div class="toolbar" style="margin:0 0 20px"><button class="chip-btn primary" type="button" id="pdfAll">${esc(t("rep_pdf"))}</button><button class="chip-btn" type="button" id="xlsAll">${esc(t("rep_xlsx"))}</button><a class="chip-btn" href="#presentation">${esc(t("nav_present"))}</a><button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button></div>
@@ -545,6 +548,8 @@
           <a class="dcell" href="#plan"><span class="l">Actions ouvertes</span><b>${reportPlan.length}</b><span class="s">${reportHigh} à impact élevé</span></a>
           <a class="dcell" href="#plan"><span class="l">Responsables manquants</span><b>${reportNoOwner}</b><span class="s">Actions à attribuer</span></a>
           <a class="dcell" href="#plan"><span class="l">Échéances manquantes</span><b>${reportNoDue}</b><span class="s">Actions à planifier</span></a>
+          <a class="dcell" href="#preuves"><span class="l">Documents expirés</span><b>${reportExpiredDocs}</b><span class="s">À renouveler ou retirer</span></a>
+          <a class="dcell" href="#preuves"><span class="l">Preuves manquantes</span><b>${reportMissingProofs}</b><span class="s">Actions sans pièce active liée</span></a>
         </div>
         <p class="ai-note">Les résultats sont des signaux d'auto-évaluation. Les modules non renseignés utilisent des valeurs d'exemple ; les constats doivent être confirmés avant toute décision.</p>
       </section>
