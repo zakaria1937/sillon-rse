@@ -3,7 +3,7 @@
 (function () {
   const num = (v, d = 0) => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : d; };
   window.SILLON_REF = {
-    version: "2026-11-16",
+    version: "2026-11-17",
     // Facteurs de démonstration non rapprochés individuellement d’une fiche ADEME : ne pas les présenter comme des valeurs officielles validées.
     facteurs: { gaz: 0.227, fioul: 3.25, gazole: 3.16, essence: 2.8, r410a: 2088, elec: 0.052, train: 0.0029, avc: 0.258, avl: 0.152, voit: 0.218, ordinateurPortable: 156 },
     facteursStatut: { source: "ADEME — Base Empreinte", versionBase: "à confirmer pour chaque fiche", statut: "ordres de grandeur non vérifiés individuellement", dateVerification: null, usage: "simulation pédagogique uniquement tant que les fiches, unités, périmètres et années ne sont pas documentés" },
