@@ -573,7 +573,7 @@
     const st = S(), c = st.contact;
     app.innerHTML = `<div class="wrap narrow"><div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("md_title"))}</h1><p>${esc(t("md_sub"))}</p></div>
       <section class="panel md" aria-labelledby="mdL"><h2 id="mdL">${esc(t("md_local"))}</h2><p class="sub">${esc(t("md_local_p"))}</p>
-        <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div>
+        <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn" type="button" id="mdImportOpen">Restaurer une sauvegarde</button><input type="file" id="mdImportFile" accept="application/json,.json" hidden><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div><p class="fine">La restauration remplace le dossier actuellement ouvert. Exportez-le avant toute restauration si vous souhaitez conserver son état.</p>
         <div class="confirm" id="mdConfirm" hidden role="group" aria-labelledby="mdConfirmT"><p id="mdConfirmT">${esc(t("md_erase_confirm"))}</p><div class="toolbar"><button class="chip-btn danger" type="button" id="mdEraseYes">${esc(t("md_erase_yes"))}</button><button class="chip-btn" type="button" id="mdEraseNo">${esc(t("md_cancel"))}</button></div></div>
       </section>
       <section class="panel md" aria-labelledby="mdC"><h2 id="mdC">${esc(t("cl_title"))}</h2><p class="sub">${esc(t("cl_p"))}</p>
@@ -596,6 +596,21 @@
     document.getElementById("mdExport").onclick = async () => {
       const data = JSON.stringify({ exporte_le: new Date().toISOString(), source: "Sillon", donnees: S() }, null, 2);
       try { await X.saveFile(`sillon-mes-donnees-${X.today()}.json`, new Blob([data], { type: "application/json" })); } catch (e) { if (!e || e.code !== "declined") X.toast(t("toast_fail")); }
+    };
+    document.getElementById("mdImportOpen").onclick = () => document.getElementById("mdImportFile").click();
+    document.getElementById("mdImportFile").onchange = async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      try {
+        if (file.size > 10 * 1024 * 1024) throw new Error("Fichier trop volumineux (10 Mo maximum).");
+        const parsed = JSON.parse(await file.text()), incoming = parsed?.donnees;
+        if (parsed?.source !== "Sillon" || !incoming || typeof incoming !== "object" || !incoming.inputs || typeof incoming.inputs !== "object" || Array.isArray(incoming.inputs)) throw new Error("Ce fichier ne ressemble pas à une sauvegarde Sillon valide.");
+        if (!confirm("Remplacer le dossier actuellement ouvert par cette sauvegarde ? Cette opération ne peut pas être annulée.")) return;
+        const next = { ...X.blank(), ...incoming, lang: S().lang, cloud: null, chat: [] };
+        if (!next.custom || !Array.isArray(next.custom)) next.custom = [];
+        if (!next.documents || !Array.isArray(next.documents)) next.documents = [];
+        X.setState(next); X.save(); X.toast("Sauvegarde restaurée. Vérifiez les données et les résultats."); window.SXR.route();
+      } catch (err) { X.toast(err.message || "Impossible de lire cette sauvegarde."); }
+      finally { e.target.value = ""; }
     };
     const on = document.getElementById("clOn");
     if (on) on.onclick = async () => { on.disabled = true; const ok = await X.cloudEnable(); X.toast(ok ? t("cl_saved") : t("cl_fail")); myDataView(); };
