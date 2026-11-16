@@ -37,3 +37,19 @@ test("un résultat source ne modifie pas les réponses du copilote destinataire"
   assert.equal(after, before);
   assert.ok(source && target);
 });
+
+test("les anciennes données stockées négatives ou démesurées sont neutralisées avant calcul", () => {
+  const cp = SX.byId["bilan-carbone"];
+  const state = SX.blank();
+  state.inputs[cp.id] = { ...SX.defaults(cp), elec: -2500000, gaz: 1e99 };
+  SX.setState(state);
+  const safe = SX.inputs(cp);
+  assert.equal(safe.elec, cp.fields.find((f) => f.id === "elec").def);
+  assert.equal(safe.gaz, cp.fields.find((f) => f.id === "gaz").def);
+  const supplier = SX.byId["fournisseurs"];
+  const s = SX.blank();
+  s.inputs[supplier.id] = SX.defaults(supplier);
+  s.inputs[supplier.id].rows[0].dep = -9000;
+  SX.setState(s);
+  assert.equal(SX.inputs(supplier).rows[0].dep, 0);
+});
