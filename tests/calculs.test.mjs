@@ -96,11 +96,12 @@ test("Réglementation : les échéances de transparence salariale distinguent le
   assert.equal(at(300).join(","), "2027-06-07");
 });
 
-test("EcoVadis : un thème sous 30 bloque toute médaille", () => {
-  const r = run("ecovadis", { eth: { pol: "0", act: "0", kpi: "0", cert: "0" } });
-  assert.equal(r.verdict, "Aucune médaille");
-  const top = { pol: "3", act: "3", kpi: "3", cert: "3" };
-  assert.equal(run("ecovadis", { env: top, lab: top, eth: top, sup: top }).verdict, "Platine probable");
+test("EcoVadis : l’indice Sillon ne prédit aucune médaille", () => {
+  const r = run("ecovadis");
+  assert.equal(r.verdict, "Indice interne de maturité");
+  assert.match(r.summary, /sans prédiction de médaille/);
+  assert.ok(r.findings.some((f) => f.t.includes("ne permet pas de prédire une médaille")));
+  assert.equal(ctx.window.SILLON_REF.ecovadis.seuilsNovembre2026.platine, 89);
 });
 
 test("Greenwashing : détecte la neutralité carbone et la mention AGEC interdite", () => {
