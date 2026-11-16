@@ -25,6 +25,7 @@
     beges: { n: "Légifrance — Code de l’environnement, art. L.229-25", t: "Seuils BEGES : entreprises privées >500 salariés en métropole, >250 en outre-mer ; personnes morales de droit public >250 salariés, et collectivités concernées de plus de 50 000 habitants.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051559662" },
     energie: { n: "Légifrance — Code de l’énergie, art. L.233-1", t: "Loi n° 2025-391 du 30 avril 2025, art. 25 : seuils de 2,75 et 23,6 GWh, audit quadriennal et système de management certifié.", url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027718472/" },
     pay: { n: "EUR-Lex — directive (UE) 2023/970, art. 9", t: "Échéances de reporting des écarts de rémunération : 250+, 150–249 et 100–149 salariés.", url: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=celex:32023L0970" },
+    sapin: { n: "Agence française anticorruption — entreprises assujetties à l’article 17", t: "Sapin II : société ou EPIC dont le siège est en France, au moins 500 salariés et plus de 100 M€ de chiffre d’affaires ; vérifier l’appréciation entité/groupe et les cas particuliers.", url: "https://www.agence-francaise-anticorruption.gouv.fr/acteurs-economiques/connaitre-les-obligations-des-entreprises" },
   };
   const YNP = [["1", "Oui"], ["0.5", "En partie"], ["0", "Non"]];
 
@@ -382,9 +383,9 @@
       const seuilBEGES = statut === "collectivite" ? (pop > 50000) : statut === "public" ? (e > 250) : territoire === "outremer" ? (e > 250) : (e > 500);
       if (seuilBEGES) add("oblig", "BEGES réglementaire", statut === "collectivite" ? "Collectivité de plus de 50 000 habitants : BEGES et plan de transition publics, mise à jour tous les 3 ans." : statut === "public" ? "Personne morale de droit public de plus de 250 salariés : BEGES et plan de transition publics, mise à jour tous les 3 ans." : territoire === "outremer" ? "Personne morale de droit privé de plus de 250 salariés en outre-mer : BEGES et plan de transition publics, mise à jour tous les 4 ans." : "Personne morale de droit privé de plus de 500 salariés en métropole : BEGES et plan de transition publics, mise à jour tous les 4 ans.");
       else add("info", "BEGES réglementaire", "Seuil non atteint avec les informations saisies. Vérifier le statut juridique, le territoire, l'effectif de référence, le périmètre de groupe et les éventuelles obligations sectorielles avant de conclure.");
-      if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("oblig", "Loi Sapin II", "Programme anticorruption (500 salariés et 100 M€ de CA).");
+      if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("verif", "Loi Sapin II", "Assujettissement à confirmer : société ou EPIC dont le siège est en France, au moins 500 salariés et plus de 100 M€ de chiffre d'affaires. Vérifier le périmètre entité/groupe, les règles de calcul et les cas particuliers prévus par les textes.");
       if (e >= 1000) add("oblig", "Loi Rixain", "Quotas de femmes parmi les cadres dirigeants (dès 1 000 salariés).");
-      if (e >= 5000 || em >= 10000) add("oblig", "Devoir de vigilance", "Plan de vigilance publié (5 000 salariés en France ou 10 000 dans le monde).");
+      if (e >= 5000 || em >= 10000) add("verif", "Devoir de vigilance", "Seuil d'alerte atteint : vérifier le calcul des effectifs de la société et de ses filiales directes/indirectes et confirmer que le seuil est atteint à la clôture de deux exercices consécutifs (5 000 salariés en France ou 10 000 dans le monde).");
       if (em > SEUIL.csrdEffectif && ca > SEUIL.csrdCA) add("oblig", "CSRD", "Dans le champ après l'Omnibus (plus de 1 000 salariés et plus de 450 M€ de CA).");
       else add("info", "CSRD", "Hors champ selon les seuils CSRD simplifiés ; vérifier le périmètre consolidé et les dispositions applicables. Les demandes de données des clients doivent être examinées au regard du statut d’entreprise protégée et du standard volontaire pertinent.");
       if (em > SEUIL.csdddEffectif && ca > SEUIL.csdddCA) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
@@ -412,7 +413,7 @@
           "Mettre en place une veille réglementaire trimestrielle (transpositions EmpCo et transparence salariale en cours).",
         ],
         hyp: "Seuils simplifiés : certains textes s'apprécient par établissement, sur deux exercices consécutifs ou avec le bilan. Ceci n'est pas un avis juridique.",
-        sources: [S.omnibus, S.beges, S.dechets, S.mp, S.empco, S.energie, S.pay],
+        sources: [S.omnibus, S.beges, S.dechets, S.mp, S.empco, S.energie, S.pay, S.sapin],
       };
     },
   };
