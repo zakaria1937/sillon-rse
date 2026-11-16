@@ -83,7 +83,7 @@ test("Fournisseurs : une certification déclarée ne réduit pas automatiquement
   const none = run("fournisseurs", { rows: [{ ...row, cert: "none" }] }).kpis[0].v;
   const certified = run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).kpis[0].v;
   assert.equal(none, certified);
-  assert.match(byId.fournisseurs.hyp, /ne réduisent pas mécaniquement/);
+  assert.match(run("fournisseurs", { rows: [{ ...row, cert: "iso" }] }).hyp, /ne réduisent pas mécaniquement/);
 });
 
 test("ISO : auto-évaluation non exhaustive, pas de conclusion de conformité/certification", () => {
