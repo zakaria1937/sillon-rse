@@ -69,9 +69,9 @@ test("Réglementation énergie : les seuils français sont inclusifs (>=)", () =
 test("Réglementation : les échéances de transparence salariale distinguent les tranches", () => {
   const timeline = ctx.window.SILLON_REF.echeances;
   const at = (eff) => timeline.filter((e) => e.t.toLowerCase().includes("rapports") && e.ap({ eff })).map((e) => e.d);
-  assert.deepEqual(at(120), ["2031-06-07"]);
-  assert.deepEqual(at(180), ["2027-06-07"]);
-  assert.deepEqual(at(300), ["2027-06-07"]);
+  assert.equal(at(120).join(","), "2031-06-07");
+  assert.equal(at(180).join(","), "2027-06-07");
+  assert.equal(at(300).join(","), "2027-06-07");
 });
 
 test("EcoVadis : un thème sous 30 bloque toute médaille", () => {
