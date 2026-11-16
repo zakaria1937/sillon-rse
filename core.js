@@ -58,7 +58,7 @@
   async function cloudLoad(code) {
     code = String(code || "").trim().toLowerCase();
     if (!/^[a-z0-9]{24,64}$/.test(code)) throw { code: "invalid_code" };
-    const r = await fetch("/api/dossier?code=" + code).catch(() => { throw { code: "offline" }; });
+    const r = await fetch("/api/dossier", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }).catch(() => { throw { code: "offline" }; });
     if (!r.ok) throw { code: r.status === 404 ? "not_found" : "upstream_error" };
     const rec = await r.json();
     let restored;
