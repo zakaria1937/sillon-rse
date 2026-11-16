@@ -163,6 +163,7 @@
     if (X.byId[h]) V.view(X.byId[h]);
     else if (h === "profil") V.profileView();
     else if (h === "plan") V.planView();
+    else if (h === "preuves") V.documentsView();
     else if (h === "veille") V.watchView();
     else if (h === "methode") V.methodView();
     else if (h === "rapport") V.reportView();
