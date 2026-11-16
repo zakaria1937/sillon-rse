@@ -177,6 +177,16 @@ test("plan d'action : une action sans intitulé n'est jamais enregistrée", asyn
   await page.click("#addAct"); await page.fill("#draftT", "Former les commerciaux à la RSE"); await page.click("#draftF button[type=submit]");
   await page.waitForTimeout(400);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom.length), 1);
+  await page.fill('input[data-k="owner"]', "Responsable QSE");
+  await page.fill('input[data-k="due"]', "2027-03-31");
+  await page.fill('input[data-k="kpi"]', "100 % des commerciaux formés");
+  await page.fill('input[data-k="evidence"]', "Feuilles de présence et support de formation");
+  await page.waitForTimeout(400);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0]);
+  assert.equal(saved.owner, "Responsable QSE");
+  assert.equal(saved.due, "2027-03-31");
+  assert.equal(saved.kpi, "100 % des commerciaux formés");
+  assert.equal(saved.evidence, "Feuilles de présence et support de formation");
   await page.fill('td.act input', ""); await page.locator('td.act input').blur(); await page.waitForTimeout(400);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0].text), "Former les commerciaux à la RSE");
   await page.goto(BASE + "/#accueil");
