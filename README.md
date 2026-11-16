@@ -34,7 +34,8 @@
 - **Plan d'action global** trié par impact et effort, avec responsable, échéance et statut.
 - **Historique et référence** : courbe d'évolution des scores et comparaison avant/après.
 - **Veille réglementaire** : frise des échéances 2026-2030, celles qui concernent l'entreprise sont mises en avant.
-- **Exports** : PDF consolidé, classeur Excel, mode présentation plein écran.
+- **Exports et portabilité** : PDF consolidé, classeur Excel, mode présentation plein écran, export JSON du dossier et restauration contrôlée depuis une sauvegarde.
+- **Sauvegarde en ligne** : dossier chiffré côté navigateur (AES-GCM) avant transmission ; le code secret est nécessaire pour le restaurer. Le serveur ne reçoit pas le dossier en clair.
 - **Français** (version anglaise en préparation), thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
 
 ## Méthode
@@ -51,6 +52,10 @@ Chaque copilote affiche sa formule, ses hypothèses et ses sources (page « Mét
 - Google (0,24 Wh par requête Gemini médiane, 2025), OpenAI (0,34 Wh), Luccioni et al. (2023)
 
 Les résultats sont des estimations ou indices internes. Ils ne remplacent ni un BEGES réglementaire, ni une analyse de risques fournisseurs/diligence raisonnable, ni un audit de certification, ni un conseil juridique. Les indices Diagnostic de maturité, Marchés publics, Greenwashing et Visibilité sont des grilles heuristiques conçues pour l'outil, pas des moyennes sectorielles mesurées ni des validations réglementaires.
+
+## Données, sauvegarde et limites d'accès
+
+Voir [SECURITE_DONNEES.md](docs/SECURITE_DONNEES.md) pour le modèle de stockage, les sauvegardes et les limites actuelles. Sillon est aujourd'hui un dossier de travail par navigateur/session : il ne propose pas encore de comptes nominatifs, de rôles ni d'isolation multi-entreprises côté serveur. Ne l'utilisez pas comme GED ou comme espace collaboratif contenant des données confidentielles sans déploiement d'une architecture dédiée.
 
 ## Lancer en local
 
