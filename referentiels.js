@@ -11,8 +11,8 @@
     ia: { requeteStandard: 0.3, requeteLongue: 3, image: 2.9 },
     // Seuils réglementaires (effectifs en salariés, chiffre d'affaires en M€, énergie en GWh, surface en m²).
     seuils: { csrdEffectif: 1000, csrdCA: 450, csdddEffectif: 5000, csdddCA: 1500, begesEffectif: 500, sapin2Effectif: 500, sapin2CA: 100, tertiaireSurface: 1000, auditEnergieGWh: 2.75, smeEnergieGWh: 23.6 },
-    // Médailles EcoVadis : score indicatif minimal (au 1er juillet 2024) et seuil bloquant par thème.
-    ecovadis: { platine: 81, or: 73, argent: 66, bronze: 58, committed: 45, plancherTheme: 30 },
+    // EcoVadis : percentiles officiels ; seuils de score publiés mensuellement et variables.
+    ecovadis: { percentiles: { platine: 99, or: 95, argent: 85, bronze: 65 }, seuilsNovembre2026: { platine: 89, or: 82, argent: 75, bronze: 67 }, badgeCommitted: 45, plancherTheme: 30, dateSeuils: "2026-11-01", statut: "instantané mensuel initial, seuils susceptibles d’évoluer" },
     // Échéances réglementaires ; `ap(profil)` dit si l'échéance concerne l'entreprise.
     echeances: [
     { d: "2026-02-26", t: "Omnibus I publié au Journal officiel de l'UE", s: "CSRD et CSDDD recentrées sur les grandes entreprises.", ap: () => true },
