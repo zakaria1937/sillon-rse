@@ -106,7 +106,7 @@
   const carbone = {
     id: "carbone-ia", fam: "mesurer", title: "Carbone IA",
     short: "Empreinte carbone de vos usages d'IA générative, matériel compris.",
-    intro: "Estimez l'énergie et les émissions de vos requêtes texte, des requêtes longues de type « raisonnement » et des images générées, puis comparez-les au matériel acheté.",
+    intro: "Estimation exploratoire des usages texte, des requêtes longues et des images générées. Les consommations par requête et les facteurs géographiques sont des hypothèses variables selon les modèles, les centres de données et les méthodes de calcul : ce module ne mesure pas les consommations réelles du fournisseur.",
     calc: "kWh · kgCO2e · équivalences ADEME",
     icon: "leaf",
     fields: [
@@ -136,8 +136,8 @@
       F.push({ lvl: "info", t: `L'usage annuel de l'IA (${nf(kg, 1)} kgCO2e) équivaut à ${nf(kg / 0.218)} km en voiture thermique ou ${nf((kg / 156) * 100)} % de la fabrication d'un ordinateur portable.` });
       if (n > 0) F.push({ lvl: "ok", t: `Une requête texte standard reste sobre : environ 0,3 Wh, l'ordre de grandeur publié par Google (0,24 Wh) et OpenAI (0,34 Wh).` });
       return {
-        gauge: { val: score, max: 100, label: "SOBRIÉTÉ" },
-        verdict: score >= 75 ? "Usage sobre" : score >= 50 ? "Usage à optimiser" : "Usage intensif",
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: score >= 75 ? "Indice interne favorable" : score >= 50 ? "Indice interne intermédiaire" : "Indice interne à optimiser",
         summary: `${nf(total)} kgCO2e par an au total, dont ${nf(kg)} pour l'usage de l'IA et ${nf(kgPc)} pour le matériel.`,
         kpis: [
           { l: "Énergie consommée", v: nf(kwh), u: "kWh/an", s: `${nf(n)} requêtes texte/an` },
@@ -153,7 +153,7 @@
           "Allonger la durée de vie des postes à 5 ans minimum avant d'en acheter pour l'IA.",
           "Intégrer ce poste au scope 3 (catégorie « biens et services achetés ») de votre bilan carbone.",
         ],
-        hyp: "Hypothèses : 0,3 Wh par requête standard, 3 Wh par requête longue (ordre de grandeur ×10), 2,9 Wh par image ; facteurs d'émission indiqués dans le formulaire.",
+        hyp: "Estimation indicative et non mesure réelle : 0,3 Wh par requête standard et 3 Wh par requête longue sont des hypothèses de modélisation (la seconde est une hypothèse ×10, non une donnée mesurée universelle) ; 2,9 Wh/image est issu d’une étude sur un modèle et un protocole donnés, non généralisable à tous les générateurs. Le facteur kgCO2e/kWh dépend de la localisation et de l’année du mix électrique. Le facteur de fabrication du PC est un ordre de grandeur à vérifier selon le modèle et le cycle de vie. Le calcul ne couvre pas de manière exhaustive les équipements des centres de données, le refroidissement, le réseau, l’eau ni l’ensemble du cycle de vie des infrastructures. L’indice 0–100 est une formule interne Sillon, sans référentiel externe ni valeur de certification.",
         sources: [S.google, S.altman, S.luccioni, S.ademe],
       };
     },
