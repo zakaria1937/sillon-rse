@@ -473,13 +473,13 @@
     "50001": hls([["6.3", "Revue énergétique et usages significatifs", "part"], ["6.4", "Indicateurs et situation énergétique de référence", "nc"]]),
   };
   const isoA = {
-    id: "audit-iso", fam: "conformer", title: "Audit ISO",
-    short: "Audit interne guidé, clause par clause, avant la certification.",
-    intro: "Passez en revue les exigences clés de la norme choisie. Le copilote calcule votre taux de conformité et signale les écarts bloquants pour l'audit de certification.",
-    calc: "15 clauses · écarts bloquants",
+    id: "audit-iso", fam: "conformer", title: "Auto-évaluation ISO",
+    short: "Grille de repérage avant une revue approfondie du système de management.",
+    intro: "Auto-évaluation pédagogique d'un échantillon de points de contrôle. Ce module n'est ni un audit clause par clause, ni une détermination de conformité ou de certification. Attention : ISO 14001:2026 a remplacé l'édition 2015 en avril 2026 ; les listes de contrôle Sillon doivent encore être remappées et validées sur les textes complets des éditions en vigueur.",
+    calc: "15 points de contrôle simplifiés · grille interne",
     icon: "clip",
     fields: [
-      { type: "seg", id: "norme", label: "Norme", def: "14001", options: [["14001", "ISO 14001"], ["45001", "ISO 45001"], ["50001", "ISO 50001"]] },
+      { type: "seg", id: "norme", label: "Norme", def: "14001", options: [["14001", "ISO 14001:2026"], ["45001", "ISO 45001:2018"], ["50001", "ISO 50001:2018"]] },
       { type: "checklist", id: "c14001", label: "ISO 14001 · management environnemental", states: ISOS, items: isoLists["14001"], showIf: { norme: "14001" } },
       { type: "checklist", id: "c45001", label: "ISO 45001 · santé et sécurité au travail", states: ISOS, items: isoLists["45001"], showIf: { norme: "45001" } },
       { type: "checklist", id: "c50001", label: "ISO 50001 · management de l'énergie", states: ISOS, items: isoLists["50001"], showIf: { norme: "50001" } },
@@ -489,32 +489,28 @@
       const it = list.map((x) => ({ ...x, s: st[x.id] || x.def }));
       const pct = Math.round((it.reduce((a, x) => a + (x.s === "ok" ? 1 : x.s === "part" ? 0.5 : 0), 0) / it.length) * 100);
       const nc = it.filter((x) => x.s === "nc"), pa = it.filter((x) => x.s === "part");
-      const crit = ["9.2", "9.3", "6.1.3", "5.2"];
-      const blk = nc.filter((x) => crit.includes(x.code));
-      const ready = pct >= 85 && !blk.length;
       const F = [];
-      blk.forEach((x) => F.push({ lvl: "crit", t: `§${x.code} ${x.label} : écart majeur probable, il bloque la certification.` }));
-      nc.filter((x) => !blk.includes(x)).forEach((x) => F.push({ lvl: "crit", t: `§${x.code} ${x.label} : non conforme.` }));
-      pa.slice(0, 4).forEach((x) => F.push({ lvl: "warn", t: `§${x.code} ${x.label} : à compléter (écart mineur probable).` }));
-      if (!nc.length && !pa.length) F.push({ lvl: "ok", t: "Aucun écart déclaré : planifiez un audit à blanc par un tiers." });
+      nc.forEach((x) => F.push({ lvl: "warn", t: "§" + x.code + " " + x.label + " : point de contrôle déclaré non traité dans la grille Sillon ; qualifier l'écart au regard du texte intégral et des preuves." }));
+      pa.slice(0, 4).forEach((x) => F.push({ lvl: "info", t: "§" + x.code + " " + x.label + " : point de contrôle à compléter et à documenter." }));
+      if (!nc.length && !pa.length) F.push({ lvl: "ok", t: "Aucun écart déclaré sur cet échantillon : cela ne démontre pas la conformité à la norme." });
       return {
-        gauge: { val: pct, max: 100, label: "CONFORMITÉ" },
-        verdict: ready ? "Prêt pour l'audit à blanc" : blk.length ? "Écarts bloquants" : "En préparation",
-        summary: `ISO ${n} : ${it.length - nc.length - pa.length} clauses conformes, ${pa.length} partielles, ${nc.length} non conformes.`,
+        gauge: { val: pct, max: 100, label: "COUVERTURE SILLON" },
+        verdict: pct >= 85 && !nc.length ? "Avancement élevé sur la grille interne" : "Auto-évaluation à compléter",
+        summary: "ISO " + n + " : " + (it.length - nc.length - pa.length) + " points conformes selon la déclaration, " + pa.length + " partiels, " + nc.length + " à traiter.",
         kpis: [
-          { l: "Conformité", v: pct, u: "%", s: "Objectif : 85 % et plus" },
-          { l: "Écarts bloquants", v: blk.length, u: "", s: "Audit interne, revue, veille, politique" },
-          { l: "Délai estimé", v: ready ? "1–2" : blk.length ? "6–9" : "3–6", u: "mois", s: "Avant l'audit de certification" },
+          { l: "Couverture de la grille", v: pct, u: "%", s: "Indice interne, non normatif" },
+          { l: "Points à traiter", v: nc.length, u: "", s: "Sur cet échantillon de contrôle" },
+          { l: "Points partiels", v: pa.length, u: "", s: "À documenter et vérifier" },
         ],
-        chart: { type: "bars", unit: "clauses", items: [{ l: "Conformes", v: it.length - nc.length - pa.length }, { l: "Partielles", v: pa.length }, { l: "Non conformes", v: nc.length, hot: true }] },
+        chart: { type: "bars", unit: "points de contrôle", items: [{ l: "Déclarés conformes", v: it.length - nc.length - pa.length }, { l: "Partiels", v: pa.length }, { l: "À traiter", v: nc.length, hot: true }] },
         findings: F,
         actions: [
-          "Planifier l'audit interne complet (§9.2) au moins 2 mois avant la certification.",
-          "Tenir une revue de direction formalisée avec compte rendu (§9.3).",
-          "Ouvrir une fiche d'action corrective par écart, avec pilote et échéance.",
+          "Vérifier la version de la norme et établir une matrice de correspondance avec les exigences officielles en vigueur.",
+          "Réaliser un audit interne couvrant l'ensemble du domaine d'application, des processus et des exigences applicables.",
+          "Documenter les constats, preuves, responsables, actions correctives et échéances.",
         ],
-        hyp: "Structure harmonisée ISO (Annexe SL). Délais indicatifs pour une PME de 50 à 250 salariés.",
-        sources: [S.iso],
+        hyp: "Grille Sillon simplifiée et non exhaustive : 15 points de contrôle génériques ou sélectionnés, avec des clauses héritées de versions antérieures. ISO 14001:2026 est publiée depuis avril 2026 ; ISO 45001:2018 et ISO 50001:2018 restent les éditions publiées en vigueur, avec amendements climat 2024. Les numéros de clauses, les exigences et les preuves doivent être revérifiés dans chaque édition officielle avant tout audit. Le pourcentage et le verdict ne préjugent ni d'un écart majeur/mineur, ni d'une décision de certification.",
+        sources: [S.iso14001, S.iso45001, S.iso50001],
       };
     },
   };
