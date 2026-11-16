@@ -42,6 +42,11 @@
     doc.text(clean(`${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} · ${p.secteur} · ${p.eff} salariés · ${p.ca} M€ · ${ids.length} copilote(s)`), M, 45, { maxWidth: TW });
     doc.setFontSize(8); doc.text(clean(t("foot2")), M, 55, { maxWidth: TW });
     y = 84;
+    const entered = ids.filter((id) => st.used[id]).length;
+    text("PÉRIMÈTRE ET QUALITÉ DES DONNÉES", 11, acc, "bold");
+    text("Périmètre : " + ids.length + " copilote(s) ; " + entered + " avec saisies utilisateur ; " + (ids.length - entered) + " avec valeurs de démonstration.", 9, mut);
+    text("Les données saisies ne sont pas vérifiées et les justificatifs ne sont pas audités. Auto-évaluation indicative : ni audit, ni certification, ni avis juridique, ni attestation de conformité.", 8.5, soil);
+    y += 4;
     if (ids.length > 1) {
       text(st.lang === "en" ? "Summary" : "Synthèse", 14, ink, "bold"); y += 1;
       ids.forEach((id) => { const c = byId[id], r = X.result(c); text(`${cpT(c).title} : ${r.verdict}${r.gauge ? ` (${r.gauge.show || r.gauge.val}${r.gauge.raw || r.gauge.show ? "" : "/100"})` : ""}${st.used[id] ? "" : " [exemple]"}`, 10, mut, "normal", 2); });
@@ -90,6 +95,8 @@
     const XL = window.XLSX, wb = XL.utils.book_new(), st = S(), p = X.profile();
     const add = (name, rows, widths) => { const ws = XL.utils.aoa_to_sheet(rows); ws["!cols"] = (widths || [30, 50, 18, 14]).map((w) => ({ wch: w })); XL.utils.book_append_sheet(wb, ws, name.slice(0, 31).replace(/[\\/?*[\]:]/g, "")); };
     add("Profil", [["Champ", "Valeur"], ...X.PROFILE_FIELDS.map((f) => [t(f.k), p[f.id]])], [36, 30]);
+    const entered = ids.filter((id) => st.used[id]).length;
+    add("Qualité & périmètre", [["Contrôle", "Constat"], ["Date export", new Date().toLocaleString("fr-FR")], ["Périmètre", ids.length + " copilote(s)"], ["Modules renseignés", entered + " / " + ids.length], ["Modules avec valeurs de démonstration", String(ids.length - entered)], ["Vérification", "Données non vérifiées ; justificatifs non contrôlés"], ["Analyse IA", ids.some((id) => !!st.ai[id]) ? "Présente ; contenu à relire" : "Aucune analyse enregistrée"], ["Portée", "Auto-évaluation indicative ; ni audit, certification, avis juridique ou attestation de conformité"], ["Scores", "Indicateurs internes ; aucune preuve indépendante"]], [38, 92]);
     if (ids.length) add("Synthèse", [["Copilote", "Verdict", "Score", "Résumé", "Données"], ...ids.map((id) => { const c = byId[id], r = X.result(c); return [cpT(c).title, r.verdict, r.gauge ? r.gauge.show || r.gauge.val : "", r.summary, st.used[id] ? "saisies" : "exemple"]; })], [22, 30, 10, 70, 10]);
     ids.forEach((id) => {
       const c = byId[id], r = X.result(c), v = X.resolved(c).v, rows = [["Section", "Libellé", "Valeur", "Unité"]];
@@ -100,7 +107,7 @@
         else if (f.type === "select" || f.type === "seg") rows.push(["Saisie", f.label, (f.options.find((o) => String(o[0]) === String(v[f.id])) || [, v[f.id]])[1], ""]);
         else rows.push(["Saisie", f.label, f.type === "textarea" ? v[f.id] : X.num(v[f.id]), f.unit || ""]);
       });
-      rows.push([], ["Résultat", "Verdict", r.verdict, ""], ["Résultat", "Résumé", r.summary, ""]);
+      rows.push([], ["Traçabilité", "Statut des données", st.used[id] ? "Saisies utilisateur — non vérifiées" : "Valeurs par défaut / démonstration", ""], ["Résultat", "Verdict", r.verdict, ""], ["Résultat", "Résumé", r.summary, ""]);
       r.kpis.forEach((k) => rows.push(["Indicateur", k.l, k.v, k.u]));
       r.findings.forEach((f) => rows.push(["Constat", f.tag || f.lvl, f.t, ""]));
       r.actions.forEach((a) => rows.push(["Action", "", a, ""]));
