@@ -191,7 +191,7 @@
   const vsme = {
     id: "reporting-vsme", fam: "conformer", title: "Reporting VSME",
     short: "État de préparation de votre rapport volontaire PME, point par point.",
-    intro: "La VSME est le standard volontaire européen pour les PME. Depuis l'Omnibus, c'est aussi le plafond de ce que vos grands clients peuvent vous demander. Cochez où vous en êtes sur chaque point.",
+    intro: "La VSME est le standard volontaire européen pour les PME. La protection « value-chain cap » issue de la directive Omnibus concerne les entreprises protégées de la chaîne de valeur d’une entreprise soumise au reporting CSRD : elles peuvent refuser certaines demandes d’informations dépassant les standards volontaires applicables, dans le cadre et sous les conditions du texte. Ce n’est pas un plafond universel opposable à toute demande client. Cochez où vous en êtes sur chaque point.",
     calc: "B1–B11 · C1–C9 · jours de travail",
     icon: "doc",
     fields: [
@@ -209,7 +209,7 @@
       const days = miss.length * 1.5 + part.length * 0.7;
       const F = [];
       const b3 = items.find((i) => i.code === "B3");
-      if (b3 && b3.s !== "ok") F.push({ lvl: "crit", t: "B3 (énergie et GES) incomplet : c'est la donnée la plus demandée par les banques et les donneurs d'ordre. Priorité n°1." });
+      if (b3 && b3.s !== "ok") F.push({ lvl: "warn", t: "B3 (énergie et GES) incomplet : point important du module de base à documenter, selon les données pertinentes et disponibles pour l’entreprise." });
       miss.filter((i) => i.code !== "B3").forEach((i) => F.push({ lvl: "warn", t: `${i.code} · ${i.label} : à constituer.` }));
       part.filter((i) => i.code !== "B3").slice(0, 4).forEach((i) => F.push({ lvl: "info", t: `${i.code} · ${i.label} : à compléter.` }));
       if (!miss.length && !part.length) F.push({ lvl: "ok", t: "Tous les points pertinents sont prêts : vous pouvez rédiger le rapport." });
@@ -229,9 +229,9 @@
           "Désigner un responsable par point de données et une date de collecte.",
           "Commencer par B3 : relevés d'énergie sur 12 mois, puis calcul des scopes 1 et 2 avec les facteurs ADEME.",
           "Réutiliser les données RH existantes (registre du personnel, DUERP, bilan formation) pour B8 à B10.",
-          "Envoyer le rapport VSME à vos clients plutôt que de remplir chaque questionnaire séparément.",
+          "Proposer un reporting VSME comme base de dialogue avec les clients, en vérifiant les demandes complémentaires et le champ de protection juridique applicable.",
         ],
-        hyp: "Charge : 1,5 jour par point manquant et 0,7 jour par point partiel, pour une PME de 20 à 250 salariés.",
+        hyp: "Le pourcentage est un indice interne de complétude, avec une pondération égale des points déclarés pertinents ; il ne s’agit pas d’un score EFRAG. La charge de 1,5 jour par point manquant et 0,7 jour par point partiel est une hypothèse indicative à recalibrer selon la taille, les systèmes de données et le niveau de preuve. Les points ne sont à renseigner que lorsqu’ils sont applicables. La protection value-chain cap n’est pas générale : elle vise les entreprises protégées au sens de la directive 2026/470 et les demandes formulées pour le reporting CSRD d’une entreprise déclarante.",
         sources: [S.vsme, S.omnibus],
       };
     },
@@ -285,13 +285,13 @@
   /* ---------- 4. Fournisseurs ---------- */
   const ZONES = [["fr", "France", 1], ["ue", "Union européenne", 1.5], ["ocde", "OCDE hors UE", 2.5], ["mod", "Hors OCDE, risque modéré", 3.5], ["high", "Hors OCDE, risque élevé", 5]];
   const CATS = [["textile", "Textile, habillement", 5], ["elec", "Électronique", 4.5], ["agro", "Agroalimentaire", 4], ["chim", "Chimie, plastiques", 4], ["btp", "Matériaux, BTP", 3.5], ["energie", "Énergie", 3], ["transport", "Transport, logistique", 3], ["emb", "Emballages", 3], ["mob", "Mobilier, fournitures", 3], ["num", "Services numériques", 2], ["intel", "Services intellectuels", 1.5]];
-  const CERTS = [["none", "Aucune", 1], ["iso", "ISO 14001", 0.8], ["eco", "Médaille EcoVadis", 0.7], ["sa", "SA8000 / amfori BSCI", 0.75]];
+  const CERTS = [["none", "Aucune preuve déclarée", 1], ["iso", "ISO 14001", 1], ["eco", "Évaluation EcoVadis", 1], ["sa", "SA8000 / amfori BSCI", 1]];
   const lk = (arr, k) => arr.find((x) => x[0] === k) || arr[0];
   const fourn = {
     id: "fournisseurs", fam: "mesurer", title: "Fournisseurs",
     short: "Cartographie des risques RSE de vos achats, pondérée par la dépense.",
-    intro: "Listez vos principaux fournisseurs. Le risque combine la zone géographique, la catégorie d'achat et les certifications, puis il est pondéré par le montant dépensé.",
-    calc: "risque pays × catégorie × dépense",
+    intro: "Pré-cartographie exploratoire des risques d’achats : la grille combine une exposition géographique et une sensibilité sectorielle, puis pondère les résultats par les dépenses. Elle ne constitue pas une analyse de risques de diligence raisonnable. Les labels et certificats sont des éléments de preuve à examiner, pas une garantie d’absence de risque ni une réduction automatique du score.",
+    calc: "indice de présélection pays × catégorie × dépense",
     icon: "truck",
     fields: [
       { type: "table", id: "rows", label: "Vos fournisseurs", columns: [
@@ -313,7 +313,7 @@
       const tot = rows.reduce((a, r) => a + num(r.dep), 0) || 1;
       const sc = rows.map((r) => {
         const z = lk(ZONES, r.zone), c = lk(CATS, r.cat), ce = lk(CERTS, r.cert);
-        const risk = Math.round(((z[2] * c[2]) / 25) * 100 * ce[2]);
+        const risk = Math.round(((z[2] * c[2]) / 25) * 100);
         return { nom: r.nom || "Sans nom", risk, dep: num(r.dep), share: num(r.dep) / tot, z: z[1], c: c[1], cert: ce[0] };
       });
       const w = Math.round(sc.reduce((a, s) => a + s.risk * s.share, 0));
@@ -339,7 +339,7 @@
           "Demander une preuve datée : certificat ISO 14001, scorecard EcoVadis ou audit social.",
           "Rechercher une alternative européenne pour les catégories textile et électronique les plus exposées.",
         ],
-        hyp: "Risque = (zone 1 à 5 × catégorie 1,5 à 5) / 25, réduit de 20 à 30 % si certifié. Grille indicative à affiner avec un audit.",
+        hyp: "Indice interne de présélection : exposition géographique (échelle qualitative Sillon de 1 à 5) × sensibilité de catégorie (échelle qualitative Sillon de 1,5 à 5), normalisées sur 25, puis pondérées par la dépense. Ces coefficients ne sont ni des données statistiques ni une notation pays/secteur validée. Les preuves déclarées (ISO 14001, évaluation EcoVadis, SA8000/BSCI) ne réduisent pas mécaniquement l’indice : leur périmètre, validité, site couvert, date, audit et éventuelles non-conformités doivent être vérifiés. Le résultat n’est pas un score de conformité ni une diligence raisonnable complète.");
         sources: [S.omnibus, S.ecovadis],
       };
     },
