@@ -8,7 +8,7 @@
     google: { n: "Google — énergie d'une requête Gemini", t: "Google / MIT Technology Review (août 2025) : requête texte médiane Gemini = 0,24 Wh ; 0,03 gCO2e ; 0,26 ml d'eau", url: "https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/" },
     altman: { n: "OpenAI — énergie d'une requête ChatGPT", t: "OpenAI (S. Altman, juin 2025) : ≈ 0,34 Wh par requête ChatGPT moyenne", url: "https://blog.samaltman.com/the-gentle-singularity" },
     luccioni: { n: "Luccioni et al. — énergie de la génération d'images", t: "Luccioni et al., « Power Hungry Processing » (2023) : ≈ 2,9 kWh pour 1 000 images générées", url: "https://arxiv.org/abs/2311.16863" },
-    ademe: { n: "ADEME — Base Empreinte et impactCO2", t: "ADEME, Base Empreinte et impactCO2 (facteurs d'émission France)", url: "https://impactco2.fr" },
+    ademe: { n: "ADEME — Base Empreinte", t: "Base publique de facteurs d’émission et de données d’inventaire. Les valeurs préremplies dans Sillon ne sont pas rapprochées individuellement d’une fiche, d’une version et d’un périmètre ADEME ; elles ne doivent pas être présentées comme des facteurs ADEME certifiés.", url: "https://base-empreinte.ademe.fr/" },
     vsme: { n: "EFRAG — norme VSME", t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
     omnibus: { n: "EUR-Lex — directive (UE) 2026/470 (Omnibus I)", t: "Texte officiel publié au Journal officiel de l’Union européenne le 26/02/2026 ; modifications CSRD et CSDDD.", url: "https://eur-lex.europa.eu/eli/dir/2026/470/oj?locale=fr" },
     ecovadis: { n: "EcoVadis — médailles et badges", t: "EcoVadis, « Understanding EcoVadis Medals and Badges » (règles 2025)", url: "https://support.ecovadis.com/hc/en-us/articles/210460227-Understanding-EcoVadis-Medals-and-Badges" },
@@ -28,20 +28,20 @@
   /* ---------- 0. Bilan carbone ---------- */
   const FE = window.SILLON_REF.facteurs, SEUIL = window.SILLON_REF.seuils;
   const bilanC = {
-    id: "bilan-carbone", fam: "mesurer", title: "Bilan carbone",
-    short: "Vos émissions scopes 1, 2 et 3 avec les facteurs ADEME.",
-    intro: "Un bilan simplifié à partir de vos factures et de vos volumes d'activité. Il alimente directement le point B3 de la VSME, le Benchmark et le critère environnemental des marchés publics.",
-    calc: "scopes 1-2-3 · facteurs ADEME",
+    id: "bilan-carbone", fam: "mesurer", title: "Estimation GES simplifiée",
+    short: "Une première estimation de plusieurs postes des scopes 1, 2 et 3.",
+    intro: "Estimation pédagogique sur un nombre limité de postes à partir de données d’activité et de ratios. Ce module n’est pas un BEGES complet : plusieurs postes du scope 3 ne sont pas couverts et les facteurs préremplis doivent être vérifiés avant tout usage externe, réglementaire ou décisionnel.",
+    calc: "postes sélectionnés · facteurs indicatifs",
     icon: "flame",
     fields: [
       { type: "group", label: "Scope 1 · combustion et fuites" },
-      { type: "number", id: "gaz", label: "Gaz naturel", unit: "kWh/an", def: 350000, min: 0, help: "0,227 kgCO2e/kWh" },
-      { type: "number", id: "fioul", label: "Fioul domestique", unit: "L/an", def: 0, min: 0, help: "3,25 kgCO2e/L" },
-      { type: "number", id: "gazole", label: "Gazole des véhicules", unit: "L/an", def: 12000, min: 0, help: "3,16 kgCO2e/L" },
-      { type: "number", id: "essence", label: "Essence des véhicules", unit: "L/an", def: 2000, min: 0, help: "2,80 kgCO2e/L" },
-      { type: "number", id: "clim", label: "Recharges de climatisation (R410A)", unit: "kg/an", def: 3, min: 0, help: "PRG 2 088" },
+      { type: "number", id: "gaz", label: "Gaz naturel", unit: "kWh/an", def: 350000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "fioul", label: "Fioul domestique", unit: "L/an", def: 0, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "gazole", label: "Gazole des véhicules", unit: "L/an", def: 12000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "essence", label: "Essence des véhicules", unit: "L/an", def: 2000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "clim", label: "Recharges de climatisation (R410A)", unit: "kg/an", def: 3, min: 0, help: "PRG indicatif à confirmer selon le gaz exact et la référence méthodologique retenue." },
       { type: "group", label: "Scope 2 · électricité" },
-      { type: "number", id: "elec", label: "Électricité consommée", unit: "kWh/an", def: 420000, min: 0, help: "0,052 kgCO2e/kWh, mix France" },
+      { type: "number", id: "elec", label: "Électricité consommée", unit: "kWh/an", def: 420000, min: 0, help: "Valeur indicative préremplie. Le facteur électrique dépend notamment de l’année, du périmètre et de la méthode ; vérifier la fiche ADEME adaptée." },
       { type: "group", label: "Scope 3 · déplacements" },
       { type: "number", id: "train", label: "Train", unit: "km/an", def: 40000, min: 0 },
       { type: "number", id: "avc", label: "Avion court et moyen courrier", unit: "km/an", def: 25000, min: 0 },
@@ -77,14 +77,15 @@
       F.push({ lvl: "crit", t: `Premier poste : ${top[0][0]} avec ${nf(t(top[0][2]))} tCO2e, soit ${nf((top[0][2] / (tot || 1)) * 100)} % du total.` });
       F.push({ lvl: sc[2] / (tot || 1) > 0.7 ? "warn" : "info", t: `Le scope 3 représente ${nf((sc[2] / (tot || 1)) * 100)} % des émissions : c'est là que se jouent les réductions.` });
       if (k("avl") * FE.avl > k("train") * FE.train * 5) F.push({ lvl: "warn", t: `L'avion pèse ${nf(t(k("avc") * FE.avc + k("avl") * FE.avl), 1)} tCO2e. Un trajet en TGV émet environ 90 fois moins par km qu'un vol court-courrier.` });
-      F.push({ lvl: "info", t: `Les achats sont estimés par ratios monétaires : précision faible, à affiner avec les données de vos principaux fournisseurs.` });
+      F.push({ lvl: "warn", t: `Périmètre incomplet : le scope 3 ne couvre ici que certains déplacements, le domicile-travail et trois catégories d’achats. Les déchets, le fret, les immobilisations, les combustibles et l’énergie en amont, l’utilisation et la fin de vie des produits vendus, entre autres postes pertinents, ne sont pas évalués.` });
+      F.push({ lvl: "info", t: `Les achats sont estimés par ratios monétaires : précision faible, à affiner avec les données physiques et les facteurs documentés des principaux fournisseurs.` });
       return {
         gauge: { val: Math.round(t(tot)), max: Math.max(1, Math.round(t(tot)) / Math.max(0.01, sc[2] / (tot || 1))), label: "TCO2E / AN", raw: true, show: nf(t(tot)) + " t" },
         verdict: `${nf(t(tot))} tCO2e par an`,
-        summary: `Scope 1 : ${nf(t(sc[0]))} t · Scope 2 : ${nf(t(sc[1]))} t · Scope 3 : ${nf(t(sc[2]))} t. ${nf(per, 1)} tCO2e par salarié.`,
+        summary: `Estimation partielle — postes sélectionnés uniquement. Scope 1 : ${nf(t(sc[0]))} t · Scope 2 : ${nf(t(sc[1]))} t · Scope 3 partiel : ${nf(t(sc[2]))} t. ${nf(per, 1)} tCO2e par salarié sur ce périmètre incomplet.`,
         kpis: [
           { l: "Scopes 1 et 2", v: nf(t(sc[0] + sc[1]), 1), u: "tCO2e", s: "Périmètre BEGES et VSME B3" },
-          { l: "Scope 3", v: nf(t(sc[2])), u: "tCO2e", s: `${nf((sc[2] / (tot || 1)) * 100)} % du total` },
+          { l: "Scope 3 (partiel)", v: nf(t(sc[2])), u: "tCO2e", s: `${nf((sc[2] / (tot || 1)) * 100)} % du total calculé` },
           { l: "Par salarié", v: nf(per, 1), u: "tCO2e", s: `${nf(k("sal"))} salariés` },
         ],
         chart: { type: "bars", unit: "tCO2e/an", items: P.filter((p) => p[2] > 0).map((p) => ({ l: p[0], v: t(p[2]), hot: p === top[0] })) },
@@ -93,9 +94,9 @@
           `Bâtir un plan de réduction sur « ${top[0][0]} » et « ${top[1][0]} », qui pèsent ${nf(((top[0][2] + top[1][2]) / (tot || 1)) * 100)} % du total.`,
           "Demander à vos 10 premiers fournisseurs leur empreinte carbone pour remplacer les ratios monétaires.",
           "Fixer une politique de déplacements : train obligatoire sous 4 h de trajet.",
-          "Publier les scopes 1 et 2 dans le rapport VSME (point B3).",
+          "Compléter les postes manquants et documenter les facteurs avant toute intégration dans un reporting VSME ou un BEGES.",
         ],
-        hyp: "Facteurs ADEME (Base Empreinte, impactCO2) : gaz 0,227 kg/kWh ; fioul 3,25 kg/L ; gazole 3,16 kg/L ; essence 2,80 kg/L ; électricité 0,052 kg/kWh ; TGV 2,9 g/km ; avion 258 g/km (court) et 152 g/km (long, traînées incluses) ; voiture 218 g/km. Ratios monétaires indicatifs et modifiables.",
+        hyp: "Les facteurs préremplis sont des ordres de grandeur de démonstration, pas une extraction vérifiée de fiches ADEME. Leur année, géographie, unité fonctionnelle, périmètre (amont, combustion, fabrication, traînées aériennes, etc.) et statut doivent être rapprochés individuellement d’une fiche Base Empreinte avant utilisation. Les ratios monétaires d’achats sont des hypothèses modifiables. Le calcul ne couvre qu’une sélection de postes : il ne constitue ni un BEGES réglementaire, ni un bilan carbone exhaustif, ni un audit.",
         sources: [S.ademe, S.beges, S.vsme],
       };
     },
