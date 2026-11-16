@@ -147,7 +147,7 @@ test("rapport : la synthèse de pilotage est visible et le PDF exécutif est exp
   assert.match(await page.textContent(".dash"), /Synthèse de pilotage/);
   assert.match(await page.textContent(".dash"), /valeurs d'exemple/);
   const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfAll")]);
-  assert.match(pdf.suggestedFilename(), /sillon-rapport-.*\\.pdf$/);
+  assert.match(pdf.suggestedFilename(), /sillon-rapport-.*\.pdf$/);
   assert.ok((await fs.promises.stat(await pdf.path())).size > 5000);
   assert.deepEqual(errors, []);
   await page.close();
