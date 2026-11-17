@@ -11,6 +11,15 @@ const calls = [];
 let mode = "success";
 globalThis.fetch = async (url, init = {}) => {
   calls.push({ url: String(url), init });
+  if (String(url).includes("/auth/v1/recover")) {
+    if (mode === "recover_unavailable") return new Response('{"msg":"unavailable"}', { status: 503 });
+    if (mode === "recover_rate_limited") return new Response('{"msg":"limited"}', { status: 429 });
+    return new Response(null, { status: 200 });
+  }
+  if (String(url).includes("/auth/v1/user") && init.method === "PUT") {
+    if (mode === "update_invalid") return new Response('{"msg":"invalid"}', { status: 400 });
+    return new Response(JSON.stringify({ id: userId, email: "user@example.fr" }), { status: 200 });
+  }
   if (String(url).includes("grant_type=password")) {
     if (mode === "bad_login") return new Response('{"msg":"invalid"}', { status: 400 });
     return new Response(JSON.stringify({
@@ -187,4 +196,39 @@ test("persistent rate limiter fails closed instead of using process memory", asy
   await assert.rejects(() => bumpStrict(null, "login/test", 2), /persistent_store_unavailable/);
   const broken = { async get() { throw new Error("storage_down"); }, async set() {} };
   await assert.rejects(() => bumpStrict(broken, "login/test", 2), /storage_down/);
+});
+
+
+test("password recovery sends a same-origin redirect and does not reveal whether an account exists", async () => {
+  calls.length = 0;
+  const r = await auth(req("recover", { email: " USER@example.fr " }), { ip: "10.0.0.21" });
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: true });
+  assert.match(calls[0].url, /auth\\/v1\\/recover/);
+  assert.match(decodeURIComponent(calls[0].url), /redirect_to=https:\/\/sillon\.example\//);
+  assert.equal(JSON.parse(calls[0].init.body).email, "user@example.fr");
+  assert.equal(calls[0].init.headers.apikey, "test-anon-key");
+});
+
+test("password recovery validates email, rate limits and fails safely on identity outages", async () => {
+  assert.equal((await auth(req("recover", { email: "bad" }), { ip: "10.0.0.22" })).status, 400);
+  mode = "recover_unavailable";
+  assert.equal((await auth(req("recover", { email: "user@example.fr" }), { ip: "10.0.0.23" })).status, 502);
+  mode = "recover_rate_limited";
+  assert.equal((await auth(req("recover", { email: "user@example.fr" }), { ip: "10.0.0.24" })).status, 429);
+  mode = "success";
+});
+
+test("password update requires a recovery token and a strong password", async () => {
+  calls.length = 0;
+  assert.equal((await auth(req("update-password", { access_token: "short", password: "short" }), { ip: "10.0.0.25" })).status, 400);
+  const r = await auth(req("update-password", { access_token: "recovery-access-token-long-enough", password: "NewStrongPassword2026!" }), { ip: "10.0.0.26" });
+  assert.equal(r.status, 200);
+  assert.match(calls[0].url, /auth\/v1\/user$/);
+  assert.equal(calls[0].init.method, "PUT");
+  assert.equal(calls[0].init.headers.authorization, "Bearer recovery-access-token-long-enough");
+  assert.deepEqual(JSON.parse(calls[0].init.body), { password: "NewStrongPassword2026!" });
+  mode = "update_invalid";
+  assert.equal((await auth(req("update-password", { access_token: "recovery-access-token-long-enough", password: "AnotherStrongPassword2026!" }), { ip: "10.0.0.27" })).status, 400);
+  mode = "success";
 });
