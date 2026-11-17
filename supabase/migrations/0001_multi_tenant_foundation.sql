@@ -47,7 +47,7 @@ create table if not exists public.audit_events (
   new_role text,
   event_type text not null check (event_type in (
     'dossier.created', 'dossier.updated', 'dossier.deleted',
-    'membership.created', 'membership.role_changed'
+    'membership.created', 'membership.role_changed', 'membership.removed'
   )),
   dossier_version bigint,
   occurred_at timestamptz not null default now()
@@ -313,3 +313,61 @@ end;
 $$;
 revoke all on function public.set_organization_member_role(uuid, uuid, text) from public, anon;
 grant execute on function public.set_organization_member_role(uuid, uuid, text) to authenticated;
+
+
+-- Suppression contrôlée d'une adhésion : journaliser avant DELETE, dans la même transaction.
+-- Aucun trigger DELETE générique n'est utilisé afin de préserver les suppressions en cascade d'organisation.
+create or replace function public.remove_organization_member(
+  p_org uuid,
+  p_user uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_current_role text;
+  v_admin_count integer;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  perform 1 from public.organizations where id = p_org for update;
+  if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  -- Sérialise la suppression et les transferts de rôle dans la même organisation.
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  select role into v_current_role
+  from public.organization_memberships
+  where organization_id = p_org and user_id = p_user
+  for update;
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+
+  if v_current_role = 'admin' then
+    select count(*) into v_admin_count
+    from public.organization_memberships
+    where organization_id = p_org and role = 'admin';
+    if v_admin_count <= 1 then
+      raise exception 'cannot_remove_last_admin' using errcode = '23514';
+    end if;
+  end if;
+
+  insert into public.audit_events(
+    organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+  ) values (
+    p_org, auth.uid(), p_user, v_current_role, null, 'membership.removed'
+  );
+
+  delete from public.organization_memberships
+  where organization_id = p_org and user_id = p_user;
+end;
+$$;
+revoke all on function public.remove_organization_member(uuid, uuid) from public, anon;
+grant execute on function public.remove_organization_member(uuid, uuid) to authenticated;
