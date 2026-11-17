@@ -26,7 +26,7 @@ globalThis.fetch = async (url, init = {}) => {
     if (mode === "bad_login") return new Response('{"msg":"invalid"}', { status: 400 });
     return new Response(JSON.stringify({
       access_token: "access-token-value-long-enough",
-      refresh_token: "refresh-token-value-long-enough",
+      refresh_token: mode === "short_refresh" ? "kxvr2yjrb3va" : "refresh-token-value-long-enough",
       expires_in: 3600,
       user: { id: userId, email: "user@example.fr" },
     }), { status: 200, headers: { "content-type": "application/json" } });
@@ -253,5 +253,13 @@ test("password update explains a reused or weak password instead of blaming the 
   mode = "update_weak";
   const weak = await auth(req("update-password", { access_token: "recovery-access-token-long-enough", password: "aaaaaaaaaaaa" }), { ip: "10.0.0.29" });
   assert.equal((await weak.json()).code, "password_too_weak");
+  mode = "success";
+});
+
+test("login accepts the short refresh tokens issued by Supabase Auth (12 characters)", async () => {
+  mode = "short_refresh";
+  const r = await auth(req("login", { email: "user@example.fr", password: "CorrectPassword2026!" }), { ip: "10.0.0.40" });
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("set-cookie"), /kxvr2yjrb3va/);
   mode = "success";
 });
