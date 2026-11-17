@@ -99,6 +99,51 @@ export default async function tenant(req) {
     return r.error ? json(r.error, { code: "audit_read_failed" }) : json(200, r.data);
   }
 
+  if (resource === "invitations") {
+    if (req.method === "GET") {
+      const org = url.searchParams.get("organization_id") || "";
+      if (!UUID.test(org)) return json(400, { code: "invalid_organization_id" });
+      const path = "organization_invitations?select=id,email,role,created_at,expires_at,accepted_at,revoked_at"
+        + "&organization_id=eq." + org + "&order=created_at.desc&limit=100";
+      const r = await rest(cfg, auth.token, path);
+      return r.error ? json(r.error, { code: "invitation_read_failed" }) : json(200, r.data);
+    }
+    if (req.method === "POST") {
+      const parsed = await readBody(req);
+      if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+      const org = parsed.value.organization_id;
+      const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
+      const role = parsed.value.role;
+      if (!UUID.test(String(org || ""))) return json(400, { code: "invalid_organization_id" });
+      if (email.length < 5 || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json(400, { code: "invalid_invitation_email" });
+      if (!["admin", "rse_lead", "contributor", "reader"].includes(role)) return json(400, { code: "invalid_invitation_role" });
+      const r = await rest(cfg, auth.token, "rpc/create_organization_invitation", {
+        method: "POST", body: JSON.stringify({ p_org: org, p_email: email, p_role: role }),
+      });
+      if (r.error) {
+        const code = r.error === 403 ? "organization_admin_required"
+          : r.error === 400 || r.error === 422 ? "invalid_invitation"
+          : "invitation_create_failed";
+        return json(r.error, { code });
+      }
+      const item = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (!item || typeof item.token !== "string" || typeof item.invitation_id !== "string") return json(502, { code: "invitation_create_failed" });
+      return json(201, { id: item.invitation_id, token: item.token, expires_at: item.expires_at });
+    }
+    if (req.method === "DELETE") {
+      const parsed = await readBody(req);
+      if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+      const id = parsed.value.invitation_id;
+      if (!UUID.test(String(id || ""))) return json(400, { code: "invalid_invitation_id" });
+      const r = await rest(cfg, auth.token, "rpc/revoke_organization_invitation", {
+        method: "POST", body: JSON.stringify({ p_invitation: id }),
+      });
+      if (r.error) return json(r.error, { code: r.error === 403 ? "organization_admin_required" : r.error === 404 ? "invitation_not_found" : "invitation_revoke_failed" });
+      return json(200, { revoked: r.data === true });
+    }
+    return json(405, { code: "method" });
+  }
+
   if (resource === "memberships") {
     if (req.method === "GET") {
       const org = url.searchParams.get("organization_id") || "";
