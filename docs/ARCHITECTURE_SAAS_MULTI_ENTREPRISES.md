@@ -23,9 +23,9 @@ La migration permet à un utilisateur authentifié de créer une organisation vi
 
 ## Passerelle serveur préparée
 
-`netlify/functions/auth.mjs` prépare les opérations de connexion, renouvellement et déconnexion : le refresh token est conservé dans un cookie `HttpOnly`, `Secure` et `SameSite=Strict`, tandis que seul l'access token court est renvoyé au navigateur. Les tentatives de connexion sont limitées par IP. `netlify/functions/tenant.mjs` expose les opérations initiales organisations/dossiers. Elle vérifie le jeton auprès de Supabase Auth (`/auth/v1/user`), puis transmet le même JWT utilisateur à PostgREST. La base applique donc les politiques RLS pour chaque opération. Seule la clé publique `SUPABASE_ANON_KEY` est utilisée côté serveur ; aucune clé `service_role` n'est nécessaire ni attendue. Les appels sont limités dans le temps, les identifiants sont validés et les opérations de modification exigent une origine autorisée.
+`netlify/functions/auth.mjs` prépare les opérations de connexion, renouvellement et déconnexion : le refresh token est conservé dans un cookie `HttpOnly`, `Secure` et `SameSite=Strict`, tandis que seul l'access token court est renvoyé au navigateur. Les tentatives de connexion sont limitées par IP. `netlify/functions/tenant.mjs` expose les opérations initiales organisations/dossiers et la lecture des adhésions/roles visibles par l'utilisateur selon la RLS. Elle vérifie le jeton auprès de Supabase Auth (`/auth/v1/user`), puis transmet le même JWT utilisateur à PostgREST. La base applique donc les politiques RLS pour chaque opération. Seule la clé publique `SUPABASE_ANON_KEY` est utilisée côté serveur ; aucune clé `service_role` n'est nécessaire ni attendue. Les appels sont limités dans le temps, les identifiants sont validés et les opérations de modification exigent une origine autorisée.
 
-Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. La procédure de staging détaillée est décrite dans `docs/CONFIGURATION_SUPABASE_NETLIFY.md`. L'interface de connexion est raccordée aux endpoints : l'access token reste en mémoire, le refresh token dans un cookie `HttpOnly`, et les organisations/dossiers vierges passent par la passerelle RLS. Restent à réaliser : provisionnement/invitations, gestion des rôles, synchronisation/import du dossier local existant, récupération de mot de passe, et migration des données. Ne pas publier le mode SaaS avant leur réalisation et leurs tests.
+Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. La procédure de staging détaillée est décrite dans `docs/CONFIGURATION_SUPABASE_NETLIFY.md`. L'interface de connexion est raccordée aux endpoints : l'access token reste en mémoire, le refresh token dans un cookie `HttpOnly`, et les organisations/dossiers vierges passent par la passerelle RLS. L'interface affiche le rôle courant dans chaque organisation et masque la création de dossiers au rôle lecteur. Restent à réaliser : provisionnement/invitations, modification des rôles, synchronisation/import du dossier local existant, récupération de mot de passe, et migration des données. Ne pas publier le mode SaaS avant leur réalisation et leurs tests.
 
 ## Contrôles de sécurité prévus
 
@@ -44,7 +44,7 @@ Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_A
 
 1. Créer un projet Supabase distinct (développement/staging puis production), activer MFA pour les comptes privilégiés et configurer les URL de redirection.
 2. Appliquer la migration et vérifier les politiques avec deux organisations et au moins quatre utilisateurs de rôles différents.
-3. Finaliser l'interface de connexion et la gestion/rotation des sessions ; la passerelle Netlify initiale est déjà préparée et valide les JWT auprès de Supabase Auth. Les requêtes PostgREST utilisent le JWT utilisateur afin que la RLS reste l'autorité d'accès. Ne jamais faire confiance à un `organization_id` fourni seul par le navigateur.
+3. Valider en staging la connexion, le renouvellement rotatif et la révocation de session, activer MFA pour les comptes privilégiés et tester l'interface initiale. La passerelle Netlify valide les JWT auprès de Supabase Auth. Les requêtes PostgREST utilisent le JWT utilisateur afin que la RLS reste l'autorité d'accès. Ne jamais faire confiance à un `organization_id` fourni seul par le navigateur.
 4. Implémenter invitations à durée limitée, révocation, transfert du rôle admin et journalisation des changements d'adhésion via fonctions serveur.
 5. Remplacer progressivement le stockage navigateur par l'API authentifiée. Conserver import/export local comme portabilité.
 6. Définir sauvegardes, restauration testée, rétention, suppression organisation/utilisateur, gestion des clés, alertes et procédure d'incident.
@@ -57,6 +57,8 @@ Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_A
 |---|---|
 | Utilisateur A lit un dossier de son organisation | Autorisé |
 | Utilisateur A lit un dossier de l'organisation B | Refusé par RLS |
+| Utilisateur A consulte les adhésions de l'organisation B | Refusé par RLS |
+| Lecteur consulte son rôle et les dossiers de son organisation | Autorisé, sans action de modification |
 | Lecteur modifie un dossier | Refusé |
 | Contributeur crée/modifie un dossier de son organisation | Autorisé |
 | Contributeur supprime un dossier | Refusé |
