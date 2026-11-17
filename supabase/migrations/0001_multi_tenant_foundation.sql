@@ -459,12 +459,12 @@ begin
   insert into public.audit_events(organization_id, actor_id, event_type)
   select organization_id, auth.uid(), 'invitation.revoked' from revoked;
 
-  v_token := encode(gen_random_bytes(32), 'hex');
+  v_token := encode(public.gen_random_bytes(32), 'hex');
   v_expiry := now() + interval '7 days';
   insert into public.organization_invitations(
     organization_id, email, role, token_hash, invited_by, expires_at
   ) values (
-    p_org, v_email, p_role, encode(digest(v_token, 'sha256'), 'hex'), auth.uid(), v_expiry
+    p_org, v_email, p_role, encode(public.digest(v_token, 'sha256'), 'hex'), auth.uid(), v_expiry
   ) returning id into v_id;
 
   insert into public.audit_events(organization_id, actor_id, event_type)
@@ -503,7 +503,7 @@ begin
 
   select * into v_invitation
   from public.organization_invitations
-  where token_hash = encode(digest(p_token, 'sha256'), 'hex')
+  where token_hash = encode(public.digest(p_token, 'sha256'), 'hex')
   for update;
   if not found or v_invitation.accepted_at is not null
      or v_invitation.revoked_at is not null or v_invitation.expires_at <= now()
