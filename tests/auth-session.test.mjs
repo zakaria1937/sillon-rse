@@ -93,6 +93,7 @@ test("invalid credentials, expired sessions and foreign origins are rejected", a
   assert.match(expired.headers.get("set-cookie"), /Max-Age=0/);
   mode = "success";
   assert.equal((await auth(req("login", { email: "user@example.fr", password: "correct-password" }, "", "https://evil.example"), { ip: "10.0.0.6" })).status, 403);
+  assert.equal((await auth(req("login", { email: "user@example.fr", password: "correct-password" }, "", "http://sillon.example"), { ip: "10.0.0.6" })).status, 403);
 });
 
 test("login validates input and rate-limits repeated attempts", async () => {
