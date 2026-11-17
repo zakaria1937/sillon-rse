@@ -106,3 +106,13 @@ test("missing Supabase configuration and unsupported methods fail closed", async
   const get = new Request("https://sillon.example/api/auth?action=login", { method: "GET", headers: { origin: "https://sillon.example" } });
   assert.equal((await auth(get, { ip: "10.0.0.10" })).status, 405);
 });
+
+
+test("login measures request limits in UTF-8 bytes", async () => {
+  const oversized = "é".repeat(4100);
+  const r = await auth(new Request("https://sillon.example/api/auth?action=login", {
+    method: "POST", headers: { origin: "https://sillon.example", "content-type": "application/json" },
+    body: JSON.stringify({ email: "user@example.fr", password: "correct-password", extra: oversized }),
+  }), { ip: "10.0.0.11" });
+  assert.equal(r.status, 413);
+});
