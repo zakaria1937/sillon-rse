@@ -201,3 +201,47 @@ test("GET audits exposes metadata only and delegates visibility to organization 
   assert.match(calls.at(-1).url, /limit=100/);
   assert.equal((await tenant(req("POST", "?resource=audits&organization_id=" + orgId, {}))).status, 405);
 });
+
+
+test("POST invitations validates input and returns the one-time token only from the create RPC", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  restData = [{ invitation_id: dossierId, token: "a".repeat(64), expires_at: "2026-11-24T10:00:00Z" }];
+  assert.equal((await tenant(req("POST", "?resource=invitations", {
+    organization_id: orgId, email: "not-an-email", role: "reader",
+  }))).status, 400);
+  assert.equal((await tenant(req("POST", "?resource=invitations", {
+    organization_id: orgId, email: "member@example.test", role: "owner",
+  }))).status, 400);
+  const r = await tenant(req("POST", "?resource=invitations", {
+    organization_id: orgId, email: " MEMBER@example.test ", role: "contributor",
+  }));
+  assert.equal(r.status, 201);
+  assert.deepEqual(await r.json(), { id: dossierId, token: "a".repeat(64), expires_at: "2026-11-24T10:00:00Z" });
+  assert.match(calls.at(-1).url, /rpc\\/create_organization_invitation$/);
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), {
+    p_org: orgId, p_email: "member@example.test", p_role: "contributor",
+  });
+});
+
+test("GET and DELETE invitations use RLS and the admin-only revocation RPC", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  restData = [{ id: dossierId, email: "member@example.test", role: "reader" }];
+  const list = await tenant(req("GET", "?resource=invitations&organization_id=" + orgId, undefined, null, false));
+  assert.equal(list.status, 200);
+  assert.match(calls.at(-1).url, /organization_invitations\\?select=id,email,role/);
+  const invalid = await tenant(req("DELETE", "?resource=invitations", { invitation_id: "bad" }));
+  assert.equal(invalid.status, 400);
+  restData = true;
+  const revoked = await tenant(req("DELETE", "?resource=invitations", { invitation_id: dossierId }));
+  assert.equal(revoked.status, 200);
+  assert.deepEqual(await revoked.json(), { revoked: true });
+  assert.match(calls.at(-1).url, /rpc\\/revoke_organization_invitation$/);
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_invitation: dossierId });
+  restStatus = 403;
+  const forbidden = await tenant(req("DELETE", "?resource=invitations", { invitation_id: dossierId }));
+  assert.equal(forbidden.status, 403);
+  assert.deepEqual(await forbidden.json(), { code: "organization_admin_required" });
+  restStatus = 200;
+});
