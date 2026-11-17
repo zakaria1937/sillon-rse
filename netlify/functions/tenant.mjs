@@ -111,6 +111,21 @@ export default async function tenant(req) {
     if (req.method === "POST") {
       const parsed = await readBody(req);
       if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+      if (parsed.value.action === "accept") {
+        const token = parsed.value.token;
+        if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return json(400, { code: "invalid_invitation_token" });
+        const accepted = await rest(cfg, auth.token, "rpc/accept_organization_invitation", {
+          method: "POST", body: JSON.stringify({ p_token: token }),
+        });
+        if (accepted.error) {
+          const code = accepted.error === 403 ? "invitation_identity_mismatch"
+            : accepted.error === 404 || accepted.error === 400 || accepted.error === 422 ? "invitation_invalid_or_expired"
+            : "invitation_accept_failed";
+          return json(accepted.error, { code });
+        }
+        if (!UUID.test(String(accepted.data || ""))) return json(502, { code: "invitation_accept_failed" });
+        return json(200, { organization_id: accepted.data });
+      }
       const org = parsed.value.organization_id;
       const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
       const role = parsed.value.role;
