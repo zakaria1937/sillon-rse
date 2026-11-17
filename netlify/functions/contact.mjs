@@ -1,6 +1,6 @@
 // Sillon — réception des fiches contact et des demandes (accompagnement, désinscription, suppression).
 // Filtre les robots et le spam avant de transmettre au formulaire Netlify, qui notifie le propriétaire.
-import { json, store, bumpProtected, today, ipKey, sameOrigin, toForm } from "../lib/shared.mjs";
+import { json, store, bumpProtected, today, ipKey, sameOrigin, toForm, readJsonLimited } from "../lib/shared.mjs";
 
 const FIELDS = ["evenement", "prenom", "nom", "email", "entreprise", "fonction", "telephone", "secteur", "effectif", "ca", "consentement", "majeur_pro", "copilote", "message", "resume"];
 const MAX = { message: 3000, resume: 3000 };
@@ -9,7 +9,9 @@ const PER_IP = Number(process.env.CONTACT_LIMIT_PER_IP || 15);
 export default async (req, context) => {
   if (req.method !== "POST") return json(405, { code: "method" });
   if (!sameOrigin(req)) return json(403, { code: "origin" });
-  let b; try { b = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
+  const parsed = await readJsonLimited(req, 20_000);
+  if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+  const b = parsed.value;
   // Pièges à robots : champ caché rempli, ou envoi moins de 2,5 s après l'ouverture de la page.
   if (b.piege || !(Number(b.delai) >= 2500)) return json(200, { ok: true });
   if (typeof b.evenement !== "string" || !b.evenement.trim()) return json(400, { code: "invalid_request" });
