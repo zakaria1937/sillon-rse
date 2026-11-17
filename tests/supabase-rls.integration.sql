@@ -284,4 +284,20 @@ begin
 end;
 $assert$;
 
+-- Organization deletion cascades membership and audit rows without an orphan-event failure.
+reset role;
+insert into public.organizations(id, name)
+values ('90000000-0000-4000-8000-000000000009', 'Organisation temporaire');
+insert into public.organization_memberships(organization_id, user_id, role)
+values ('90000000-0000-4000-8000-000000000009', '10000000-0000-4000-8000-000000000001', 'admin');
+delete from public.organizations where id = '90000000-0000-4000-8000-000000000009';
+do $assert$
+begin
+  if exists (select 1 from public.audit_events
+      where organization_id = '90000000-0000-4000-8000-000000000009') then
+    raise exception 'organization_audit_cascade_failed';
+  end if;
+end;
+$assert$;
+
 select 'tenant RLS integration checks passed' as result;
