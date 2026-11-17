@@ -36,6 +36,7 @@ Les éléments suivants existent dans la branche de préparation et doivent enco
 ### Identité et sessions
 - Passerelle serveur de connexion, renouvellement et déconnexion avec Supabase Auth.
 - Refresh token conservé dans un cookie `HttpOnly`, `SameSite=Strict` et `Secure` lorsque la requête est HTTPS ; access token court conservé en mémoire côté navigateur.
+- En cas de réponse temporaire (quota ou indisponibilité Supabase), le navigateur conserve la session active et programme une nouvelle tentative ; une session n’est effacée qu’en cas de réponse d’authentification indiquant qu’elle n’est plus valide.
 - Parcours de récupération du mot de passe implémenté côté application, mais à valider avec un vrai projet Supabase et ses URL de redirection.
 - MFA, invitations e-mail et provisionnement autonome des membres ne sont pas encore opérationnels.
 
@@ -65,7 +66,7 @@ Le registre documentaire stocke des références et métadonnées. Les fichiers 
 8. Réaliser la revue RGPD : rôles responsable/sous-traitant, contrats, finalités, minimisation, durées, droits des personnes et analyse d'impact si nécessaire.
 9. Exécuter une recette métier avec des données fictives, puis un pilote limité avec des données non sensibles, avant toute ouverture plus large.
 
-La CI vérifie les tests Node, la migration PostgreSQL et des scénarios Playwright. Un passage E2E récent a exécuté avec succès les treize premiers scénarios, puis a été interrompu par l'annulation du run lors d'une mise à jour de branche ; cela ne constitue pas une validation complète. La CI du dernier commit doit être verte avant toute fusion.
+Sur le commit `c615542fda9d0e7fe351238e09571231c97740f8` (17 novembre 2026), les deux workflows GitHub Actions (push et pull request) sont terminés avec succès : tests Node, migration PostgreSQL, isolation multi-tenant, permissions des rôles et tests E2E Playwright. Cette validation automatisée ne remplace pas les essais sur un projet Supabase/Netlify réel ni une revue indépendante.
 
 ## Recommandation d'usage actuelle
 
