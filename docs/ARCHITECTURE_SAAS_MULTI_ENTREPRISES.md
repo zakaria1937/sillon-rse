@@ -19,7 +19,7 @@ Rôles :
 - `contributor` : lecture et contribution aux dossiers.
 - `reader` : lecture seule.
 
-La migration permet à un utilisateur authentifié de créer une organisation via la fonction transactionnelle `create_organization()`, qui lui attribue le rôle admin. La fonction `set_organization_member_role()` réserve le changement de rôle aux administrateurs, verrouille l'organisation pour sérialiser les transferts et interdit de rétrograder le dernier administrateur. Les créations, changements et suppressions d'adhésions sont journalisés dans `audit_events`. Les invitations et la révocation d'accès ne sont pas encore disponibles.
+La migration permet à un utilisateur authentifié de créer une organisation via la fonction transactionnelle `create_organization()`, qui lui attribue le rôle admin. La fonction `set_organization_member_role()` réserve le changement de rôle aux administrateurs, verrouille l'organisation pour sérialiser les transferts et interdit de rétrograder le dernier administrateur. Les créations d'adhésions et changements de rôle sont journalisés dans `audit_events`. La suppression d'un membre devra passer par une future RPC dédiée qui écrira l'événement avant la suppression ; les invitations et la révocation d'accès ne sont pas encore disponibles.
 
 ## Passerelle serveur préparée
 
@@ -36,7 +36,7 @@ Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_A
 - Chaque lecture/écriture de dossier est filtrée par appartenance à l'organisation et rôle.
 - Les utilisateurs ne peuvent pas s'ajouter eux-mêmes à une organisation.
 - Les écritures directes sur les adhésions et le journal d'audit sont interdites aux clients authentifiés.
-- Le journal enregistre les métadonnées des dossiers et des adhésions (acteur, membre ciblé, ancien/nouveau rôle), sans recopier les données métier.
+- Le journal enregistre les métadonnées des dossiers et des adhésions créées ou dont le rôle change (acteur, membre ciblé, ancien/nouveau rôle), sans recopier les données métier.
 - Le rôle `service_role` ne doit jamais être exposé dans le navigateur.
 - Le code secret de sauvegarde historique n'est pas un mécanisme d'identité ni un substitut à l'authentification.
 
