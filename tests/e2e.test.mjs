@@ -89,6 +89,62 @@ test("l'espace entreprise s'ouvre et signale proprement que Supabase doit être 
   await page.close();
 });
 
+test("parcours entreprise : connexion, création d'organisation et dossier cloud vierge", async () => {
+  const { page, errors } = await open();
+  const orgId = "50000000-0000-4000-8000-000000000005";
+  const dossierId = "60000000-0000-4000-8000-000000000006";
+  let orgCreated = false, dossierCreated = false;
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "login") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        access_token: "mock-access-token-long-enough-for-e2e",
+        expires_in: 3600, user: { id: "70000000-0000-4000-8000-000000000007", email: "test@atelier.fr" }
+      }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.route("**/api/tenant**", async (route) => {
+    const request = route.request(), url = new URL(request.url());
+    assert.match(request.headers().authorization || "", /^Bearer mock-access-token/);
+    if (url.searchParams.get("resource") === "organizations" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(orgCreated ? [
+        { id: orgId, name: "Atelier Démo", created_at: "2026-11-17T10:00:00Z" }
+      ] : []) });
+    } else if (url.searchParams.get("resource") === "organizations" && request.method() === "POST") {
+      orgCreated = true;
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: orgId }) });
+    } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(dossierCreated ? [
+        { id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" }
+      ] : []) });
+    } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "POST") {
+      dossierCreated = true;
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+        id: dossierId, organization_id: orgId, name: "Diagnostic initial", version: 1
+      }) });
+    } else {
+      await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ code: "not_found" }) });
+    }
+  });
+  await page.click("[data-saas-open]");
+  await page.fill('#saas-login input[name="email"]', "test@atelier.fr");
+  await page.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await page.click('#saas-login button[type="submit"]');
+  await page.waitForSelector('[data-saas-org="' + orgId + '"]');
+  await page.click('[data-saas-org="' + orgId + '"]');
+  await page.fill('#saas-create-dossier input[name="name"]', "Diagnostic initial");
+  await page.click('#saas-create-dossier button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Diagnostic initial"));
+  assert.equal(orgCreated, true);
+  assert.equal(dossierCreated, true);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("un copilote recalcule ses résultats à la saisie", async () => {
   const { page } = await open("#bilan-carbone");
   const avant = await page.textContent("#res .verdict h3");
