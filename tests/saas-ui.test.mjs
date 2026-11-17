@@ -52,3 +52,11 @@ test("le rôle lecteur ne voit pas le formulaire de création de dossier", () =>
   assert.match(source, /const canEdit = ownMembership && \["admin", "rse_lead", "contributor"\]\.includes\(ownMembership\.role\)/);
   assert.match(source, /Accès en lecture seule/);
 });
+
+
+test("seul un administrateur voit les commandes de gestion des rôles", () => {
+  assert.match(source, /const canManageMembers = ownMembership\?\.role === "admin"/);
+  assert.match(source, /saas-member-role/);
+  assert.match(source, /api\("memberships",\s*\{\s*method: "PATCH"/);
+  assert.match(source, /organization_id: selectedOrg\.id, user_id: form\.dataset\.saasMember, role: form\.elements\.role\.value/);
+});
