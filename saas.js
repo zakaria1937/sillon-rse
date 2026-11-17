@@ -78,6 +78,7 @@
       dossier_read_failed: "Impossible de charger les dossiers.",
       dossier_create_failed: "Impossible de créer le dossier.",
       dossier_change_failed: "Cette opération n’a pas été autorisée.",
+      membership_role_update_failed: "Impossible de modifier ce rôle. Vérifiez vos droits et réessayez.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
@@ -198,13 +199,26 @@
     const ownMembership = memberships.find((m) => m.user_id === user?.id);
     const roleNames = { admin: "Administrateur", rse_lead: "Responsable RSE", contributor: "Contributeur", reader: "Lecteur" };
     const canEdit = ownMembership && ["admin", "rse_lead", "contributor"].includes(ownMembership.role);
+    const canManageMembers = ownMembership?.role === "admin";
+    const memberRows = memberships.map((member) => {
+      const label = member.user_id === user?.id ? "Vous" : "Membre " + member.user_id.slice(0, 8);
+      const role = roleNames[member.role] || member.role;
+      if (!canManageMembers) return '<div class="saas-row"><span>' + esc(label) + '</span><small>' + esc(role) + '</small></div>';
+      const options = Object.entries(roleNames).map(([value, title]) =>
+        '<option value="' + esc(value) + '"' + (member.role === value ? " selected" : "") + '>' + esc(title) + '</option>'
+      ).join("");
+      return '<form class="saas-inline saas-member-role" data-saas-member="' + esc(member.user_id) + '">' +
+        '<label>' + esc(label) + '<select name="role">' + options + '</select></label>' +
+        '<button class="chip-btn" type="submit">Modifier le rôle</button></form>';
+    }).join("");
     target.innerHTML =
       '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + ' · Dossiers</h3></div>' +
       (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
       '<div class="saas-list">' + rows + '</div>' +
       (canEdit
         ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>'
-        : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>');
+        : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>') +
+      (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '');
   }
 
   document.addEventListener("click", async (e) => {
@@ -250,6 +264,23 @@
         overlay.querySelector("[data-saas-logout]")?.focus();
         if (created?.id) await selectOrganization(created.id);
       } catch (err) { errorBox(message(err)); }
+      return;
+    }
+    if (form.classList.contains("saas-member-role")) {
+      e.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        await api("memberships", {
+          method: "PATCH",
+          body: { organization_id: selectedOrg.id, user_id: form.dataset.saasMember, role: form.elements.role.value },
+        });
+        await selectOrganization(selectedOrg.id);
+        errorBox("Rôle mis à jour.");
+      } catch (err) {
+        errorBox(message(err));
+        submit.disabled = false;
+      }
       return;
     }
     if (form.id === "saas-create-dossier") {
