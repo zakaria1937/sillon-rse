@@ -150,6 +150,11 @@ export default async function auth(req, context) {
     const result = await authRequest(cfg, "/auth/v1/user", { password }, accessToken, "PUT");
     if (!result.ok) {
       const status = result.status === 429 ? 429 : result.status === 502 || result.status >= 500 ? 502 : 400;
+      // Supabase refuse avec 422 un mot de passe identique à l'ancien ou trop faible : le lien,
+      // lui, reste valide. Ne pas afficher « lien expiré », qui pousse à redemander un e-mail.
+      const errorCode = result.data && typeof result.data.error_code === "string" ? result.data.error_code : "";
+      if (status === 400 && errorCode === "same_password") return json(400, { code: "password_same_as_old" });
+      if (status === 400 && errorCode === "weak_password") return json(400, { code: "password_too_weak" });
       return json(status, { code: status === 429 ? "auth_rate_limited" : status === 502 ? "identity_unavailable" : "recovery_link_invalid" });
     }
     return json(200, { ok: true });
