@@ -495,7 +495,8 @@ begin
   end if;
 
   select lower(u.email) into v_email
-  from auth.users u where u.id = auth.uid();
+  from auth.users u
+  where u.id = auth.uid() and u.email_confirmed_at is not null;
   if v_email is null then
     raise exception 'authenticated_email_required' using errcode = '42501';
   end if;
