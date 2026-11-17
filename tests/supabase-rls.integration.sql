@@ -417,4 +417,41 @@ begin
 end;
 $assert$;
 
+-- Une invitation envoyée à un membre déjà présent doit échouer proprement
+-- sans consommer ni marquer comme acceptée la nouvelle invitation.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select invitation_id as test_duplicate_invitation_id, token as test_duplicate_invitation_token
+from public.create_organization_invitation(
+  current_setting('test.org_alpha')::uuid,
+  'member-alpha@example.test',
+  'reader'
+) \\gset
+select set_config('test.duplicate_invitation_id', :'test_duplicate_invitation_id', false);
+select set_config('test.duplicate_invitation_token', :'test_duplicate_invitation_token', false);
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
+do $assert$
+begin
+  begin
+    perform public.accept_organization_invitation(current_setting('test.duplicate_invitation_token'));
+    raise exception 'existing_member_invitation_was_accepted';
+  exception when unique_violation then null;
+  end;
+end;
+$assert$;
+reset role;
+
+do $assert$
+begin
+  if not exists (select 1 from public.organization_invitations
+      where id = current_setting('test.duplicate_invitation_id')::uuid
+        and accepted_at is null and revoked_at is null) then
+    raise exception 'duplicate_member_invitation_should_remain_pending';
+  end if;
+end;
+$assert$;
+
 select 'tenant RLS and invitation integration checks passed' as result;
