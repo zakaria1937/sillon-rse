@@ -82,6 +82,7 @@
       audit_read_failed: "Impossible de charger le journal d’activité de cette organisation.",
       last_admin_protected: "Cette organisation doit conserver au moins un administrateur. Attribuez d’abord ce rôle à une autre personne.",
       member_not_found: "Ce membre n’appartient plus à cette organisation.",
+      membership_remove_failed: "Impossible de retirer ce membre. Vérifiez vos droits et réessayez.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
@@ -218,11 +219,12 @@
       ).join("");
       return '<form class="saas-inline saas-member-role" data-saas-member="' + esc(member.user_id) + '">' +
         '<label>' + esc(label) + '<select name="role">' + options + '</select></label>' +
-        '<button class="chip-btn" type="submit">Modifier le rôle</button></form>';
+        '<button class="chip-btn" type="submit">Modifier le rôle</button>' +
+        '<button class="chip-btn" type="button" data-saas-remove-member="' + esc(member.user_id) + '">Retirer</button></form>';
     }).join("");
     const auditLabels = {
       "dossier.created": "Dossier créé", "dossier.updated": "Dossier modifié", "dossier.deleted": "Dossier supprimé",
-      "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié",
+      "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié", "membership.removed": "Membre retiré",
     };
     const auditRows = auditEvents.map((event) => {
       const actor = event.actor_id ? event.actor_id.slice(0, 8) : "Système";
@@ -250,6 +252,25 @@
     if (openBtn) { await open(); return; }
     if (!overlay || overlay.hidden) return;
     if (e.target.closest("[data-saas-reload]")) { await loadWorkspace(); return; }
+    const removeMemberBtn = e.target.closest("[data-saas-remove-member]");
+    if (removeMemberBtn) {
+      const memberId = removeMemberBtn.dataset.saasRemoveMember;
+      if (!selectedOrg || !memberId) return;
+      if (!window.confirm("Retirer ce membre de l’organisation ? Son accès sera révoqué et l’action inscrite au journal.")) return;
+      removeMemberBtn.disabled = true;
+      try {
+        await api("memberships", {
+          method: "DELETE",
+          body: { organization_id: selectedOrg.id, user_id: memberId },
+        });
+        await selectOrganization(selectedOrg.id);
+        errorBox("Membre retiré de l’organisation.");
+      } catch (err) {
+        errorBox(message(err));
+        removeMemberBtn.disabled = false;
+      }
+      return;
+    }
     const orgBtn = e.target.closest("[data-saas-org]");
     if (orgBtn) { await selectOrganization(orgBtn.dataset.saasOrg); return; }
     if (e.target.closest("[data-saas-logout]")) {
