@@ -1,7 +1,7 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
   let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], refreshTimer = 0;
-  let overlay = null, returnFocus = null;
+  let overlay = null, returnFocus = null, sessionReady = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const auth = async (action, payload) => fetch("/api/auth?action=" + action, {
@@ -87,11 +87,15 @@
     overlay.hidden = true;
     if (returnFocus?.isConnected) returnFocus.focus();
   }
-  function open() {
+  async function open() {
     ensureOverlay();
     returnFocus = document.activeElement;
     overlay.hidden = false;
-    if (accessToken) loadWorkspace();
+    // Évite d'afficher brièvement le formulaire de connexion à un utilisateur déjà connecté
+    // lorsque la vérification du cookie de session est encore en cours au chargement.
+    try { if (sessionReady) await sessionReady; } catch { clearSession(); }
+    if (overlay.hidden) return;
+    if (accessToken) await loadWorkspace();
     else renderLogin();
   }
   function content(html) {
@@ -224,5 +228,5 @@
   });
 
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay && !overlay.hidden) close(); });
-  refreshSession().catch(() => clearSession());
+  sessionReady = refreshSession().catch(() => { clearSession(); return false; });
 })();
