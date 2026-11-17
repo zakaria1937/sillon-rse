@@ -95,9 +95,8 @@ test("la sauvegarde en ligne est chiffrée côté navigateur et restaurable dans
   let cloudPayload;
   page.on("request", req => { if (req.url().includes("/api/dossier") && req.method() === "PUT") cloudPayload = JSON.parse(req.postData()); });
   await page.fill("#p-nom", "Atelier Normand"); await page.click("#pform button[type=submit]");
-  await page.waitForFunction(() => !!localStorage.getItem("sillon.v2"));
-  await page.waitForTimeout(350);
-  await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("sillon.v2")); d.documents = [{ id: "large", title: "Pièce volumineuse", ref: "GED/TEST", note: "x".repeat(70000) }]; localStorage.setItem("sillon.v2", JSON.stringify(d)); });
+  await page.evaluate(() => { window.SX.state().documents = [{ id: "large", title: "Pièce volumineuse", ref: "GED/TEST", note: "x".repeat(70000) }]; window.SX.save(); });
+  await page.waitForTimeout(450);
   await page.reload();
   await page.goto(BASE + "/#mes-donnees"); await page.click("#clOn"); await page.waitForSelector("#clCode");
   assert.equal(cloudPayload.data.v, 2);
