@@ -116,3 +116,12 @@ test("login measures request limits in UTF-8 bytes", async () => {
   }), { ip: "10.0.0.11" });
   assert.equal(r.status, 413);
 });
+
+
+test("invalid rate-limit configuration falls back to a safe default", async () => {
+  process.env.AUTH_LOGIN_LIMIT_PER_IP = "not-a-number";
+  const ctx = { ip: "10.0.0.12" };
+  const r = await auth(req("login", { email: "user@example.fr", password: "correct-password" }), ctx);
+  assert.equal(r.status, 200);
+  process.env.AUTH_LOGIN_LIMIT_PER_IP = "20";
+});
