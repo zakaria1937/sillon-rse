@@ -92,7 +92,7 @@ create or replace function private.guard_dossier_mutation()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $guard$
 begin
   if tg_op = 'INSERT' then
     if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
@@ -115,7 +115,7 @@ begin
   new.updated_at := now();
   return new;
 end;
-$;
+$guard$;
 
 create trigger dossiers_guard_insert
 before insert on public.dossiers
