@@ -61,7 +61,7 @@ as $$
   );
 $$;
 
-grant execute on function private.has_org_role(uuid, text[]) to authenticated;
+revoke all on function private.has_org_role(uuid, text[]) from public, anon;\ngrant execute on function private.has_org_role(uuid, text[]) to authenticated;
 
 -- Users cannot create an organization and then self-assign arbitrary membership rows.
 -- This RPC atomically creates the organization and its first admin membership.
