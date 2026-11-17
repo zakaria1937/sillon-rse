@@ -66,7 +66,7 @@ async function rest(cfg, token, path, init = {}) {
 
 export default async function tenant(req) {
   if (!["GET", "POST", "PATCH", "DELETE"].includes(req.method)) return json(405, { code: "method" });
-  if (!sameOrigin(req)) return json(403, { code: "origin" });
+  if (req.headers.has("origin") ? !sameOrigin(req) : req.method !== "GET") return json(403, { code: "origin" });
   const cfg = config();
   if (!cfg) return json(503, { code: "tenant_not_configured" });
   const auth = await authenticate(req, cfg);
