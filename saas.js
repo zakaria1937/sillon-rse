@@ -1,6 +1,6 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
-  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], refreshTimer = 0;
+  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], refreshTimer = 0;
   let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -11,7 +11,7 @@
   });
 
   function clearSession() {
-    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = [];
+    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = [];
     clearTimeout(refreshTimer);
   }
   function setSession(data) {
@@ -178,7 +178,10 @@
     if (!selectedOrg || !target) return;
     target.innerHTML = '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + '</h3></div><p class="saas-muted">Chargement des dossiers…</p>';
     try {
-      dossiers = await api("dossiers", { query: "organization_id=" + encodeURIComponent(id) });
+      [dossiers, memberships] = await Promise.all([
+        api("dossiers", { query: "organization_id=" + encodeURIComponent(id) }),
+        api("memberships", { query: "organization_id=" + encodeURIComponent(id) }),
+      ]);
       renderDossiers();
     } catch (e) { target.innerHTML = '<p class="saas-error">' + esc(message(e)) + '</p>'; }
   }
@@ -190,8 +193,11 @@
       '<div class="saas-row dossier-row"><span>' + esc(d.name) + '</span><small>V' + esc(d.version) + ' · ' +
       (d.updated_at ? new Date(d.updated_at).toLocaleDateString("fr-FR") : "—") + '</small></div>'
     ).join("") : '<p class="saas-muted">Aucun dossier dans cette organisation.</p>';
+    const ownMembership = memberships.find((m) => m.user_id === user?.id);
+    const roleNames = { admin: "Administrateur", rse_lead: "Responsable RSE", contributor: "Contributeur", reader: "Lecteur" };
     target.innerHTML =
       '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + ' · Dossiers</h3></div>' +
+      (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
       '<div class="saas-list">' + rows + '</div>' +
       '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>';
   }
