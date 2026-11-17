@@ -79,7 +79,16 @@ export default async function auth(req, context) {
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || password.length < 8 || password.length > 1024) {
       return json(400, { code: "invalid_credentials_format" });
     }
+    // En production, ne pas retomber silencieusement sur un compteur mémoire
+    // (éphémère et différent sur chaque instance Netlify).
+    const isNetlify = process.env.NETLIFY === "true";
+    if (isNetlify && (!process.env.IP_SALT || process.env.IP_SALT.length < 32)) {
+      return response(req, 503, { code: "rate_limit_not_configured" }, "", true);
+    }
     const limits = await store();
+    if (isNetlify && !limits) {
+      return response(req, 503, { code: "rate_limit_unavailable" }, "", true);
+    }
     const configuredLimit = Number(process.env.AUTH_LOGIN_LIMIT_PER_IP);
     const limit = Number.isSafeInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 1000 ? configuredLimit : 20;
     if (!(await bump(limits, "auth-login/" + today() + "/" + await ipKey(req, context), limit))) {
@@ -116,8 +125,15 @@ export default async function auth(req, context) {
     const refreshToken = cookieValue(req);
     if (refreshToken && refreshToken.length <= 8192) {
       const refreshed = await authRequest(cfg, "/auth/v1/token?grant_type=refresh_token", { refresh_token: refreshToken });
+      // Une panne réseau ne doit pas être présentée comme une révocation réussie.
+      if (refreshed.status === 502) {
+        return response(req, 502, { code: "identity_unavailable" }, refreshToken);
+      }
       if (refreshed.ok && validSession(refreshed.data)) {
-        await authRequest(cfg, "/auth/v1/logout?scope=local", {}, refreshed.data.access_token);
+        const revoked = await authRequest(cfg, "/auth/v1/logout?scope=local", {}, refreshed.data.access_token);
+        if (!revoked.ok && revoked.status >= 500) {
+          return response(req, 502, { code: "identity_unavailable" }, refreshToken);
+        }
       }
     }
     return response(req, 200, { ok: true }, "", true);
