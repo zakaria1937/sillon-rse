@@ -32,6 +32,7 @@ async function authenticate(req, cfg) {
   try {
     response = await fetch(cfg.base + "/auth/v1/user", {
       headers: { apikey: cfg.anon, authorization: "Bearer " + match[1], accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
     });
   } catch { return { error: 502 }; }
   if (!response.ok) return { error: response.status === 401 || response.status === 403 ? 401 : 502 };
@@ -45,6 +46,7 @@ async function rest(cfg, token, path, init = {}) {
   try {
     const response = await fetch(cfg.base + "/rest/v1/" + path, {
       ...init,
+      signal: AbortSignal.timeout(12000),
       headers: {
         apikey: cfg.anon,
         authorization: "Bearer " + token,
