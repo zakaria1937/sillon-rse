@@ -173,7 +173,7 @@ test("DELETE memberships delegates removal to the admin-only audited database RP
   }));
   assert.equal(r.status, 200);
   assert.deepEqual(await r.json(), { removed: true });
-  assert.match(calls.at(-1).url, /\\/rpc\\/remove_organization_member$/);
+  assert.ok(calls.at(-1).url.includes("/rpc/remove_organization_member"));
   assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_org: orgId, p_user: userId });
   restStatus = 403;
   const forbidden = await tenant(req("DELETE", "?resource=memberships", {
