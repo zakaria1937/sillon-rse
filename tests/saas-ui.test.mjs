@@ -99,3 +99,12 @@ test("l'interface expose la récupération et le changement de mot de passe sans
   assert.match(source, /history\.replaceState/);
   assert.match(source, /recoveryAccessToken/);
 });
+
+
+test("une indisponibilité temporaire du refresh ne détruit pas une session active", () => {
+  assert.match(source, /r\.status === 429 \|\| r\.status >= 500/);
+  assert.match(source, /if \(accessToken\) \{/);
+  assert.match(source, /refreshTimer = setTimeout\(\(\) => \{ refreshSession\(\); \}, 60_000\)/);
+  assert.match(source, /sessionUnavailable \? "Le service d’authentification est temporairement indisponible/);
+  assert.match(source, /clearSession\(\);\s*return false;/);
+});
