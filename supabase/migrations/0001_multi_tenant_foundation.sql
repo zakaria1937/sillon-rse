@@ -371,3 +371,149 @@ end;
 $$;
 revoke all on function public.remove_organization_member(uuid, uuid) from public, anon;
 grant execute on function public.remove_organization_member(uuid, uuid) to authenticated;
+
+
+-- Invitations à usage unique : le jeton brut n'est retourné qu'à l'administrateur
+-- lors de sa création ; seule son empreinte SHA-256 est conservée en base.
+create table if not exists public.organization_invitations (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  email text not null check (email = lower(trim(email)) and length(email) between 5 and 254),
+  role text not null check (role in ('admin', 'rse_lead', 'contributor', 'reader')),
+  token_hash text not null unique check (token_hash ~ '^[0-9a-f]{64}$'),
+  invited_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  accepted_by uuid references auth.users(id),
+  revoked_at timestamptz,
+  check (expires_at > created_at),
+  check ((accepted_at is null) = (accepted_by is null)),
+  check (accepted_at is null or revoked_at is null)
+);
+create index if not exists invitations_org_pending_idx
+  on public.organization_invitations(organization_id, email, created_at desc)
+  where accepted_at is null and revoked_at is null;
+
+alter table public.organization_invitations enable row level security;
+create policy invitations_read_admin on public.organization_invitations
+for select to authenticated
+using (private.has_org_role(organization_id, array['admin']));
+revoke all on public.organization_invitations from anon;
+revoke insert, update, delete on public.organization_invitations from authenticated;
+grant select on public.organization_invitations to authenticated;
+
+alter table public.audit_events drop constraint if exists audit_events_event_type_check;
+alter table public.audit_events add constraint audit_events_event_type_check
+  check (event_type in (
+    'dossier.created', 'dossier.updated', 'dossier.deleted',
+    'membership.created', 'membership.role_changed', 'membership.removed',
+    'invitation.created', 'invitation.revoked'
+  ));
+
+-- Création réservée à un administrateur. Une nouvelle invitation pour la même
+-- adresse invalide atomiquement toute invitation précédente encore en attente.
+create or replace function public.create_organization_invitation(
+  p_org uuid,
+  p_email text,
+  p_role text
+)
+returns table(invitation_id uuid, token text, expires_at timestamptz)
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_email text;
+  v_token text;
+  v_id uuid;
+  v_expiry timestamptz;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  v_email := lower(trim(coalesce(p_email, '')));
+  if length(v_email) < 5 or length(v_email) > 254
+     or v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then
+    raise exception 'invalid_invitation_email' using errcode = '22023';
+  end if;
+  if p_role is null or p_role not in ('admin', 'rse_lead', 'contributor', 'reader') then
+    raise exception 'invalid_invitation_role' using errcode = '22023';
+  end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  perform 1 from public.organizations where id = p_org for update;
+  if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  update public.organization_invitations
+  set revoked_at = now()
+  where organization_id = p_org and email = v_email
+    and accepted_at is null and revoked_at is null;
+
+  v_token := encode(gen_random_bytes(32), 'hex');
+  v_expiry := now() + interval '7 days';
+  insert into public.organization_invitations(
+    organization_id, email, role, token_hash, invited_by, expires_at
+  ) values (
+    p_org, v_email, p_role, encode(digest(v_token, 'sha256'), 'hex'), auth.uid(), v_expiry
+  ) returning id into v_id;
+
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  values (p_org, auth.uid(), 'invitation.created');
+
+  return query select v_id, v_token, v_expiry;
+end;
+$$;
+revoke all on function public.create_organization_invitation(uuid, text, text) from public, anon;
+grant execute on function public.create_organization_invitation(uuid, text, text) to authenticated;
+
+-- Acceptation par le compte connecté dont l'adresse Auth correspond à l'invitation.
+-- Le verrou sur l'invitation garantit l'usage unique en cas de clics concurrents.
+create or replace function public.accept_organization_invitation(p_token text)
+returns uuid
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_invitation public.organization_invitations%rowtype;
+  v_email text;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if p_token is null or p_token !~ '^[0-9a-f]{64}$' then
+    raise exception 'invalid_or_expired_invitation' using errcode = '22023';
+  end if;
+
+  select lower(u.email) into v_email
+  from auth.users u where u.id = auth.uid();
+  if v_email is null then
+    raise exception 'authenticated_email_required' using errcode = '42501';
+  end if;
+
+  select * into v_invitation
+  from public.organization_invitations
+  where token_hash = encode(digest(p_token, 'sha256'), 'hex')
+  for update;
+  if not found or v_invitation.accepted_at is not null
+     or v_invitation.revoked_at is not null or v_invitation.expires_at <= now()
+     or v_invitation.email <> v_email then
+    raise exception 'invalid_or_expired_invitation' using errcode = '22023';
+  end if;
+
+  insert into public.organization_memberships(organization_id, user_id, role)
+  values (v_invitation.organization_id, auth.uid(), v_invitation.role);
+
+  update public.organization_invitations
+  set accepted_at = now(), accepted_by = auth.uid()
+  where id = v_invitation.id;
+
+  return v_invitation.organization_id;
+end;
+$$;
+revoke all on function public.accept_organization_invitation(text) from public, anon;
+grant execute on function public.accept_organization_invitation(text) to authenticated;
