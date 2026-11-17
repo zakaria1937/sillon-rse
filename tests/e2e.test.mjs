@@ -95,6 +95,8 @@ test("la sauvegarde en ligne est chiffrée côté navigateur et restaurable dans
   let cloudPayload;
   page.on("request", req => { if (req.url().includes("/api/dossier") && req.method() === "PUT") cloudPayload = JSON.parse(req.postData()); });
   await page.fill("#p-nom", "Atelier Normand"); await page.click("#pform button[type=submit]");
+  await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("sillon.v2")); d.documents = [{ id: "large", title: "Pièce volumineuse", ref: "GED/TEST", note: "x".repeat(70000) }]; localStorage.setItem("sillon.v2", JSON.stringify(d)); });
+  await page.reload();
   await page.goto(BASE + "/#mes-donnees"); await page.click("#clOn"); await page.waitForSelector("#clCode");
   assert.equal(cloudPayload.data.v, 2);
   assert.equal(typeof cloudPayload.data.ciphertext, "string");
@@ -104,6 +106,7 @@ test("la sauvegarde en ligne est chiffrée côté navigateur et restaurable dans
   await p2.goto(BASE + "/#dossier-" + code); await p2.waitForSelector("#cl-in");
   await p2.click("#clF button[type=submit]"); await p2.waitForFunction(() => location.hash === "#accueil");
   assert.match(await p2.textContent(".dash"), /Atelier Normand/);
+  assert.equal(await p2.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).documents[0].note.length), 70000);
   await ctx2.close(); await page.close();
 });
 
