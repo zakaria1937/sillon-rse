@@ -300,4 +300,38 @@ begin
 end;
 $assert$;
 
+-- Member removal is admin-only, audited before deletion, and protects the last administrator.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select public.remove_organization_member(
+  current_setting('test.org_alpha')::uuid,
+  '20000000-0000-4000-8000-000000000002'
+);
+do $assert$
+begin
+  if exists (select 1 from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and user_id = '20000000-0000-4000-8000-000000000002') then
+    raise exception 'membership_was_not_removed';
+  end if;
+  if not exists (select 1 from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and event_type = 'membership.removed'
+        and target_user_id = '20000000-0000-4000-8000-000000000002'
+        and previous_role = 'reader' and new_role is null
+        and actor_id = '10000000-0000-4000-8000-000000000001') then
+    raise exception 'membership_removal_not_audited';
+  end if;
+  begin
+    perform public.remove_organization_member(
+      current_setting('test.org_alpha')::uuid,
+      '10000000-0000-4000-8000-000000000001'
+    );
+    raise exception 'last_admin_was_removed';
+  exception when check_violation then null;
+  end;
+end;
+$assert$;
+reset role;
+
 select 'tenant RLS integration checks passed' as result;
