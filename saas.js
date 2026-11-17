@@ -263,8 +263,12 @@
           method: "DELETE",
           body: { organization_id: selectedOrg.id, user_id: memberId },
         });
-        await selectOrganization(selectedOrg.id);
-        errorBox("Membre retiré de l’organisation.");
+        if (memberId === user?.id) {
+          await loadWorkspace("Vous avez quitté cette organisation. Son accès n’est plus disponible depuis ce compte.");
+        } else {
+          await selectOrganization(selectedOrg.id);
+          errorBox("Membre retiré de l’organisation.");
+        }
       } catch (err) {
         errorBox(message(err));
         removeMemberBtn.disabled = false;
