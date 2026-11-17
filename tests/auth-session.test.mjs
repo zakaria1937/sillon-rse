@@ -33,6 +33,7 @@ globalThis.fetch = async (url, init = {}) => {
     if (mode === "expired") return new Response('{"msg":"expired"}', { status: 400 });
     if (mode === "refresh_unavailable") return new Response('{"msg":"unavailable"}', { status: 503 });
     if (mode === "refresh_rate_limited") return new Response('{"msg":"limited"}', { status: 429 });
+    if (mode === "refresh_malformed") return new Response("{}", { status: 200 });
     return new Response(JSON.stringify({
       access_token: "rotated-access-token-long-enough",
       refresh_token: "rotated-refresh-token-long-enough",
@@ -152,6 +153,13 @@ test("logout preserves the cookie when Supabase cannot confirm session revocatio
   const revokeFailure = await auth(req("logout", undefined, "sillon_refresh=refresh-token-value-long-enough"), { ip: "10.0.0.14" });
   assert.equal(revokeFailure.status, 502);
   assert.doesNotMatch(revokeFailure.headers.get("set-cookie"), /Max-Age=0/);
+
+  mode = "refresh_malformed";
+  const malformedRefresh = await auth(req("logout", undefined, "sillon_refresh=refresh-token-value-long-enough"), { ip: "10.0.0.15" });
+  assert.equal(malformedRefresh.status, 502);
+  assert.match(malformedRefresh.headers.get("set-cookie"), /sillon_refresh=refresh-token-value-long-enough/);
+  assert.doesNotMatch(malformedRefresh.headers.get("set-cookie"), /Max-Age=0/);
+
   mode = "success";
 });
 
