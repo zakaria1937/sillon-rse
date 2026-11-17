@@ -41,3 +41,9 @@ test("le renouvellement de session est mutualisé pour éviter la rotation concu
 test("l'espace entreprise replace le focus dans la fenêtre après chargement", () => {
   assert.match(source, /overlay\.querySelector\("\[data-saas-logout\]"\)\?\.focus\(\)/);
 });
+
+test("le rôle affiché dans l'organisation provient de l'adhésion retournée par l'API", () => {
+  assert.match(source, /api\("memberships"/);
+  assert.match(source, /memberships\.find\(\(m\) => m\.user_id === user\?\.id\)/);
+  assert.match(source, /Votre rôle :/);
+});
