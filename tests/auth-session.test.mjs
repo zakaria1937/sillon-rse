@@ -1,6 +1,7 @@
 // Tests de session Supabase : refresh token HttpOnly, rotation et déconnexion.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { bumpStrict } from "../netlify/lib/shared.mjs";
 
 process.env.SUPABASE_URL = "https://sillon-test.supabase.co";
 process.env.SUPABASE_ANON_KEY = "test-anon-key";
@@ -170,4 +171,19 @@ test("refresh preserves the cookie during temporary Supabase outages and rate li
   assert.match(limited.headers.get("set-cookie"), /sillon_refresh=refresh-token-value-long-enough/);
   assert.doesNotMatch(limited.headers.get("set-cookie"), /Max-Age=0/);
   mode = "success";
+});
+
+
+test("persistent rate limiter fails closed instead of using process memory", async () => {
+  const values = new Map();
+  const persistent = {
+    async get(key) { return values.get(key) ?? null; },
+    async set(key, value) { values.set(key, value); },
+  };
+  assert.equal(await bumpStrict(persistent, "login/test", 2), true);
+  assert.equal(await bumpStrict(persistent, "login/test", 2), true);
+  assert.equal(await bumpStrict(persistent, "login/test", 2), false);
+  await assert.rejects(() => bumpStrict(null, "login/test", 2), /persistent_store_unavailable/);
+  const broken = { async get() { throw new Error("storage_down"); }, async set() {} };
+  await assert.rejects(() => bumpStrict(broken, "login/test", 2), /storage_down/);
 });
