@@ -47,7 +47,7 @@ create table if not exists public.audit_events (
   new_role text,
   event_type text not null check (event_type in (
     'dossier.created', 'dossier.updated', 'dossier.deleted',
-    'membership.created', 'membership.role_changed', 'membership.removed'
+    'membership.created', 'membership.role_changed'
   )),
   dossier_version bigint,
   occurred_at timestamptz not null default now()
@@ -171,47 +171,31 @@ revoke all on function private.audit_dossier_change() from public, anon, authent
 
 -- Record membership lifecycle changes as metadata, including the actor and role transition.
 -- This trigger runs with table-owner privileges so client roles cannot forge audit entries.
+-- Journalise l'ajout d'un membre et les changements de rôle. La suppression
+-- d'un membre devra passer par une RPC dédiée qui écrit l'événement avant DELETE.
 create or replace function private.audit_membership_change()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $audit$
-declare
-  v_org uuid;
-  v_user uuid;
-  v_old_role text;
-  v_new_role text;
-  v_event text;
 begin
-  if tg_op = 'DELETE' then
-    v_org := old.organization_id;
-    v_user := old.user_id;
-    v_old_role := old.role;
-    v_new_role := null;
-    v_event := 'membership.removed';
-  elsif tg_op = 'INSERT' then
-    v_org := new.organization_id;
-    v_user := new.user_id;
-    v_old_role := null;
-    v_new_role := new.role;
-    v_event := 'membership.created';
-  else
-    if new.role is not distinct from old.role then return new; end if;
-    v_org := new.organization_id;
-    v_user := new.user_id;
-    v_old_role := old.role;
-    v_new_role := new.role;
-    v_event := 'membership.role_changed';
+  if tg_op = 'INSERT' then
+    insert into public.audit_events(
+      organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+    ) values (
+      new.organization_id, auth.uid(), new.user_id, null, new.role, 'membership.created'
+    );
+    return new;
   end if;
 
-  insert into public.audit_events(
-    organization_id, actor_id, target_user_id, previous_role, new_role, event_type
-  ) values (
-    v_org, auth.uid(), v_user, v_old_role, v_new_role, v_event
-  );
-
-  if tg_op = 'DELETE' then return old; end if;
+  if new.role is distinct from old.role then
+    insert into public.audit_events(
+      organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+    ) values (
+      new.organization_id, auth.uid(), new.user_id, old.role, new.role, 'membership.role_changed'
+    );
+  end if;
   return new;
 end;
 $audit$;
@@ -221,9 +205,6 @@ after insert on public.organization_memberships
 for each row execute function private.audit_membership_change();
 create trigger memberships_audit_update
 after update of role on public.organization_memberships
-for each row execute function private.audit_membership_change();
-create trigger memberships_audit_delete
-after delete on public.organization_memberships
 for each row execute function private.audit_membership_change();
 revoke all on function private.audit_membership_change() from public, anon, authenticated;
 
