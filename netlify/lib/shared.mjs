@@ -20,6 +20,21 @@ export async function bump(s, key, limit) {
   return true;
 }
 
+// Variante fail-closed pour les contrôles de sécurité en production.
+// Contrairement au compteur générique, elle ne retombe jamais sur une mémoire locale
+// si Netlify Blobs est indisponible.
+export async function bumpStrict(s, key, limit) {
+  if (!s || typeof s.get !== "function" || typeof s.set !== "function") {
+    throw new Error("persistent_store_unavailable");
+  }
+  const raw = await s.get(key);
+  const cur = raw == null ? 0 : Number(raw);
+  if (!Number.isSafeInteger(cur) || cur < 0) throw new Error("invalid_rate_limit_counter");
+  if (cur >= limit) return false;
+  await s.set(key, String(cur + 1));
+  return true;
+}
+
 export const today = () => new Date().toISOString().slice(0, 10);
 
 export async function sha(text) {
