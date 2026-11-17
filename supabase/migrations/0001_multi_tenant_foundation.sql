@@ -170,7 +170,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $audit$
 declare
   v_org uuid;
   v_user uuid;
@@ -208,7 +208,7 @@ begin
   if tg_op = 'DELETE' then return old; end if;
   return new;
 end;
-$;
+$audit$;
 
 create trigger memberships_audit_insert
 after insert on public.organization_memberships
