@@ -105,3 +105,13 @@ test("refuse l'origine externe, les identifiants invalides et les payloads trop 
   assert.equal((await tenant(req("DELETE", "?resource=dossiers&id=bad"))).status, 400);
   assert.equal((await tenant(req("POST", "?resource=dossiers", JSON.stringify({ organization_id: orgId, payload: { huge: "x".repeat(360000) } })))).status, 413);
 });
+
+
+test("PATCH et DELETE signalent un dossier absent ou invisible plutôt qu'un succès vide", async () => {
+  restData = [];
+  const patch = await tenant(req("PATCH", "?resource=dossiers&id=" + dossierId, { name: "Diagnostic V2" }));
+  assert.equal(patch.status, 404);
+  assert.deepEqual(await patch.json(), { code: "dossier_not_found" });
+  const del = await tenant(req("DELETE", "?resource=dossiers&id=" + dossierId));
+  assert.equal(del.status, 404);
+});
