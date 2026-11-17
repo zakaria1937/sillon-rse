@@ -1,4 +1,7 @@
 name: Tests
+concurrency:
+  group: sillon-ci-${{ github.ref }}
+  cancel-in-progress: true
 on: [push, pull_request]
 jobs:
   tests:
