@@ -88,3 +88,14 @@ test("l'import local vers le cloud est volontaire, ponctuel, limité et exclut l
   assert.match(source, /300000/);
   assert.match(source, /Copie ponctuelle/);
 });
+
+
+test("l'interface expose la récupération et le changement de mot de passe sans persister le jeton", () => {
+  assert.match(source, /data-saas-recover/);
+  assert.match(source, /id="saas-recover"/);
+  assert.match(source, /id="saas-update-password"/);
+  assert.match(source, /auth\("recover"/);
+  assert.match(source, /auth\("update-password"/);
+  assert.match(source, /history\.replaceState/);
+  assert.match(source, /recoveryAccessToken/);
+});
