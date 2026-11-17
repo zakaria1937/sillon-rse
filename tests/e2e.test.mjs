@@ -128,6 +128,10 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
       assert.equal(body.role, "contributor");
       roleUpdated = true;
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ updated: true }) });
+    } else if (url.searchParams.get("resource") === "audits" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(roleUpdated ? [
+        { id: 1, event_type: "membership.role_changed", actor_id: "70000000-0000-4000-8000-000000000007", target_user_id: "80000000-0000-4000-8000-000000000008", previous_role: "reader", new_role: "contributor", occurred_at: "2026-11-17T10:00:00Z" }
+      ] : []) });
     } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "GET") {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(dossierCreated ? [
         { id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" }
@@ -156,6 +160,7 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   await page.selectOption('form[data-saas-member="80000000-0000-4000-8000-000000000008"] select[name="role"]', "contributor");
   await page.click('form[data-saas-member="80000000-0000-4000-8000-000000000008"] button[type="submit"]');
   await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Contributeur"));
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Rôle modifié"));
   assert.equal(orgCreated, true);
   assert.equal(dossierCreated, true);
   assert.equal(roleUpdated, true);
