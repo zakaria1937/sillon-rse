@@ -25,7 +25,7 @@
   /* ---------- sauvegarde en ligne (facultative, protégée par un code secret créé ici) ---------- */
   const newCode = () => { const a = new Uint8Array(20); crypto.getRandomValues(a); return [...a].map((b) => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("") + Date.now().toString(36).slice(-6); };
   const cloudPayload = () => { const { cloud, chat, ...rest } = state; return rest; };
-  const b64 = (bytes) => btoa(String.fromCharCode(...bytes));
+  const b64 = (bytes) => { let binary = ""; for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(binary); };
   const unb64 = (value) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
   async function cloudKey(code) {
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
