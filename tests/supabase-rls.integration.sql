@@ -353,8 +353,8 @@ from public.create_organization_invitation(
   '  MEMBER-ALPHA@example.test  ',
   'contributor'
 ) \gset
-select set_config('test.invitation_id', current_setting('test.invitation_id')::uuid, false);
-select set_config('test.invitation_token', current_setting('test.invitation_token'), false);
+select set_config('test.invitation_id', :'test_invitation_id', false);
+select set_config('test.invitation_token', :'test_invitation_token', false);
 reset role;
 
 do $assert$
