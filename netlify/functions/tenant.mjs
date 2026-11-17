@@ -1,7 +1,7 @@
 // Sillon — passerelle multi-tenant Supabase.
 // Aucun secret de service_role n'est utilisé : toutes les requêtes PostgREST portent le JWT
 // de l'utilisateur et sont donc soumises aux politiques RLS PostgreSQL.
-import { json, sameOrigin } from "../lib/shared.mjs";
+import { json, sameOrigin, readJsonLimited } from "../lib/shared.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY = 350_000;
@@ -17,12 +17,7 @@ function supabaseConfig() {
   } catch { return null; }
 }
 
-async function readBody(req) {
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_BODY) return { error: 413 };
-  try { return { value: raw ? JSON.parse(raw) : {} }; }
-  catch { return { error: 400 }; }
-}
+async function readBody(req) { return readJsonLimited(req, MAX_BODY); }
 
 async function authenticate(req, cfg) {
   const header = req.headers.get("authorization") || "";
