@@ -78,3 +78,9 @@ test('organization invitations store only token hashes and expose controlled one
   assert.ok(sql.includes('for update;'));
   assert.ok(sql.includes('revoke all on function public.accept_organization_invitation(text) from public, anon'));
 });
+
+test('invitation revocation is an admin-only audited RPC', () => {
+  assert.ok(sql.includes('create or replace function public.revoke_organization_invitation'));
+  assert.ok(sql.includes('grant execute on function public.revoke_organization_invitation(uuid) to authenticated'));
+  assert.ok(sql.includes("values (v_org, auth.uid(), 'invitation.revoked')"));
+});
