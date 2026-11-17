@@ -103,6 +103,7 @@
       recovery_link_invalid: "Ce lien de récupération est invalide ou expiré. Demandez un nouveau lien.",
       invalid_password_update: "Le mot de passe doit contenir au moins 12 caractères.",
       recovery_unavailable: "Impossible d'envoyer le lien pour le moment. Réessayez plus tard.",
+      invitation_already_member: "Vous êtes déjà membre de cette organisation. Aucune nouvelle adhésion n’a été créée.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
