@@ -227,6 +227,7 @@
         if (!r.ok) throw new Error(data.code || "login_failed");
         setSession(data);
         await loadWorkspace();
+        overlay.querySelector("[data-saas-logout]")?.focus();
       } catch (err) { renderLogin(message(err)); }
       return;
     }
@@ -235,6 +236,7 @@
       try {
         const created = await api("organizations", { method: "POST", body: { name: form.elements.name.value } });
         await loadWorkspace();
+        overlay.querySelector("[data-saas-logout]")?.focus();
         if (created?.id) await selectOrganization(created.id);
       } catch (err) { errorBox(message(err)); }
       return;
