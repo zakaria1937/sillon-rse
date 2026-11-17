@@ -1,7 +1,7 @@
 // Tests des passerelles /api/contact et /api/dossier.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { bumpProtected } from "../netlify/lib/shared.mjs";
+import { bumpProtected, readJsonLimited } from "../netlify/lib/shared.mjs";
 
 const sent = [];
 
@@ -89,4 +89,28 @@ test("les passerelles rejettent les corps JSON trop volumineux avant traitement"
     body: JSON.stringify({ code, data: { inputs: {}, extra: "x".repeat(420_000) } }),
   }), { ip: "7.7.7.8" });
   assert.equal(dossierResponse.status, 413);
+});
+
+
+test("la lecture JSON en flux annule le corps dès le dépassement de la limite", async () => {
+  let cancelled = false;
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode('{"message":"'));
+      controller.enqueue(new Uint8Array(1024));
+      controller.enqueue(new Uint8Array(1024));
+    },
+    cancel() { cancelled = true; },
+  });
+  const request = new Request("https://sillon.example/api/test", { method: "POST", body: stream, duplex: "half" });
+  const result = await readJsonLimited(request, 100);
+  assert.deepEqual(result, { error: 413 });
+  assert.equal(cancelled, true);
+});
+
+test("la lecture JSON en flux compte les octets UTF-8 et parse les corps valides", async () => {
+  const valid = new Request("https://sillon.example/api/test", { method: "POST", body: JSON.stringify({ label: "é" }) });
+  assert.deepEqual(await readJsonLimited(valid, 32), { value: { label: "é" } });
+  const invalid = new Request("https://sillon.example/api/test", { method: "POST", body: "{invalid" });
+  assert.deepEqual(await readJsonLimited(invalid, 32), { error: 400 });
 });
