@@ -21,6 +21,7 @@ globalThis.fetch = async (url, init = {}) => {
   }
   if (String(url).includes("grant_type=refresh_token")) {
     if (mode === "expired") return new Response('{"msg":"expired"}', { status: 400 });
+    if (mode === "refresh_unavailable") return new Response('{"msg":"unavailable"}', { status: 503 });
     return new Response(JSON.stringify({
       access_token: "rotated-access-token-long-enough",
       refresh_token: "rotated-refresh-token-long-enough",
@@ -28,7 +29,10 @@ globalThis.fetch = async (url, init = {}) => {
       user: { id: userId, email: "user@example.fr" },
     }), { status: 200, headers: { "content-type": "application/json" } });
   }
-  if (String(url).includes("/auth/v1/logout")) return new Response(null, { status: 204 });
+  if (String(url).includes("/auth/v1/logout")) {
+    if (mode === "logout_unavailable") return new Response('{"msg":"unavailable"}', { status: 503 });
+    return new Response(null, { status: 204 });
+  }
   return new Response("not found", { status: 404 });
 };
 const { default: auth } = await import("../netlify/functions/auth.mjs");
@@ -124,4 +128,29 @@ test("invalid rate-limit configuration falls back to a safe default", async () =
   const r = await auth(req("login", { email: "user@example.fr", password: "correct-password" }), ctx);
   assert.equal(r.status, 200);
   process.env.AUTH_LOGIN_LIMIT_PER_IP = "20";
+});
+
+test("logout preserves the cookie when Supabase cannot confirm session revocation", async () => {
+  mode = "refresh_unavailable";
+  const refreshFailure = await auth(req("logout", undefined, "sillon_refresh=refresh-token-value-long-enough"), { ip: "10.0.0.13" });
+  assert.equal(refreshFailure.status, 502);
+  assert.doesNotMatch(refreshFailure.headers.get("set-cookie"), /Max-Age=0/);
+
+  mode = "logout_unavailable";
+  const revokeFailure = await auth(req("logout", undefined, "sillon_refresh=refresh-token-value-long-enough"), { ip: "10.0.0.14" });
+  assert.equal(revokeFailure.status, 502);
+  assert.doesNotMatch(revokeFailure.headers.get("set-cookie"), /Max-Age=0/);
+  mode = "success";
+});
+
+test("production refuses login without a strong IP salt for distributed rate limiting", async () => {
+  const oldNetlify = process.env.NETLIFY;
+  const oldSalt = process.env.IP_SALT;
+  process.env.NETLIFY = "true";
+  delete process.env.IP_SALT;
+  const r = await auth(req("login", { email: "user@example.fr", password: "correct-password" }), { ip: "10.0.0.15" });
+  assert.equal(r.status, 503);
+  assert.deepEqual(await r.json(), { code: "rate_limit_not_configured" });
+  if (oldNetlify === undefined) delete process.env.NETLIFY; else process.env.NETLIFY = oldNetlify;
+  if (oldSalt === undefined) delete process.env.IP_SALT; else process.env.IP_SALT = oldSalt;
 });
