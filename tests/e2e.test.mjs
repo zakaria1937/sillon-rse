@@ -138,6 +138,8 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   await page.fill('#saas-login input[name="email"]', "test@atelier.fr");
   await page.fill('#saas-login input[name="password"]', "motdepasse-test");
   await page.click('#saas-login button[type="submit"]');
+  await page.fill('#saas-create-org input[name="name"]', "Atelier Démo");
+  await page.click('#saas-create-org button[type="submit"]');
   await page.waitForSelector('[data-saas-org="' + orgId + '"]');
   await page.click('[data-saas-org="' + orgId + '"]');
   await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Administrateur"));
