@@ -114,3 +114,18 @@ test("la lecture JSON en flux compte les octets UTF-8 et parse les corps valides
   const invalid = new Request("https://sillon.example/api/test", { method: "POST", body: "{invalid" });
   assert.deepEqual(await readJsonLimited(invalid, 32), { error: 400 });
 });
+
+
+test("la production refuse toute empreinte IP sans secret dédié", async () => {
+  const oldNetlify = process.env.NETLIFY;
+  const oldSalt = process.env.IP_SALT;
+  process.env.NETLIFY = "true";
+  delete process.env.IP_SALT;
+  try {
+    const { ipKey } = await import("../netlify/lib/shared.mjs");
+    await assert.rejects(() => ipKey(new Request("https://sillon.example/"), { ip: "192.0.2.10" }), /ip_salt_not_configured/);
+  } finally {
+    if (oldNetlify === undefined) delete process.env.NETLIFY; else process.env.NETLIFY = oldNetlify;
+    if (oldSalt === undefined) delete process.env.IP_SALT; else process.env.IP_SALT = oldSalt;
+  }
+});
