@@ -1,7 +1,7 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
   let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], refreshTimer = 0;
-  let overlay = null, returnFocus = null, sessionReady = null;
+  let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const auth = async (action, payload) => fetch("/api/auth?action=" + action, {
@@ -19,15 +19,28 @@
     user = data.user;
     clearTimeout(refreshTimer);
     const delay = Math.max(30_000, ((Number(data.expires_in) || 3600) - 60) * 1000);
-    refreshTimer = setTimeout(() => refreshSession().catch(() => clearSession()), delay);
+    refreshTimer = setTimeout(async () => {\n      const ok = await refreshSession();\n      if (!ok && overlay && !overlay.hidden) renderLogin("Votre session a expiré. Reconnectez-vous.");\n    }, delay);
   }
-  async function refreshSession() {
-    const r = await auth("refresh");
-    if (!r.ok) { clearSession(); return false; }
-    const data = await r.json();
-    if (!data.access_token) { clearSession(); return false; }
-    setSession(data);
-    return true;
+  // Un seul renouvellement à la fois : Supabase fait tourner les refresh tokens.
+  // Deux refresh simultanés avec le même ancien token pourraient invalider la session.
+  function refreshSession() {
+    if (refreshInFlight) return refreshInFlight;
+    refreshInFlight = (async () => {
+      try {
+        const r = await auth("refresh");
+        if (!r.ok) { clearSession(); return false; }
+        const data = await r.json();
+        if (!data.access_token) { clearSession(); return false; }
+        setSession(data);
+        return true;
+      } catch {
+        clearSession();
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+    return refreshInFlight;
   }
 
   async function api(resource, options = {}, retry = true) {
