@@ -608,7 +608,7 @@
         const next = { ...X.blank(), ...incoming, lang: S().lang, cloud: null, chat: [] };
         if (!next.custom || !Array.isArray(next.custom)) next.custom = [];
         if (!next.documents || !Array.isArray(next.documents)) next.documents = [];
-        X.setState(next); X.save(); X.toast("Sauvegarde restaurée. Vérifiez les données et les résultats."); window.SXR.route();
+        X.setState(next); X.save(); X.toast("Sauvegarde restaurée. Vérifiez les données et les résultats."); location.hash = "#accueil"; window.SXR.route();
       } catch (err) { X.toast(err.message || "Impossible de lire cette sauvegarde."); }
       finally { e.target.value = ""; }
     };
