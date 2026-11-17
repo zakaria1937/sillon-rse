@@ -51,7 +51,7 @@ export async function ipKey(req, context) {
 export function sameOrigin(req) {
   const origin = req.headers.get("origin");
   const allowed = (process.env.ALLOWED_ORIGINS || "").split(",").map((x) => x.trim()).filter(Boolean);
-  try { return !!origin && (new URL(origin).host === new URL(req.url).host || allowed.includes(origin)); } catch { return false; }
+  try { return !!origin && (new URL(origin).origin === new URL(req.url).origin || allowed.includes(new URL(origin).origin)); } catch { return false; }
 }
 
 // Envoi vers le formulaire Netlify « sillon », qui notifie le propriétaire par e-mail.
