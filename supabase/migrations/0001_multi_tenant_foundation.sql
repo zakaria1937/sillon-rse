@@ -226,7 +226,7 @@ begin
   if auth.uid() is null then
     raise exception 'authentication_required' using errcode = '42501';
   end if;
-  if p_role not in ('admin', 'rse_lead', 'contributor', 'reader') then
+  if p_role is null or p_role not in ('admin', 'rse_lead', 'contributor', 'reader') then
     raise exception 'invalid_member_role' using errcode = '22023';
   end if;
   if not private.has_org_role(p_org, array['admin']) then
@@ -235,6 +235,10 @@ begin
 
   perform 1 from public.organizations where id = p_org for update;
   if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  -- Recheck after the lock: a concurrent admin transfer may have changed the caller's role.
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
 
   select role into v_current_role
   from public.organization_memberships
