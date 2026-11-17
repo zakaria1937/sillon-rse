@@ -3,6 +3,9 @@
 -- Apply only in a dedicated Supabase project after reviewing the security model.
 
 create extension if not exists pgcrypto;
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+grant usage on schema private to authenticated;
 
 create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
@@ -58,9 +61,6 @@ as $$
   );
 $$;
 
-create schema if not exists private;
-revoke all on schema private from public, anon, authenticated;
-grant usage on schema private to authenticated;
 grant execute on function private.has_org_role(uuid, text[]) to authenticated;
 
 -- Users cannot create an organization and then self-assign arbitrary membership rows.
@@ -164,4 +164,3 @@ revoke all on public.organizations, public.organization_memberships, public.doss
 revoke insert, update, delete on public.organizations, public.organization_memberships, public.audit_events from authenticated;
 grant select on public.organizations, public.organization_memberships, public.audit_events to authenticated;
 grant select, insert, update, delete on public.dossiers to authenticated;
-grant usage, select on sequence public.audit_events_id_seq to authenticated;
