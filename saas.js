@@ -179,6 +179,7 @@
   async function selectOrganization(id) {
     selectedOrg = organizations.find((o) => o.id === id) || null;
     dossiers = [];
+    auditEvents = [];
     renderOrganizations();
     const target = overlay.querySelector("#saas-dossiers");
     if (!selectedOrg || !target) return;
