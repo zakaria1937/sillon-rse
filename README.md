@@ -35,7 +35,8 @@
 - **Historique et référence** : courbe d'évolution des scores et comparaison avant/après.
 - **Veille réglementaire** : frise des échéances 2026-2030, celles qui concernent l'entreprise sont mises en avant.
 - **Exports et portabilité** : PDF consolidé, classeur Excel, mode présentation plein écran, export JSON du dossier et restauration contrôlée depuis une sauvegarde.
-- **Sauvegarde en ligne** : dossier chiffré côté navigateur (AES-GCM) avant transmission ; le code secret est nécessaire pour le restaurer. Le serveur ne reçoit pas le dossier en clair.
+- **Sauvegarde en ligne historique** : dossier chiffré côté navigateur (AES-GCM) avant transmission ; le code secret est nécessaire pour le restaurer. Le serveur ne reçoit pas le dossier en clair.
+- **Espace entreprise en préversion** : fondation Supabase/PostgreSQL RLS, connexion avec refresh token HttpOnly, organisations et dossiers cloud vierges. Cette fonction reste inactive tant que le projet Supabase et les variables Netlify ne sont pas configurés ; elle ne synchronise pas encore les dossiers locaux.
 - **Français** (version anglaise en préparation), thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
 
 ## Méthode
@@ -55,7 +56,7 @@ Les résultats sont des estimations ou indices internes. Ils ne remplacent ni un
 
 ## Données, sauvegarde et limites d'accès
 
-Voir [SECURITE_DONNEES.md](docs/SECURITE_DONNEES.md) pour le modèle de stockage, les sauvegardes et les limites actuelles. Sillon est aujourd'hui un dossier de travail par navigateur/session : il ne propose pas encore de comptes nominatifs, de rôles ni d'isolation multi-entreprises côté serveur. Ne l'utilisez pas comme GED ou comme espace collaboratif contenant des données confidentielles sans déploiement d'une architecture dédiée.
+Voir [SECURITE_DONNEES.md](docs/SECURITE_DONNEES.md) pour le modèle de stockage, les sauvegardes et les limites actuelles. Le site actuellement déployé reste un dossier de travail par navigateur/session. La branche de préparation SaaS ajoute le schéma RLS, les passerelles d'authentification et une interface préversion, mais aucun projet Supabase n'est relié et aucun compte d'entreprise n'est encore provisionné. La procédure de configuration est décrite dans [CONFIGURATION_SUPABASE_NETLIFY.md](docs/CONFIGURATION_SUPABASE_NETLIFY.md) et l'état technique dans [ARCHITECTURE_SAAS_MULTI_ENTREPRISES.md](docs/ARCHITECTURE_SAAS_MULTI_ENTREPRISES.md). Ne saisissez pas de données sensibles dans la préversion et n'utilisez pas Sillon comme GED.
 
 ## Lancer en local
 
@@ -90,10 +91,14 @@ npx netlify dev      # site + fonction en local (clé dans un fichier .env)
 | `legal.js` | Politique de confidentialité et mentions légales |
 | `netlify/functions/claude.mjs` | Passerelle sécurisée vers l'IA (Mistral, secours Groq) |
 | `netlify/functions/contact.mjs` | Réception filtrée des contacts et demandes |
-| `netlify/functions/dossier.mjs` | Sauvegarde en ligne des dossiers (Netlify Blobs) |
+| `netlify/functions/dossier.mjs` | Sauvegarde en ligne historique des dossiers (Netlify Blobs) |
+| `netlify/functions/auth.mjs` | Session Supabase, refresh token HttpOnly |
+| `netlify/functions/tenant.mjs` | API organisations/dossiers soumise à PostgreSQL RLS |
+| `saas.js` | Interface de connexion et espace entreprise en préversion |
+| `supabase/migrations/0001_multi_tenant_foundation.sql` | Schéma multi-entreprises, rôles et politiques RLS |
 | `netlify.toml` | Configuration Netlify |
 | `i18n.js` | Textes français et anglais |
-| `tests/` | Tests des calculs et de la passerelle (`npm test`) |
+| `tests/` | Tests unitaires, passerelles, sessions, schéma SQL et interface (`npm test`) ; tests E2E navigateur |
 
 Bibliothèques et polices hébergées dans le dépôt (`vendor/`, `fonts/`) : Three.js r128, jsPDF 2.5.1, SheetJS 0.18.5, PDF.js 3.11.174, Gloock, Newsreader, Atkinson Hyperlegible Next et Martian Mono (OFL). Relief : IGN RGE ALTI, Licence Ouverte 2.0. Voir [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
