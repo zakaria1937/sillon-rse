@@ -25,3 +25,9 @@ test("espace entreprise : les données dynamiques affichées sont échappées", 
   assert.match(source, /const esc =/);
   assert.match(source, /textContent = text/);
 });
+
+
+test("espace entreprise : attend la vérification initiale de session avant de choisir l'écran", () => {
+  assert.match(source, /sessionReady = refreshSession\(\)/);
+  assert.match(source, /if \(sessionReady\) await sessionReady/);
+});
