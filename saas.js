@@ -1,6 +1,6 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
-  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], refreshTimer = 0;
+  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], auditEvents = [], refreshTimer = 0;
   let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -11,7 +11,7 @@
   });
 
   function clearSession() {
-    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = [];
+    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = []; auditEvents = [];
     clearTimeout(refreshTimer);
   }
   function setSession(data) {
@@ -79,6 +79,7 @@
       dossier_create_failed: "Impossible de créer le dossier.",
       dossier_change_failed: "Cette opération n’a pas été autorisée.",
       membership_role_update_failed: "Impossible de modifier ce rôle. Vérifiez vos droits et réessayez.",
+      audit_read_failed: "Impossible de charger le journal d’activité de cette organisation.",
       last_admin_protected: "Cette organisation doit conserver au moins un administrateur. Attribuez d’abord ce rôle à une autre personne.",
       member_not_found: "Ce membre n’appartient plus à cette organisation.",
     };
@@ -187,6 +188,10 @@
         api("dossiers", { query: "organization_id=" + encodeURIComponent(id) }),
         api("memberships", { query: "organization_id=" + encodeURIComponent(id) }),
       ]);
+      const own = memberships.find((m) => m.user_id === user?.id);
+      auditEvents = own && ["admin", "rse_lead"].includes(own.role)
+        ? await api("audits", { query: "organization_id=" + encodeURIComponent(id) })
+        : [];
       renderDossiers();
     } catch (e) { target.innerHTML = '<p class="saas-error">' + esc(message(e)) + '</p>'; }
   }
@@ -202,6 +207,7 @@
     const roleNames = { admin: "Administrateur", rse_lead: "Responsable RSE", contributor: "Contributeur", reader: "Lecteur" };
     const canEdit = ownMembership && ["admin", "rse_lead", "contributor"].includes(ownMembership.role);
     const canManageMembers = ownMembership?.role === "admin";
+    const canReadAudit = ownMembership && ["admin", "rse_lead"].includes(ownMembership.role);
     const memberRows = memberships.map((member) => {
       const label = member.user_id === user?.id ? "Vous" : "Membre " + member.user_id.slice(0, 8);
       const role = roleNames[member.role] || member.role;
@@ -213,6 +219,20 @@
         '<label>' + esc(label) + '<select name="role">' + options + '</select></label>' +
         '<button class="chip-btn" type="submit">Modifier le rôle</button></form>';
     }).join("");
+    const auditLabels = {
+      "dossier.created": "Dossier créé", "dossier.updated": "Dossier modifié", "dossier.deleted": "Dossier supprimé",
+      "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié", "membership.removed": "Membre retiré",
+    };
+    const auditRows = auditEvents.map((event) => {
+      const actor = event.actor_id ? event.actor_id.slice(0, 8) : "Système";
+      const targetUser = event.target_user_id ? " · membre " + event.target_user_id.slice(0, 8) : "";
+      const roleChange = event.previous_role || event.new_role
+        ? " · " + (roleNames[event.previous_role] || event.previous_role || "—") + " → " + (roleNames[event.new_role] || event.new_role || "—")
+        : "";
+      const date = event.occurred_at ? new Date(event.occurred_at).toLocaleString("fr-FR") : "—";
+      return '<div class="saas-row"><span>' + esc(auditLabels[event.event_type] || event.event_type) +
+        esc(targetUser) + esc(roleChange) + '</span><small>' + esc(date) + ' · ' + esc(actor) + '</small></div>';
+    }).join("") || '<p class="saas-muted">Aucune activité enregistrée.</p>';
     target.innerHTML =
       '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + ' · Dossiers</h3></div>' +
       (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
@@ -220,7 +240,8 @@
       (canEdit
         ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>'
         : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>') +
-      (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '');
+      (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '') +
+      (canReadAudit ? '<h4>Activité récente</h4><div class="saas-list">' + auditRows + '</div>' : '');
   }
 
   document.addEventListener("click", async (e) => {
