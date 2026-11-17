@@ -426,7 +426,7 @@ from public.create_organization_invitation(
   current_setting('test.org_alpha')::uuid,
   'member-alpha@example.test',
   'reader'
-) \\gset
+) \gset
 select set_config('test.duplicate_invitation_id', :'test_duplicate_invitation_id', false);
 select set_config('test.duplicate_invitation_token', :'test_duplicate_invitation_token', false);
 reset role;
