@@ -527,7 +527,8 @@ select set_config('test.expired_invitation_token', :'test_expired_invitation_tok
 reset role;
 
 update public.organization_invitations
-set expires_at = now() - interval '1 minute'
+set created_at = now() - interval '2 days',
+    expires_at = now() - interval '1 minute'
 where id = current_setting('test.expired_invitation_id')::uuid;
 
 set role authenticated;
