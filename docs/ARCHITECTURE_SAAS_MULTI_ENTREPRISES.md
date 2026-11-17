@@ -24,6 +24,9 @@ La migration permet à un utilisateur authentifié de créer une organisation vi
 ## Contrôles de sécurité prévus
 
 - RLS activée sur les quatre tables.
+- Les triggers de base imposent l'auteur à l'identité authentifiée, rendent l'organisation et l'auteur initial immuables, et incrémentent la version côté base.
+- Les fonctions privilégiées utilisent un `search_path` vide et des références qualifiées pour réduire les risques de détournement d'objets SQL.
+- La CI exécute désormais la migration sur PostgreSQL 16 et vérifie réellement l'isolation entre deux organisations, ainsi que les droits lecteur/contributeur.
 - Chaque lecture/écriture de dossier est filtrée par appartenance à l'organisation et rôle.
 - Les utilisateurs ne peuvent pas s'ajouter eux-mêmes à une organisation.
 - Les écritures directes sur les adhésions et le journal d'audit sont interdites aux clients authentifiés.
