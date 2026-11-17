@@ -261,4 +261,12 @@ test("POST invitations accepts a strict one-time token through the authenticated
   assert.deepEqual(await accepted.json(), { organization_id: orgId });
   assert.ok(calls.at(-1).url.endsWith("/rpc/accept_organization_invitation"));
   assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_token: "a".repeat(64) });
+
+  restStatus = 409;
+  const alreadyMember = await tenant(req("POST", "?resource=invitations", {
+    action: "accept", token: "b".repeat(64),
+  }));
+  assert.equal(alreadyMember.status, 409);
+  assert.deepEqual(await alreadyMember.json(), { code: "invitation_already_member" });
+  restStatus = 200;
 });
