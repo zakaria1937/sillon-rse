@@ -165,6 +165,31 @@ test("PATCH memberships delegates role changes to the admin-only database RPC", 
 });
 
 
+test("DELETE memberships delegates removal to the admin-only audited database RPC", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  const r = await tenant(req("DELETE", "?resource=memberships", {
+    organization_id: orgId, user_id: userId,
+  }));
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { removed: true });
+  assert.match(calls.at(-1).url, /\\/rpc\\/remove_organization_member$/);
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_org: orgId, p_user: userId });
+  restStatus = 403;
+  const forbidden = await tenant(req("DELETE", "?resource=memberships", {
+    organization_id: orgId, user_id: userId,
+  }));
+  assert.equal(forbidden.status, 403);
+  assert.deepEqual(await forbidden.json(), { code: "organization_admin_required" });
+  restStatus = 400;
+  const protectedAdmin = await tenant(req("DELETE", "?resource=memberships", {
+    organization_id: orgId, user_id: userId,
+  }));
+  assert.equal(protectedAdmin.status, 400);
+  assert.deepEqual(await protectedAdmin.json(), { code: "last_admin_protected" });
+  restStatus = 200;
+});
+
 test("GET audits exposes metadata only and delegates visibility to organization RLS", async () => {
   calls.length = 0;
   restStatus = 200;
