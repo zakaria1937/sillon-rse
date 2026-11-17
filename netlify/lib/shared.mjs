@@ -76,3 +76,12 @@ export async function alertOwner(req, s, code, detail) {
     await toForm(req, { evenement: "Alerte technique", message: `${code} : ${detail}`.slice(0, 500) });
   } catch { /* une alerte ratée ne doit jamais casser la réponse */ }
 }
+
+
+// Lecture JSON bornée : vérifie la taille avant de parser et d'allouer l'objet.
+export async function readJsonLimited(req, maxBytes) {
+  const raw = await req.text();
+  if (new TextEncoder().encode(raw).byteLength > maxBytes) return { error: 413 };
+  try { return { value: raw ? JSON.parse(raw) : {} }; }
+  catch { return { error: 400 }; }
+}
