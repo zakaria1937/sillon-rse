@@ -32,11 +32,8 @@ select 1 / (exists (select 1 from public.audit_events where dossier_id = :'dossi
 set role authenticated;
 select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
 select public.create_organization('Organisation Beta') as org_beta \gset
-select count(*) as visible_alpha from public.dossiers where id = :'dossier_alpha' \gset
-\if :visible_alpha != 0
-  \echo 'Cross-tenant read isolation failed'
-  \quit 1
-\endif
+select case when count(*) = 0 then 1 else 1/0 end
+from public.dossiers where id = :'dossier_alpha';
 reset role;
 
 -- A reader can read but cannot update; a contributor cannot delete.
@@ -46,10 +43,15 @@ set role authenticated;
 select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
 update public.dossiers set name = 'Reader tampering' where id = :'dossier_alpha';
 reset role;
-select 1 / (not exists (select 1 from public.dossiers where id = :'dossier_alpha'::uuid and name = 'Reader tampering')::int);
+select 1 / ((not exists (select 1 from public.dossiers where id = :'dossier_alpha'::uuid and name = 'Reader tampering'))::int);
 
 insert into public.organization_memberships(organization_id, user_id, role)
 values (:'org_alpha', '30000000-0000-4000-8000-000000000003', 'contributor');
+set role authenticated;
+select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
+update public.dossiers set name = 'Contributor update' where id = :'dossier_alpha';
+reset role;
+select 1 / (exists (select 1 from public.dossiers where id = :'dossier_alpha'::uuid and name = 'Contributor update' and version = 3)::int);
 set role authenticated;
 select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
 delete from public.dossiers where id = :'dossier_alpha';
