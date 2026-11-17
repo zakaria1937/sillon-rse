@@ -94,6 +94,15 @@ export default async function tenant(req) {
     return json(405, { code: "method" });
   }
 
+  if (resource === "memberships") {
+    if (req.method !== "GET") return json(405, { code: "method" });
+    const org = url.searchParams.get("organization_id") || "";
+    if (!UUID.test(org)) return json(400, { code: "invalid_organization_id" });
+    const r = await rest(cfg, auth.token,
+      "organization_memberships?select=user_id,role,created_at&organization_id=eq." + org + "&order=created_at.asc");
+    return r.error ? json(r.error, { code: "membership_read_failed" }) : json(200, r.data);
+  }
+
   if (resource === "dossiers") {
     if (req.method === "GET") {
       const org = url.searchParams.get("organization_id") || "";
