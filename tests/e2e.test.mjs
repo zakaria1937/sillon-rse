@@ -93,7 +93,7 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   const { page, errors } = await open();
   const orgId = "50000000-0000-4000-8000-000000000005";
   const dossierId = "60000000-0000-4000-8000-000000000006";
-  let orgCreated = false, dossierCreated = false;
+  let orgCreated = false, dossierCreated = false, roleUpdated = false;
   await page.route("**/api/auth**", async (route) => {
     const url = new URL(route.request().url());
     if (url.searchParams.get("action") === "refresh") {
@@ -119,8 +119,15 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: orgId }) });
     } else if (url.searchParams.get("resource") === "memberships" && request.method() === "GET") {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
-        { user_id: "70000000-0000-4000-8000-000000000007", role: "admin", created_at: "2026-11-17T10:00:00Z" }
+        { user_id: "70000000-0000-4000-8000-000000000007", role: "admin", created_at: "2026-11-17T10:00:00Z" },
+        { user_id: "80000000-0000-4000-8000-000000000008", role: roleUpdated ? "contributor" : "reader", created_at: "2026-11-17T10:00:00Z" }
       ]) });
+    } else if (url.searchParams.get("resource") === "memberships" && request.method() === "PATCH") {
+      const body = request.postDataJSON();
+      assert.equal(body.user_id, "80000000-0000-4000-8000-000000000008");
+      assert.equal(body.role, "contributor");
+      roleUpdated = true;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ updated: true }) });
     } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "GET") {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(dossierCreated ? [
         { id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" }
@@ -146,8 +153,12 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   await page.fill('#saas-create-dossier input[name="name"]', "Diagnostic initial");
   await page.click('#saas-create-dossier button[type="submit"]');
   await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Diagnostic initial"));
+  await page.selectOption('form[data-saas-member="80000000-0000-4000-8000-000000000008"] select[name="role"]', "contributor");
+  await page.click('form[data-saas-member="80000000-0000-4000-8000-000000000008"] button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Contributeur"));
   assert.equal(orgCreated, true);
   assert.equal(dossierCreated, true);
+  assert.equal(roleUpdated, true);
   assert.deepEqual(errors, []);
   await page.close();
 });
