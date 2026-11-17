@@ -143,11 +143,9 @@ declare
   v_version bigint;
   v_event text;
 begin
-  -- Lors d'une suppression en cascade de l'organisation, ses événements seront
-  -- supprimés eux aussi ; ne pas tenter d'insérer un événement orphelin.
-  if tg_op = 'DELETE' and not exists (
-    select 1 from public.organizations where id = old.organization_id
-  ) then
+  -- Les suppressions de membres déclenchées par une cascade (ex. suppression
+  -- de l'organisation) ne doivent pas créer un audit qui serait aussitôt orphelin.
+  if tg_op = 'DELETE' and pg_trigger_depth() > 1 then
     return old;
   end if;
 
