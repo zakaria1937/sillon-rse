@@ -63,6 +63,16 @@ test("POST organization calls the controlled create_organization RPC", async () 
   assert.deepEqual(JSON.parse(calls[1].init.body), { p_name: "Atelier Alpha" });
 });
 
+test("GET memberships exposes only the roles visible through organization-membership RLS", async () => {
+  calls.length = 0;
+  restData = [{ user_id: userId, role: "admin", created_at: "2026-11-17T10:00:00Z" }];
+  const r = await tenant(req("GET", "?resource=memberships&organization_id=" + orgId, undefined, null, false));
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), restData);
+  assert.match(calls.at(-1).url, /organization_memberships\?select=user_id,role,created_at&organization_id=eq\./);
+  assert.equal((await tenant(req("POST", "?resource=memberships&organization_id=" + orgId, {}))).status, 405);
+});
+
 test("GET dossiers requires a valid organization id and lets RLS filter rows", async () => {
   calls.length = 0;
   restData = [{ id: dossierId, organization_id: orgId, name: "Diagnostic" }];
