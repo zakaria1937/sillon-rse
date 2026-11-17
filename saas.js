@@ -1,7 +1,7 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
   let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], auditEvents = [], refreshTimer = 0;
-  let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null, recoveryAccessToken = null;
+  let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null, recoveryAccessToken = null, sessionUnavailable = false;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const auth = async (action, payload) => fetch("/api/auth?action=" + action, {
@@ -13,10 +13,12 @@
   function clearSession() {
     accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = []; auditEvents = [];
     clearTimeout(refreshTimer);
+    sessionUnavailable = false;
   }
   function setSession(data) {
     accessToken = data.access_token;
     user = data.user;
+    sessionUnavailable = false;
     clearTimeout(refreshTimer);
     const delay = Math.max(30_000, ((Number(data.expires_in) || 3600) - 60) * 1000);
     refreshTimer = setTimeout(async () => {
@@ -31,7 +33,20 @@
     refreshInFlight = (async () => {
       try {
         const r = await auth("refresh");
-        if (!r.ok) { clearSession(); return false; }
+        if (!r.ok) {
+          // Une panne temporaire ou un quota ne signifie pas que le refresh token est révoqué.
+          if (r.status === 429 || r.status >= 500) {
+            sessionUnavailable = true;
+            if (accessToken) {
+              clearTimeout(refreshTimer);
+              refreshTimer = setTimeout(() => { refreshSession(); }, 60_000);
+              return true;
+            }
+            return false;
+          }
+          clearSession();
+          return false;
+        }
         const data = await r.json();
         if (!data.access_token) { clearSession(); return false; }
         setSession(data);
@@ -124,7 +139,7 @@
     try { if (sessionReady) await sessionReady; } catch { clearSession(); }
     if (overlay.hidden) return;
     if (accessToken) await loadWorkspace();
-    else renderLogin();
+    else renderLogin(sessionUnavailable ? "Le service d’authentification est temporairement indisponible. Votre session n’a pas été révoquée ; réessayez dans un instant." : "");
   }
   function content(html) {
     ensureOverlay();
