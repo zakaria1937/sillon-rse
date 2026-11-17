@@ -340,9 +340,9 @@ select 'tenant RLS integration checks passed' as result;
 -- Invitation à usage unique : identité email, expiration, hash du jeton et audit.
 update auth.users set email = 'admin-alpha@example.test'
 where id = '10000000-0000-4000-8000-000000000001';
-update auth.users set email = 'member-alpha@example.test'
+update auth.users set email = 'member-alpha@example.test', email_confirmed_at = now()
 where id = '20000000-0000-4000-8000-000000000002';
-update auth.users set email = 'other-alpha@example.test'
+update auth.users set email = 'other-alpha@example.test', email_confirmed_at = now()
 where id = '30000000-0000-4000-8000-000000000003';
 
 set role authenticated;
