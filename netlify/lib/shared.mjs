@@ -35,6 +35,14 @@ export async function bumpStrict(s, key, limit) {
   return true;
 }
 
+// Les quotas qui protègent des coûts ou des abus ne doivent jamais basculer
+// sur une mémoire éphémère en production si Netlify Blobs est indisponible.
+export async function bumpProtected(s, key, limit) {
+  return process.env.NETLIFY === "true"
+    ? bumpStrict(s, key, limit)
+    : bump(s, key, limit);
+}
+
 export const today = () => new Date().toISOString().slice(0, 10);
 
 export async function sha(text) {
