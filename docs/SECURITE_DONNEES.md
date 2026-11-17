@@ -2,7 +2,13 @@
 
 Dernière mise à jour : 17 novembre 2026.
 
-## Ce qui est disponible
+## Périmètre et état du produit
+
+Sillon conserve actuellement un mode de fonctionnement local et une sauvegarde en ligne distincts de la fondation SaaS préparée dans la branche `feat/saas-multi-tenant-foundation`.
+
+**La fondation multi-entreprises n'est pas activée sur le site de production.** Aucun projet Supabase n'est connecté, aucune variable d'environnement SaaS n'est configurée et aucune donnée métier n'a été migrée. L'interface et les passerelles préparées ne constituent pas, à elles seules, une ouverture du service aux entreprises. La branche reste une préversion technique et ne doit pas être fusionnée ni déployée sans validation.
+
+## Données et sauvegardes actuellement disponibles
 
 ### Stockage local
 - Le dossier actif est conservé dans le stockage local du navigateur (`localStorage`).
@@ -12,7 +18,7 @@ Dernière mise à jour : 17 novembre 2026.
 
 Le stockage local n'est pas un coffre-fort : il n'est pas chiffré par Sillon et reste accessible à une personne ayant accès au profil du navigateur ou à l'appareil.
 
-### Sauvegarde en ligne
+### Sauvegarde en ligne historique
 - La sauvegarde est chiffrée dans le navigateur avec AES-GCM avant son envoi.
 - Une clé est dérivée par SHA-256 du code secret généré dans le navigateur ; chaque sauvegarde utilise un vecteur d'initialisation aléatoire de 96 bits.
 - Le serveur conserve le bloc chiffré, la date de mise à jour et l'empreinte SHA-256 du code pour retrouver le dossier. Il ne reçoit pas le dossier en clair.
@@ -23,27 +29,44 @@ Le stockage local n'est pas un coffre-fort : il n'est pas chiffré par Sillon et
 
 Le chiffrement protège le contenu stocké côté fournisseur, mais ne protège pas un navigateur ou un appareil compromis. Le code secret est également conservé localement pour permettre la sauvegarde automatique.
 
-## Ce qui n'est pas encore disponible
+## Fondation SaaS préparée — non activée en production
 
-### Comptes et rôles
-Sillon ne dispose pas encore d'une authentification nominative avec comptes individuels, MFA, invitations, révocation de sessions ou rôles (administrateur, responsable RSE, contributeur, lecteur). Les droits ne doivent pas être simulés par des contrôles d'interface : une autorisation réelle doit être vérifiée côté serveur à chaque accès.
+Les éléments suivants existent dans la branche de préparation et doivent encore être validés sur un environnement Supabase/Netlify de staging :
 
-### Multi-entreprises et collaboration
-Le produit ne fournit pas encore d'espace multi-entreprises isolé côté serveur, de membres par organisation, de partage de dossiers ni de journal d'audit inviolable. Les codes de sauvegarde permettent de reprendre un dossier, mais ne constituent pas une gestion d'organisations ni un système de collaboration.
+### Identité et sessions
+- Passerelle serveur de connexion, renouvellement et déconnexion avec Supabase Auth.
+- Refresh token conservé dans un cookie `HttpOnly`, `SameSite=Strict` et `Secure` lorsque la requête est HTTPS ; access token court conservé en mémoire côté navigateur.
+- Parcours de récupération du mot de passe implémenté côté application, mais à valider avec un vrai projet Supabase et ses URL de redirection.
+- MFA, invitations e-mail et provisionnement autonome des membres ne sont pas encore opérationnels.
+
+### Organisations, rôles et cloisonnement
+- Schéma PostgreSQL préparé pour les organisations, adhésions, dossiers et événements d'audit.
+- RLS activée dans la migration sur ces tables, avec quatre rôles : administrateur, responsable RSE, contributeur et lecteur.
+- Création transactionnelle d'une organisation avec attribution du premier rôle administrateur.
+- Changements de rôle et retraits de membres réservés aux administrateurs via des fonctions SQL dédiées ; protection du dernier administrateur.
+- Les requêtes de la passerelle transmettent le JWT utilisateur à PostgREST afin que les politiques RLS de PostgreSQL restent l'autorité d'accès.
+- Journalisation des métadonnées de création/modification/suppression des dossiers et des changements d'adhésion. Le journal ne doit pas être présenté comme inviolable face à un administrateur de base de données.
+
+### Limitation des tentatives
+Les fonctions de connexion et de récupération utilisent un compteur par IP/jour stocké via Netlify Blobs en production. Le compteur repose sur une lecture suivie d'une écriture et n'est pas atomique : des requêtes concurrentes peuvent dépasser le seuil. Il s'agit d'une protection complémentaire, pas d'une garantie anti-abus. Les protections natives de Supabase Auth, la surveillance et des contrôles adaptés au trafic réel restent nécessaires. En production, l'absence de secret IP ou de stockage persistant provoque un échec fermé.
 
 ### Gestion documentaire
-Le registre documentaire stocke des références et métadonnées. Les fichiers restent dans la GED de l'organisation ; Sillon ne les héberge pas et ne vérifie pas leur authenticité.
+Le registre documentaire stocke des références et métadonnées. Les fichiers restent dans la GED de l'organisation ; Sillon ne les héberge pas et ne vérifie pas leur authenticité. Les liens de preuves ne doivent pas être rendus publics par défaut.
 
-## Architecture à mettre en place avant un usage collaboratif en entreprise
+## Conditions obligatoires avant un pilote avec des données réelles
 
-1. Déployer un fournisseur d'identité robuste (OIDC) avec MFA et gestion du cycle de vie des comptes.
-2. Introduire une base de données relationnelle avec identifiants d'organisation (`tenant_id`) et politiques d'accès vérifiées côté serveur.
-3. Définir des rôles et permissions granulaires, contrôlés sur chaque API, y compris les exports et les fichiers.
-4. Ajouter des journaux d'audit append-only (acteur, organisation, action, horodatage, objet, résultat) avec politique de conservation.
-5. Chiffrer les données sensibles au repos et gérer les clés via un KMS ; séparer les clés par environnement et, si nécessaire, par organisation.
-6. Formaliser sauvegardes, restauration testée, rétention, suppression, gestion des incidents, sous-traitants et localisation des données.
-7. Réaliser une analyse de risques, une revue RGPD et un test d'intrusion avant d'ouvrir le service à plusieurs entreprises.
+1. Créer des projets Supabase distincts pour staging et production, choisir et documenter la région d'hébergement, sécuriser les comptes privilégiés et activer MFA.
+2. Configurer les secrets Netlify par environnement ; ne jamais exposer de clé `service_role` dans le navigateur.
+3. Appliquer la migration sur une base de staging dédiée après sauvegarde et revue.
+4. Tester avec plusieurs organisations et des comptes distincts : accès croisés, quatre rôles, modification/suppression des membres, dernier administrateur, journal d'audit et opérations concurrentes.
+5. Valider les parcours réels : connexion, rotation du refresh token, déconnexion, récupération de mot de passe, erreurs réseau, quotas et expiration des sessions.
+6. Réaliser une revue de sécurité indépendante : contrôle des API, RLS, cookies, CSP, gestion des secrets, limitation des abus, journaux, dépendances et tests d'intrusion.
+7. Formaliser sauvegardes et restauration testée, rétention, suppression des comptes et organisations, gestion des incidents, sous-traitants et localisation des données.
+8. Réaliser la revue RGPD : rôles responsable/sous-traitant, contrats, finalités, minimisation, durées, droits des personnes et analyse d'impact si nécessaire.
+9. Exécuter une recette métier avec des données fictives, puis un pilote limité avec des données non sensibles, avant toute ouverture plus large.
+
+La CI vérifie les tests Node, la migration PostgreSQL et des scénarios Playwright. Un passage E2E récent a exécuté avec succès les treize premiers scénarios, puis a été interrompu par l'annulation du run lors d'une mise à jour de branche ; cela ne constitue pas une validation complète. La CI du dernier commit doit être verte avant toute fusion.
 
 ## Recommandation d'usage actuelle
 
-Utiliser des données de test ou non sensibles. Pour les dossiers réels, protéger l'appareil, conserver une sauvegarde locale hors du navigateur et le code secret hors de l'appareil. Ne pas partager un code de sauvegarde comme s'il s'agissait d'une invitation avec des droits différenciés.
+Utiliser des données de test ou non sensibles. Pour les dossiers réels en mode local, protéger l'appareil, conserver une sauvegarde locale hors du navigateur et le code secret hors de l'appareil. Ne pas partager un code de sauvegarde comme s'il s'agissait d'une invitation avec des droits différenciés.
