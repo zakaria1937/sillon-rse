@@ -256,6 +256,23 @@ begin
 end;
 $assert$;
 
+-- A direct membership removal is recorded with the former role.
+delete from public.organization_memberships
+where organization_id = :'org_alpha'
+  and user_id = '30000000-0000-4000-8000-000000000003';
+do $assert$
+begin
+  if not exists (select 1 from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and event_type = 'membership.removed'
+        and target_user_id = '30000000-0000-4000-8000-000000000003'
+        and previous_role = 'contributor'
+        and new_role is null) then
+    raise exception 'membership_removal_not_audited';
+  end if;
+end;
+$assert$;
+
 -- An RSE lead can inspect the audit trail and delete the dossier.
 insert into public.organization_memberships(organization_id, user_id, role)
 values (:'org_alpha', '40000000-0000-4000-8000-000000000004', 'rse_lead');
