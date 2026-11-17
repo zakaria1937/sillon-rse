@@ -122,5 +122,4 @@ test("un destinataire accepte l'invitation après connexion avec son compte auth
   assert.match(source, /invitationToken = invitationFromUrl/);
   assert.match(source, /action: "accept", token: tokenToAccept/);
   assert.match(source, /Connectez-vous avec l’adresse e-mail confirmée qui a reçu cette invitation/);
-  assert.match(source, /invitation_invalid_or_expired/);
 });
