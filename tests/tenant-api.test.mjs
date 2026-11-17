@@ -230,7 +230,7 @@ test("GET and DELETE invitations use RLS and the admin-only revocation RPC", asy
   restData = [{ id: dossierId, email: "member@example.test", role: "reader" }];
   const list = await tenant(req("GET", "?resource=invitations&organization_id=" + orgId, undefined, null, false));
   assert.equal(list.status, 200);
-  assert.match(calls.at(-1).url, /organization_invitations\\?select=id,email,role/);
+  assert.ok(calls.at(-1).url.includes("/organization_invitations?select=id,email,role"));
   const invalid = await tenant(req("DELETE", "?resource=invitations", { invitation_id: "bad" }));
   assert.equal(invalid.status, 400);
   restData = true;
