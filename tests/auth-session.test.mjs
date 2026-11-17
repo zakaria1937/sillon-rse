@@ -143,7 +143,7 @@ test("logout preserves the cookie when Supabase cannot confirm session revocatio
   mode = "success";
 });
 
-test("production refuses login without a strong IP salt for distributed rate limiting", async () => {
+test("production refuses login without a strong IP salt for IP-based rate limiting", async () => {
   const oldNetlify = process.env.NETLIFY;
   const oldSalt = process.env.IP_SALT;
   process.env.NETLIFY = "true";
