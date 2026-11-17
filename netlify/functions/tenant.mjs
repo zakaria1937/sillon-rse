@@ -95,12 +95,27 @@ export default async function tenant(req) {
   }
 
   if (resource === "memberships") {
-    if (req.method !== "GET") return json(405, { code: "method" });
-    const org = url.searchParams.get("organization_id") || "";
-    if (!UUID.test(org)) return json(400, { code: "invalid_organization_id" });
-    const r = await rest(cfg, auth.token,
-      "organization_memberships?select=user_id,role,created_at&organization_id=eq." + org + "&order=created_at.asc");
-    return r.error ? json(r.error, { code: "membership_read_failed" }) : json(200, r.data);
+    if (req.method === "GET") {
+      const org = url.searchParams.get("organization_id") || "";
+      if (!UUID.test(org)) return json(400, { code: "invalid_organization_id" });
+      const r = await rest(cfg, auth.token,
+        "organization_memberships?select=user_id,role,created_at&organization_id=eq." + org + "&order=created_at.asc");
+      return r.error ? json(r.error, { code: "membership_read_failed" }) : json(200, r.data);
+    }
+    if (req.method === "PATCH") {
+      const parsed = await readBody(req);
+      if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+      const { organization_id: org, user_id: member, role } = parsed.value;
+      if (!UUID.test(String(org || ""))) return json(400, { code: "invalid_organization_id" });
+      if (!UUID.test(String(member || ""))) return json(400, { code: "invalid_member_id" });
+      if (!["admin", "rse_lead", "contributor", "reader"].includes(role)) return json(400, { code: "invalid_member_role" });
+      const r = await rest(cfg, auth.token, "rpc/set_organization_member_role", {
+        method: "POST", body: JSON.stringify({ p_org: org, p_user: member, p_role: role }),
+      });
+      return r.error ? json(r.error, { code: r.error === 403 ? "organization_admin_required" : "membership_role_update_failed" })
+        : json(200, { updated: true });
+    }
+    return json(405, { code: "method" });
   }
 
   if (resource === "dossiers") {
