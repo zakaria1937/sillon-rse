@@ -6,7 +6,7 @@ import { json, sameOrigin } from "../lib/shared.mjs";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY = 350_000;
 
-function config() {
+function supabaseConfig() {
   const raw = process.env.SUPABASE_URL;
   const anon = process.env.SUPABASE_ANON_KEY;
   if (!raw || !anon) return null;
@@ -67,7 +67,7 @@ async function rest(cfg, token, path, init = {}) {
 export default async function tenant(req) {
   if (!["GET", "POST", "PATCH", "DELETE"].includes(req.method)) return json(405, { code: "method" });
   if (req.headers.has("origin") ? !sameOrigin(req) : req.method !== "GET") return json(403, { code: "origin" });
-  const cfg = config();
+  const cfg = supabaseConfig();
   if (!cfg) return json(503, { code: "tenant_not_configured" });
   const auth = await authenticate(req, cfg);
   if (auth.error) return json(auth.error, { code: auth.error === 401 ? "unauthorized" : "identity_unavailable" });
