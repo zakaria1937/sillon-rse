@@ -47,3 +47,8 @@ test("le rôle affiché dans l'organisation provient de l'adhésion retournée p
   assert.match(source, /memberships\.find\(\(m\) => m\.user_id === user\?\.id\)/);
   assert.match(source, /Votre rôle :/);
 });
+
+test("le rôle lecteur ne voit pas le formulaire de création de dossier", () => {
+  assert.match(source, /const canEdit = ownMembership && \["admin", "rse_lead", "contributor"\]\.includes\(ownMembership\.role\)/);
+  assert.match(source, /Accès en lecture seule/);
+});
