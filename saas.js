@@ -1,7 +1,7 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
   let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], auditEvents = [], refreshTimer = 0;
-  let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null;
+  let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null, recoveryAccessToken = null;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const auth = async (action, payload) => fetch("/api/auth?action=" + action, {
@@ -84,6 +84,10 @@
       member_not_found: "Ce membre n’appartient plus à cette organisation.",
       membership_remove_failed: "Impossible de retirer ce membre. Vérifiez vos droits et réessayez.",
       local_dossier_too_large: "Le dossier dépasse la taille maximale autorisée pour cet import.",
+      invalid_email: "Saisissez une adresse e-mail valide.",
+      recovery_link_invalid: "Ce lien de récupération est invalide ou expiré. Demandez un nouveau lien.",
+      invalid_password_update: "Le mot de passe doit contenir au moins 12 caractères.",
+      recovery_unavailable: "Impossible d'envoyer le lien pour le moment. Réessayez plus tard.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
@@ -141,10 +145,39 @@
       '<label>Mot de passe<input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="1024" required></label>' +
       '<button class="chip-btn primary" type="submit">Se connecter</button>' +
       '<p class="saas-error" data-saas-error role="alert">' + esc(error) + '</p></form>' +
+      '<p><button class="linkish" type="button" data-saas-recover>Mot de passe oublié ?</button></p>' +
       '<p class="saas-note">Les comptes sont actuellement créés par l’administrateur du projet. La création publique de comptes et les invitations ne sont pas encore activées.</p>' +
       '<p class="saas-note"><strong>Préversion technique :</strong> ne saisissez pas de données d’entreprise sensibles avant validation complète de la sécurité et configuration du projet Supabase.</p>'
     );
     overlay.querySelector('input[name="email"]')?.focus();
+  }
+
+  function renderRecovery(error = "") {
+    content(
+      '<p class="eyebrow">SILLON · ESPACE ENTREPRISE</p>' +
+      '<h2 id="saas-title">Récupérer l’accès</h2>' +
+      '<p class="saas-intro">Saisissez l’adresse e-mail associée à votre compte. Si un compte correspondant existe, un lien de récupération sera envoyé.</p>' +
+      '<form id="saas-recover" class="saas-form">' +
+      '<label>Adresse e-mail<input name="email" type="email" autocomplete="email" maxlength="254" required></label>' +
+      '<button class="chip-btn primary" type="submit">Envoyer le lien</button>' +
+      '<p class="saas-error" data-saas-error role="alert">' + esc(error) + '</p></form>' +
+      '<p><button class="linkish" type="button" data-saas-back-login>Retour à la connexion</button></p>'
+    );
+    overlay.querySelector('input[name="email"]')?.focus();
+  }
+
+  function renderPasswordUpdate(error = "") {
+    content(
+      '<p class="eyebrow">SILLON · ESPACE ENTREPRISE</p>' +
+      '<h2 id="saas-title">Nouveau mot de passe</h2>' +
+      '<p class="saas-intro">Choisissez un mot de passe d’au moins 12 caractères pour sécuriser votre compte.</p>' +
+      '<form id="saas-update-password" class="saas-form">' +
+      '<label>Nouveau mot de passe<input name="password" type="password" autocomplete="new-password" minlength="12" maxlength="1024" required></label>' +
+      '<label>Confirmer le mot de passe<input name="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="1024" required></label>' +
+      '<button class="chip-btn primary" type="submit">Enregistrer le mot de passe</button>' +
+      '<p class="saas-error" data-saas-error role="alert">' + esc(error) + '</p></form>'
+    );
+    overlay.querySelector('input[name="password"]')?.focus();
   }
 
   async function loadWorkspace(error = "") {
@@ -152,7 +185,7 @@
       '<p class="eyebrow">SILLON · ESPACE ENTREPRISE</p>' +
       '<h2 id="saas-title">Votre espace</h2>' +
       '<div class="saas-user"><span>' + esc(user?.email || "Compte connecté") + '</span><button class="linkish" type="button" data-saas-logout>Déconnexion</button></div>' +
-      '<p class="saas-note"><strong>Préversion :</strong> ces dossiers cloud sont séparés de vos données locales actuelles. La synchronisation/import du dossier existant n’est pas encore activée. Évitez les données sensibles.</p>' +
+      '<p class="saas-note"><strong>Préversion :</strong> ces dossiers cloud sont séparés de vos données locales actuelles. Un import ponctuel du dossier local est disponible pour les rôles autorisés ; il crée une copie indépendante. Évitez les données sensibles.</p>' +
       '<div class="saas-error" data-saas-error role="alert">' + esc(error) + '</div>' +
       '<div class="saas-section-head"><h3>Organisations</h3><button class="chip-btn" type="button" data-saas-reload>Actualiser</button></div>' +
       '<div id="saas-orgs" class="saas-list"><p class="saas-muted">Chargement…</p></div>' +
@@ -314,6 +347,8 @@
     }
     const orgBtn = e.target.closest("[data-saas-org]");
     if (orgBtn) { await selectOrganization(orgBtn.dataset.saasOrg); return; }
+    if (e.target.closest("[data-saas-recover]")) { renderRecovery(); return; }
+    if (e.target.closest("[data-saas-back-login]")) { renderLogin(); return; }
     if (e.target.closest("[data-saas-logout]")) {
       try {
         const r = await auth("logout");
@@ -340,6 +375,48 @@
         await loadWorkspace();
         overlay.querySelector("[data-saas-logout]")?.focus();
       } catch (err) { renderLogin(message(err)); }
+      return;
+    }
+    if (form.id === "saas-recover") {
+      e.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true; errorBox("");
+      try {
+        const r = await auth("recover", { email: form.elements.email.value });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.code || "recovery_unavailable");
+        content(
+          '<p class="eyebrow">SILLON · ESPACE ENTREPRISE</p>' +
+          '<h2 id="saas-title">Vérifiez votre messagerie</h2>' +
+          '<p class="saas-intro">Si un compte correspond à cette adresse, un lien de récupération vient d’être envoyé. Pensez à vérifier les courriers indésirables.</p>' +
+          '<button class="chip-btn" type="button" data-saas-back-login>Retour à la connexion</button>'
+        );
+      } catch (err) {
+        errorBox(message(err));
+        submit.disabled = false;
+      }
+      return;
+    }
+    if (form.id === "saas-update-password") {
+      e.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      const password = form.elements.password.value;
+      if (password !== form.elements.confirm.value) {
+        errorBox("Les deux mots de passe ne correspondent pas.");
+        return;
+      }
+      submit.disabled = true; errorBox("");
+      try {
+        const r = await auth("update-password", { access_token: recoveryAccessToken, password });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data.code || "recovery_link_invalid");
+        recoveryAccessToken = null;
+        history.replaceState(null, "", location.pathname + location.search);
+        renderLogin("Votre mot de passe a été modifié. Vous pouvez vous connecter.");
+      } catch (err) {
+        errorBox(message(err));
+        submit.disabled = false;
+      }
       return;
     }
     if (form.id === "saas-create-org") {
@@ -381,4 +458,13 @@
 
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay && !overlay.hidden) close(); });
   sessionReady = refreshSession().catch(() => { clearSession(); return false; });
+  // Supabase renvoie le jeton de récupération dans le fragment URL ; il n'est jamais stocké.
+  const recoveryParams = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (recoveryParams.get("type") === "recovery" && recoveryParams.get("access_token")) {
+    recoveryAccessToken = recoveryParams.get("access_token");
+    ensureOverlay();
+    overlay.hidden = false;
+    returnFocus = null;
+    renderPasswordUpdate();
+  }
 })();
