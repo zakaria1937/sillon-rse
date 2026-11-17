@@ -188,6 +188,11 @@ export default async function auth(req, context) {
         return response(req, refreshed.status === 429 ? 429 : 502,
           { code: refreshed.status === 429 ? "auth_rate_limited" : "identity_unavailable" }, refreshToken);
       }
+      // Un 2xx avec une réponse de session malformée n'établit ni l'identité
+      // ni la révocation : conserver le cookie et signaler une indisponibilité.
+      if (refreshed.ok && !validSession(refreshed.data)) {
+        return response(req, 502, { code: "identity_unavailable" }, refreshToken);
+      }
       if (refreshed.ok && validSession(refreshed.data)) {
         const revoked = await authRequest(cfg, "/auth/v1/logout?scope=local", {}, refreshed.data.access_token);
         if (!revoked.ok && ![401, 403].includes(revoked.status)) {
