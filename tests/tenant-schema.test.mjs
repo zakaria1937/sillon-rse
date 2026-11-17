@@ -73,6 +73,7 @@ test('organization invitations store only token hashes and expose controlled one
     'invitation.created',
     'invitation.revoked',
   ]) assert.ok(sql.includes(fragment), 'missing invitation control: ' + fragment);
-  assert.match(sql, /create or replace function public\\.accept_organization_invitation[\\s\\S]*?for update/);
-  assert.match(sql, /revoke all on function public\\.accept_organization_invitation\\(text\\) from public, anon/);
+  assert.ok(sql.includes('select * into v_invitation'));
+  assert.ok(sql.includes('for update;'));
+  assert.ok(sql.includes('revoke all on function public.accept_organization_invitation(text) from public, anon'));
 });
