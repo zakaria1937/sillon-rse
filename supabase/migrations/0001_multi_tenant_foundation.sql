@@ -511,6 +511,13 @@ begin
     raise exception 'invalid_or_expired_invitation' using errcode = '22023';
   end if;
 
+  if exists (
+    select 1 from public.organization_memberships
+    where organization_id = v_invitation.organization_id and user_id = auth.uid()
+  ) then
+    raise exception 'already_organization_member' using errcode = '23505';
+  end if;
+
   insert into public.organization_memberships(organization_id, user_id, role)
   values (v_invitation.organization_id, auth.uid(), v_invitation.role);
 
