@@ -59,3 +59,17 @@ test('membership lifecycle events are recorded without dossier contents', () => 
   assert.match(sql, /create trigger memberships_audit_update[\s\S]*?execute function private\.audit_membership_change/);
   assert.match(sql, /target_user_id[\s\S]*?previous_role[\s\S]*?new_role/);
 });
+
+
+test('organization invitations store only token hashes and expose controlled one-time RPCs', () => {
+  assert.match(sql, /create table if not exists public\\.organization_invitations/);
+  assert.match(sql, /token_hash text not null unique/);
+  assert.match(sql, /encode\\(digest\\(v_token, 'sha256'\\), 'hex'\\)/);
+  assert.match(sql, /create or replace function public\\.create_organization_invitation/);
+  assert.match(sql, /create or replace function public\\.accept_organization_invitation/);
+  assert.match(sql, /v_invitation\\.email <> v_email/);
+  assert.match(sql, /v_invitation\\.expires_at <= now\\(\\)/);
+  assert.match(sql, /for update/);
+  assert.match(sql, /invitation\\.created/);
+  assert.match(sql, /invitation\\.revoked/);
+});
