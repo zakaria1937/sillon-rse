@@ -31,10 +31,10 @@ Dans les variables d'environnement Netlify, ajouter pour le contexte de déploie
 |---|---|
 | SUPABASE_URL | URL HTTPS du projet Supabase |
 | SUPABASE_ANON_KEY | Clé publique anon/publishable du projet |
-| IP_SALT | Secret aléatoire long, propre à l'environnement |
+| IP_SALT | Secret aléatoire d'au moins 32 caractères, propre à l'environnement |
 | AUTH_LOGIN_LIMIT_PER_IP | Facultatif ; valeur par défaut : 20 tentatives par IP et par jour |
 
-Les deux premières variables sont nécessaires pour activer les fonctions. IP_SALT doit être différent entre staging et production.
+Les deux premières variables sont nécessaires pour activer les fonctions. IP_SALT doit être différent entre staging et production et comporter au moins 32 caractères. Le compteur applicatif via Netlify Blobs est une protection complémentaire contre les abus, pas une garantie de limitation atomique sous forte concurrence : conserver également les protections natives de Supabase Auth et surveiller les tentatives anormales.
 
 **Ne jamais configurer service_role dans le navigateur.** La passerelle utilise uniquement la clé publique anon/publishable et le JWT individuel de l'utilisateur ; PostgreSQL RLS reste l'autorité d'accès.
 
