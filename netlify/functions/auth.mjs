@@ -76,7 +76,7 @@ export default async function auth(req, context) {
     if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
     const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
     const password = typeof parsed.value.password === "string" ? parsed.value.password : "";
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || password.length < 8 || password.length > 1024) {
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
       return json(400, { code: "invalid_credentials_format" });
     }
     // En production, ne pas retomber silencieusement sur un compteur mémoire
