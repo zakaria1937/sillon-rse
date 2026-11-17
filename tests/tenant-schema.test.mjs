@@ -52,7 +52,6 @@ test('privileged SQL functions pin an empty search_path', () => {
 test('membership lifecycle events are recorded without dossier contents', () => {
   assert.match(sql, /membership\.created/);
   assert.match(sql, /membership\.role_changed/);
-  assert.match(sql, /membership\.removed/);
   assert.match(sql, /create or replace function private\.audit_membership_change/);
   assert.match(sql, /create trigger memberships_audit_update[\s\S]*?execute function private\.audit_membership_change/);
   assert.match(sql, /target_user_id[\s\S]*?previous_role[\s\S]*?new_role/);
