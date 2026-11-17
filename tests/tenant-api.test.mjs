@@ -163,3 +163,16 @@ test("PATCH memberships delegates role changes to the admin-only database RPC", 
   assert.deepEqual(await protectedAdmin.json(), { code: "last_admin_protected" });
   restStatus = 200;
 });
+
+
+test("GET audits exposes metadata only and delegates visibility to organization RLS", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  restData = [{ id: 1, event_type: "membership.role_changed", actor_id: userId, target_user_id: dossierId }];
+  const r = await tenant(req("GET", "?resource=audits&organization_id=" + orgId, undefined, null, false));
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), restData);
+  assert.match(calls.at(-1).url, /audit_events\?select=id,event_type,actor_id,target_user_id,previous_role,new_role,dossier_id,dossier_version,occurred_at/);
+  assert.match(calls.at(-1).url, /limit=100/);
+  assert.equal((await tenant(req("POST", "?resource=audits&organization_id=" + orgId, {}))).status, 405);
+});
