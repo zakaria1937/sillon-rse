@@ -38,6 +38,7 @@
         <span class="eyebrow used-lbl">${esc(t("used", { n, t: copilots.length }))}</span>
         <span class="progress-dots" aria-hidden="true">${copilots.map((c) => `<i class="${st.used[c.id] ? "on" : ""}"></i>`).join("")}</span>
         <div class="top-actions">
+          <button class="chip-btn" type="button" data-saas-open>Espace entreprise</button>
           <a class="chip-btn primary" href="#presentation">${esc(t("nav_present"))}</a>
         </div>
       </div>
