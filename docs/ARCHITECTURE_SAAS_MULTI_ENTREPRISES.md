@@ -4,7 +4,7 @@
 
 La fondation cible repose sur **Supabase Auth + PostgreSQL avec Row Level Security (RLS)**. Ce choix fournit une identité gérée, une base relationnelle et une isolation des lignes au niveau de la base. La migration SQL de référence est `supabase/migrations/0001_multi_tenant_foundation.sql`.
 
-**État réel : fondation préparatoire uniquement.** Le site Netlify actuel continue de fonctionner avec son stockage navigateur et ses fonctions Netlify. Aucun écran de connexion n'a été ajouté, aucun projet Supabase n'est connecté et aucune donnée de production n'est migrée. Les passerelles Netlify indépendantes (`/api/auth` et `/api/tenant`) sont toutefois préparées ; elles restent inactives tant que les variables Supabase ne sont pas configurées. Cette séparation évite de présenter un faux mode collaboratif ou de créer une sécurité uniquement visuelle.
+**État réel : fondation préparatoire uniquement.** Le site Netlify actuel continue de fonctionner avec son stockage navigateur et ses fonctions Netlify. Une interface de connexion et un espace organisations/dossiers sont préparés, mais aucun projet Supabase n'est connecté, aucun compte d'entreprise n'est provisionné et aucune donnée de production n'est migrée. Les passerelles Netlify indépendantes (`/api/auth` et `/api/tenant`) sont toutefois préparées ; elles restent inactives tant que les variables Supabase ne sont pas configurées. Cette séparation évite de présenter un faux mode collaboratif ou de créer une sécurité uniquement visuelle.
 
 ## Modèle de données
 
@@ -25,7 +25,7 @@ La migration permet à un utilisateur authentifié de créer une organisation vi
 
 `netlify/functions/auth.mjs` prépare les opérations de connexion, renouvellement et déconnexion : le refresh token est conservé dans un cookie `HttpOnly`, `Secure` et `SameSite=Strict`, tandis que seul l'access token court est renvoyé au navigateur. Les tentatives de connexion sont limitées par IP. `netlify/functions/tenant.mjs` expose les opérations initiales organisations/dossiers. Elle vérifie le jeton auprès de Supabase Auth (`/auth/v1/user`), puis transmet le même JWT utilisateur à PostgREST. La base applique donc les politiques RLS pour chaque opération. Seule la clé publique `SUPABASE_ANON_KEY` est utilisée côté serveur ; aucune clé `service_role` n'est nécessaire ni attendue. Les appels sont limités dans le temps, les identifiants sont validés et les opérations de modification exigent une origine autorisée.
 
-Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. L'interface de connexion, la conservation de l'access token en mémoire, les invitations, la gestion des rôles et la migration des données existantes restent à réaliser. Le renouvellement de session est préparé côté serveur, mais doit encore être raccordé à l'interface. Ne pas publier le mode SaaS avant leur réalisation et leurs tests.
+Variables Netlify à configurer avant activation : `SUPABASE_URL` et `SUPABASE_ANON_KEY`. L'interface de connexion est raccordée aux endpoints : l'access token reste en mémoire, le refresh token dans un cookie `HttpOnly`, et les organisations/dossiers vierges passent par la passerelle RLS. Restent à réaliser : provisionnement/invitations, gestion des rôles, synchronisation/import du dossier local existant, récupération de mot de passe, et migration des données. Ne pas publier le mode SaaS avant leur réalisation et leurs tests.
 
 ## Contrôles de sécurité prévus
 
