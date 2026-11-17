@@ -449,10 +449,15 @@ begin
     raise exception 'organization_admin_required' using errcode = '42501';
   end if;
 
-  update public.organization_invitations
-  set revoked_at = now()
-  where organization_id = p_org and email = v_email
-    and accepted_at is null and revoked_at is null;
+  with revoked as (
+    update public.organization_invitations
+    set revoked_at = now()
+    where organization_id = p_org and email = v_email
+      and accepted_at is null and revoked_at is null
+    returning organization_id
+  )
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  select organization_id, auth.uid(), 'invitation.revoked' from revoked;
 
   v_token := encode(gen_random_bytes(32), 'hex');
   v_expiry := now() + interval '7 days';
