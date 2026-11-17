@@ -51,7 +51,7 @@ create index if not exists audit_org_time_idx on public.audit_events(organizatio
 create or replace function private.has_org_role(p_org uuid, p_roles text[])
 returns boolean
 language sql stable security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
   select exists (
     select 1 from public.organization_memberships m
@@ -68,7 +68,7 @@ grant execute on function private.has_org_role(uuid, text[]) to authenticated;
 create or replace function public.create_organization(p_name text)
 returns uuid
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
   v_org uuid;
@@ -91,7 +91,7 @@ grant execute on function public.create_organization(text) to authenticated;
 create or replace function private.guard_dossier_mutation()
 returns trigger
 language plpgsql
-set search_path = public, pg_temp
+set search_path = ''
 as $
 begin
   if tg_op = 'INSERT' then
@@ -127,7 +127,7 @@ for each row execute function private.guard_dossier_mutation();
 create or replace function private.audit_dossier_change()
 returns trigger
 language plpgsql security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $$
 declare
   v_org uuid;
