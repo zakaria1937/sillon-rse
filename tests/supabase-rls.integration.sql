@@ -196,6 +196,24 @@ select public.set_organization_member_role(
 );
 do $assert$
 begin
+  if (select count(*) from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and event_type = 'membership.role_changed'
+        and target_user_id = '20000000-0000-4000-8000-000000000002'
+        and actor_id = '10000000-0000-4000-8000-000000000001') <> 2 then
+    raise exception 'membership_role_changes_not_audited';
+  end if;
+  if not exists (select 1 from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and event_type = 'membership.created'
+        and target_user_id = '10000000-0000-4000-8000-000000000001'
+        and new_role = 'admin') then
+    raise exception 'initial_admin_membership_not_audited';
+  end if;
+end;
+$assert$;
+do $assert$
+begin
   begin
     perform public.set_organization_member_role(
       current_setting('test.org_alpha')::uuid,
