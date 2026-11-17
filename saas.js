@@ -70,6 +70,8 @@
       session_expired: "Votre session a expiré. Reconnectez-vous.",
       login_failed: "Adresse e-mail ou mot de passe incorrect.",
       auth_rate_limited: "Trop de tentatives. Réessayez plus tard.",
+      rate_limit_not_configured: "La sécurité de connexion n’est pas complètement configurée. Contactez l’administrateur.",
+      rate_limit_unavailable: "La protection contre les tentatives répétées est temporairement indisponible. Réessayez plus tard.",
       identity_unavailable: "Le service d’authentification est temporairement indisponible.",
       tenant_read_failed: "Impossible de charger les organisations.",
       organization_create_failed: "Impossible de créer cette organisation.",
