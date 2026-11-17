@@ -523,3 +523,37 @@ end;
 $$;
 revoke all on function public.accept_organization_invitation(text) from public, anon;
 grant execute on function public.accept_organization_invitation(text) to authenticated;
+
+
+-- Révocation explicite d'une invitation en attente, réservée à l'admin de l'organisation.
+create or replace function public.revoke_organization_invitation(p_invitation uuid)
+returns boolean
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  select organization_id into v_org
+  from public.organization_invitations
+  where id = p_invitation and accepted_at is null and revoked_at is null
+  for update;
+  if v_org is null then
+    raise exception 'invitation_not_found' using errcode = 'P0002';
+  end if;
+  if not private.has_org_role(v_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+  update public.organization_invitations set revoked_at = now()
+  where id = p_invitation and accepted_at is null and revoked_at is null;
+  if not found then return false; end if;
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  values (v_org, auth.uid(), 'invitation.revoked');
+  return true;
+end;
+$$;
+revoke all on function public.revoke_organization_invitation(uuid) from public, anon;
+grant execute on function public.revoke_organization_invitation(uuid) to authenticated;
