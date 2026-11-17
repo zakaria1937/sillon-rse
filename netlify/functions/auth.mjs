@@ -1,6 +1,6 @@
 // Sillon — session Supabase côté serveur.
 // Le refresh token reste dans un cookie HttpOnly ; seul l'access token court est renvoyé au navigateur.
-import { json, sameOrigin, store, bump, bumpStrict, today, ipKey } from "../lib/shared.mjs";
+import { json, sameOrigin, store, bump, bumpStrict, today, ipKey, readJsonLimited } from "../lib/shared.mjs";
 
 const COOKIE = "sillon_refresh";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -37,12 +37,7 @@ function response(req, status, body, refreshToken, clear = false) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-async function body(req) {
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_BODY) return { error: 413 };
-  try { return { value: raw ? JSON.parse(raw) : {} }; }
-  catch { return { error: 400 }; }
-}
+async function body(req) { return readJsonLimited(req, MAX_BODY); }
 
 async function authRequest(cfg, path, payload, accessToken = "", method = "POST") {
   try {
