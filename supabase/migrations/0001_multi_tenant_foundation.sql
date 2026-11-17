@@ -86,6 +86,44 @@ $$;
 revoke all on function public.create_organization(text) from public, anon;
 grant execute on function public.create_organization(text) to authenticated;
 
+-- Prevent a client from forging ownership, timestamps or version history.
+-- Version and updated_at are maintained by the database, not by browser input.
+create or replace function private.guard_dossier_mutation()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $
+begin
+  if tg_op = 'INSERT' then
+    if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
+    new.created_by := auth.uid();
+    new.updated_by := auth.uid();
+    new.version := 1;
+    new.created_at := now();
+    new.updated_at := now();
+    return new;
+  end if;
+
+  if new.organization_id is distinct from old.organization_id
+     or new.created_by is distinct from old.created_by
+     or new.created_at is distinct from old.created_at then
+    raise exception 'immutable_dossier_metadata' using errcode = '42501';
+  end if;
+  if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
+  new.updated_by := auth.uid();
+  new.version := old.version + 1;
+  new.updated_at := now();
+  return new;
+end;
+$;
+
+create trigger dossiers_guard_insert
+before insert on public.dossiers
+for each row execute function private.guard_dossier_mutation();
+create trigger dossiers_guard_update
+before update on public.dossiers
+for each row execute function private.guard_dossier_mutation();
+
 create or replace function private.audit_dossier_change()
 returns trigger
 language plpgsql security definer
