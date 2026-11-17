@@ -195,11 +195,14 @@
     ).join("") : '<p class="saas-muted">Aucun dossier dans cette organisation.</p>';
     const ownMembership = memberships.find((m) => m.user_id === user?.id);
     const roleNames = { admin: "Administrateur", rse_lead: "Responsable RSE", contributor: "Contributeur", reader: "Lecteur" };
+    const canEdit = ownMembership && ["admin", "rse_lead", "contributor"].includes(ownMembership.role);
     target.innerHTML =
       '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + ' · Dossiers</h3></div>' +
       (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
       '<div class="saas-list">' + rows + '</div>' +
-      '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>';
+      (canEdit
+        ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>'
+        : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>');
   }
 
   document.addEventListener("click", async (e) => {
