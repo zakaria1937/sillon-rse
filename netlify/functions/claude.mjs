@@ -1,7 +1,7 @@
 // Sillon — passerelle vers l'IA (Mistral, avec Groq en secours facultatif).
 // Les clés restent sur le serveur : les visiteurs n'ont rien à configurer.
 // Limites : par adresse IP et par jour, plus un plafond global quotidien.
-import { json, store as counters, kv, bumpProtected, today, ipKey, sameOrigin, alertOwner } from "../lib/shared.mjs";
+import { json, store as counters, kv, bumpProtected, today, ipKey, sameOrigin, alertOwner, readJsonLimited } from "../lib/shared.mjs";
 
 const PROVIDERS = {
   mistral: {
@@ -98,8 +98,9 @@ export default async (req, context) => {
 
   if (!sameOrigin(req)) return json(403, { code: "origin" });
 
-  let body;
-  try { body = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
+  const parsed = await readJsonLimited(req, 5_000_000);
+  if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+  const body = parsed.value;
   const bad = validate(body);
   if (bad) return json(400, { code: "invalid_request", detail: bad });
 
