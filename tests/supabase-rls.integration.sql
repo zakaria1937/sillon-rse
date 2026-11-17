@@ -335,3 +335,79 @@ $assert$;
 reset role;
 
 select 'tenant RLS integration checks passed' as result;
+
+
+-- Invitation à usage unique : identité email, expiration, hash du jeton et audit.
+update auth.users set email = 'admin-alpha@example.test'
+where id = '10000000-0000-4000-8000-000000000001';
+update auth.users set email = 'member-alpha@example.test'
+where id = '20000000-0000-4000-8000-000000000002';
+update auth.users set email = 'other-alpha@example.test'
+where id = '30000000-0000-4000-8000-000000000003';
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select invitation_id as test_invitation_id, token as test_invitation_token
+from public.create_organization_invitation(
+  current_setting('test.org_alpha')::uuid,
+  '  MEMBER-ALPHA@example.test  ',
+  'contributor'
+) \gset
+reset role;
+
+do $assert$
+begin
+  if exists (select 1 from public.organization_invitations
+      where id = :'test_invitation_id' and token_hash = :'test_invitation_token') then
+    raise exception 'raw_invitation_token_was_stored';
+  end if;
+  if not exists (select 1 from public.organization_invitations
+      where id = :'test_invitation_id'
+        and email = 'member-alpha@example.test'
+        and role = 'contributor'
+        and length(token_hash) = 64
+        and expires_at > now()) then
+    raise exception 'invitation_metadata_missing_or_invalid';
+  end if;
+end;
+$assert$;
+
+-- Un autre compte ne peut pas consommer le jeton, même s'il est authentifié.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
+do $assert$
+begin
+  begin
+    perform public.accept_organization_invitation(:'test_invitation_token');
+    raise exception 'wrong_email_accepted_invitation';
+  exception when invalid_parameter_value then null;
+  end;
+end;
+$assert$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
+select public.accept_organization_invitation(:'test_invitation_token');
+do $assert$
+begin
+  if not exists (select 1 from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and user_id = auth.uid() and role = 'contributor') then
+    raise exception 'invitation_did_not_create_expected_membership';
+  end if;
+  if not exists (select 1 from public.organization_invitations
+      where id = :'test_invitation_id' and accepted_by = auth.uid()
+        and accepted_at is not null) then
+    raise exception 'invitation_acceptance_not_recorded';
+  end if;
+  begin
+    perform public.accept_organization_invitation(:'test_invitation_token');
+    raise exception 'invitation_token_was_reusable';
+  exception when invalid_parameter_value then null;
+  end;
+end;
+$assert$;
+reset role;
+
+select 'tenant RLS and invitation integration checks passed' as result;
