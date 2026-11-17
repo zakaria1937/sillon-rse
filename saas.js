@@ -222,7 +222,7 @@
     }).join("");
     const auditLabels = {
       "dossier.created": "Dossier créé", "dossier.updated": "Dossier modifié", "dossier.deleted": "Dossier supprimé",
-      "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié", "membership.removed": "Membre retiré",
+      "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié",
     };
     const auditRows = auditEvents.map((event) => {
       const actor = event.actor_id ? event.actor_id.slice(0, 8) : "Système";
