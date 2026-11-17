@@ -245,3 +245,20 @@ test("GET and DELETE invitations use RLS and the admin-only revocation RPC", asy
   assert.deepEqual(await forbidden.json(), { code: "organization_admin_required" });
   restStatus = 200;
 });
+
+
+test("POST invitations accepts a strict one-time token through the authenticated RPC", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  restData = orgId;
+  assert.equal((await tenant(req("POST", "?resource=invitations", {
+    action: "accept", token: "invalid",
+  }))).status, 400);
+  const accepted = await tenant(req("POST", "?resource=invitations", {
+    action: "accept", token: "a".repeat(64),
+  }));
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(await accepted.json(), { organization_id: orgId });
+  assert.match(calls.at(-1).url, /rpc\\/accept_organization_invitation$/);
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_token: "a".repeat(64) });
+});
