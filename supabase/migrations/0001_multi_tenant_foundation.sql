@@ -143,6 +143,14 @@ declare
   v_version bigint;
   v_event text;
 begin
+  -- Lors d'une suppression en cascade de l'organisation, ses événements seront
+  -- supprimés eux aussi ; ne pas tenter d'insérer un événement orphelin.
+  if tg_op = 'DELETE' and not exists (
+    select 1 from public.organizations where id = old.organization_id
+  ) then
+    return old;
+  end if;
+
   if tg_op = 'DELETE' then
     v_org := old.organization_id; v_id := old.id; v_version := old.version; v_event := 'dossier.deleted';
   elsif tg_op = 'INSERT' then
