@@ -49,10 +49,11 @@ Après ajout des variables, effectuer un nouveau déploiement Netlify. Ne pas pu
 5. Créer un second compte et une seconde organisation.
 6. Vérifier qu'un compte d'une organisation ne peut pas lire les dossiers de l'autre.
 7. Tester les rôles reader, contributor, rse_lead et admin avec des comptes distincts.
-8. Vérifier les événements dossier.created, dossier.updated et dossier.deleted dans audit_events.
-9. Tester le renouvellement de session, la déconnexion, les erreurs réseau et l'expiration du refresh token.
+8. Avec un administrateur, modifier le rôle d'un membre existant ; vérifier qu'un non-administrateur ne peut pas le faire et que le dernier administrateur ne peut pas être rétrogradé.
+9. Vérifier les événements dossier.created, dossier.updated, dossier.deleted, membership.created et membership.role_changed dans audit_events.
+10. Tester le renouvellement de session, la déconnexion, les erreurs réseau et l'expiration du refresh token.
 
-Les invitations, la modification des rôles dans l'interface, la récupération de mot de passe et la migration du dossier local ne sont pas encore livrées.
+La modification du rôle des membres déjà présents est disponible pour les administrateurs. Les invitations, l'ajout autonome de membres, la récupération de mot de passe et la migration/synchronisation du dossier local ne sont pas encore livrés.
 
 ## 5. Conditions avant données réelles
 
@@ -62,7 +63,7 @@ Avant tout usage avec des données d'entreprise réelles :
 - revue RGPD, contrats de sous-traitance et durées de conservation ;
 - sauvegardes et restauration testées ;
 - procédure de suppression de compte et d'organisation ;
-- gestion des invitations, révocation et transfert du rôle administrateur ;
+- gestion des invitations, révocation des adhésions et procédure de transfert du rôle administrateur ;
 - validation de la configuration Supabase et Netlify en production ;
 - test pilote avec des données fictives puis non sensibles.
 
