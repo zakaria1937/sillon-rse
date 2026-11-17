@@ -78,6 +78,14 @@ begin
     where id = current_setting('test.dossier_alpha')::uuid) then
     raise exception 'cross_tenant_read_isolation_failed';
   end if;
+  if exists (select 1 from public.organizations
+    where id = current_setting('test.org_alpha')::uuid) then
+    raise exception 'cross_tenant_organization_read_isolation_failed';
+  end if;
+  if exists (select 1 from public.organization_memberships
+    where organization_id = current_setting('test.org_alpha')::uuid) then
+    raise exception 'cross_tenant_membership_read_isolation_failed';
+  end if;
 end;
 $assert$;
 reset role;
@@ -125,6 +133,36 @@ begin
   end if;
 end;
 $assert$;
+
+-- A reader can see their own membership, but cannot inspect the audit trail.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
+do $assert$
+begin
+  if (select count(*) from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid) <> 1 then
+    raise exception 'reader_membership_visibility_incorrect';
+  end if;
+  if exists (select 1 from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid) then
+    raise exception 'reader_unexpectedly_read_audit_trail';
+  end if;
+end;
+$assert$;
+reset role;
+
+-- An admin can inspect the membership list for their own organization.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+do $assert$
+begin
+  if (select count(*) from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid) < 2 then
+    raise exception 'admin_cannot_read_organization_memberships';
+  end if;
+end;
+$assert$;
+reset role;
 
 -- A contributor can update, but cannot delete.
 insert into public.organization_memberships(organization_id, user_id, role)
