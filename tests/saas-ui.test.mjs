@@ -31,3 +31,13 @@ test("espace entreprise : attend la vérification initiale de session avant de c
   assert.match(source, /sessionReady = refreshSession\(\)/);
   assert.match(source, /if \(sessionReady\) await sessionReady/);
 });
+
+test("le renouvellement de session est mutualisé pour éviter la rotation concurrente des refresh tokens", () => {
+  assert.match(source, /if \(refreshInFlight\) return refreshInFlight/);
+  assert.match(source, /refreshInFlight = \(async \(\) =>/);
+  assert.match(source, /finally \{\s*refreshInFlight = null/);
+});
+
+test("l'espace entreprise replace le focus dans la fenêtre après chargement", () => {
+  assert.match(source, /overlay\.querySelector\("\[data-saas-logout\]"\)\?\.focus\(\)/);
+});
