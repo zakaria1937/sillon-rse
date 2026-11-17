@@ -1,6 +1,6 @@
 // Sillon — espace entreprise (préversion). Les access tokens restent uniquement en mémoire.
 (() => {
-  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], auditEvents = [], refreshTimer = 0;
+  let accessToken = null, user = null, organizations = [], selectedOrg = null, dossiers = [], memberships = [], invitations = [], auditEvents = [], refreshTimer = 0, invitationToken = null;
   let overlay = null, returnFocus = null, sessionReady = null, refreshInFlight = null, recoveryAccessToken = null, sessionUnavailable = false;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -11,7 +11,7 @@
   });
 
   function clearSession() {
-    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = []; auditEvents = [];
+    accessToken = null; user = null; organizations = []; selectedOrg = null; dossiers = []; memberships = []; invitations = []; auditEvents = [];
     clearTimeout(refreshTimer);
     sessionUnavailable = false;
   }
@@ -235,9 +235,10 @@
     if (!selectedOrg || !target) return;
     target.innerHTML = '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + '</h3></div><p class="saas-muted">Chargement des dossiers…</p>';
     try {
-      [dossiers, memberships] = await Promise.all([
+      [dossiers, memberships, invitations] = await Promise.all([
         api("dossiers", { query: "organization_id=" + encodeURIComponent(id) }),
         api("memberships", { query: "organization_id=" + encodeURIComponent(id) }),
+        api("invitations", { query: "organization_id=" + encodeURIComponent(id) }).catch(() => []),
       ]);
       const own = memberships.find((m) => m.user_id === user?.id);
       auditEvents = own && ["admin", "rse_lead"].includes(own.role)
@@ -274,6 +275,7 @@
     const auditLabels = {
       "dossier.created": "Dossier créé", "dossier.updated": "Dossier modifié", "dossier.deleted": "Dossier supprimé",
       "membership.created": "Membre ajouté", "membership.role_changed": "Rôle modifié", "membership.removed": "Membre retiré",
+      "invitation.created": "Invitation créée", "invitation.revoked": "Invitation révoquée",
     };
     const auditRows = auditEvents.map((event) => {
       const actor = event.actor_id ? event.actor_id.slice(0, 8) : "Système";
@@ -285,6 +287,12 @@
       return '<div class="saas-row"><span>' + esc(auditLabels[event.event_type] || event.event_type) +
         esc(targetUser) + esc(roleChange) + '</span><small>' + esc(date) + ' · ' + esc(actor) + '</small></div>';
     }).join("") || '<p class="saas-muted">Aucune activité enregistrée.</p>';
+    const pendingInvitations = invitations.filter((inv) => !inv.accepted_at && !inv.revoked_at && new Date(inv.expires_at).getTime() > Date.now());
+    const invitationRows = pendingInvitations.map((inv) =>
+      '<div class="saas-row"><span>' + esc(inv.email) + ' · ' + esc(roleNames[inv.role] || inv.role) + '</span><small>Expire le ' +
+      esc(new Date(inv.expires_at).toLocaleDateString("fr-FR")) + '</small>' +
+      (canManageMembers ? '<button class="chip-btn" type="button" data-saas-revoke-invitation="' + esc(inv.id) + '">Révoquer</button>' : '') + '</div>'
+    ).join("") || '<p class="saas-muted">Aucune invitation en attente.</p>';
     target.innerHTML =
       '<div class="saas-section-head"><h3>' + esc(selectedOrg.name) + ' · Dossiers</h3></div>' +
       (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
@@ -294,6 +302,9 @@
           '<div class="saas-inline saas-import"><button class="chip-btn" type="button" data-saas-import-local>Importer mon dossier local</button><small>Copie ponctuelle ; les conversations IA et coordonnées de contact sont exclues. Pas encore de synchronisation continue.</small></div>'
         : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>') +
       (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '') +
+      (canManageMembers
+        ? '<h4>Inviter un membre</h4><form id="saas-create-invitation" class="saas-inline"><label>Adresse e-mail<input name="email" type="email" maxlength="254" autocomplete="off" required></label><label>Rôle<select name="role"><option value="reader">Lecteur</option><option value="contributor">Contributeur</option><option value="rse_lead">Responsable RSE</option><option value="admin">Administrateur</option></select></label><button class="chip-btn primary" type="submit">Créer une invitation</button></form><div class="saas-list">' + invitationRows + '</div>'
+        : '') +
       (canReadAudit ? '<h4>Activité récente</h4><div class="saas-list">' + auditRows + '</div>' : '');
   }
 
@@ -302,6 +313,24 @@
     if (openBtn) { await open(); return; }
     if (!overlay || overlay.hidden) return;
     if (e.target.closest("[data-saas-reload]")) { await loadWorkspace(); return; }
+    const copyInvitation = e.target.closest("[data-saas-copy-invitation]");
+    if (copyInvitation) {
+      const link = copyInvitation.closest("[data-invitation-link]")?.dataset.invitationLink || "";
+      try { await navigator.clipboard.writeText(link); copyInvitation.textContent = "Lien copié"; }
+      catch { errorBox("Copie impossible sur cet appareil. Sélectionnez et copiez le lien depuis la barre d’adresse après l’avoir ouvert."); }
+      return;
+    }
+    const revokeInvitation = e.target.closest("[data-saas-revoke-invitation]");
+    if (revokeInvitation && selectedOrg) {
+      if (!window.confirm("Révoquer cette invitation ? Le lien ne pourra plus être utilisé.")) return;
+      revokeInvitation.disabled = true;
+      try {
+        await api("invitations", { method: "DELETE", body: { invitation_id: revokeInvitation.dataset.saasRevokeInvitation } });
+        await selectOrganization(selectedOrg.id);
+        errorBox("Invitation révoquée.");
+      } catch (err) { errorBox(message(err)); revokeInvitation.disabled = false; }
+      return;
+    }
     const importLocalBtn = e.target.closest("[data-saas-import-local]");
     if (importLocalBtn) {
       if (!selectedOrg || !window.SX?.state) return;
@@ -387,7 +416,17 @@
         const data = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(data.code || "login_failed");
         setSession(data);
-        await loadWorkspace();
+        if (invitationToken) {
+          const tokenToAccept = invitationToken;
+          invitationToken = null;
+          const accepted = await api("invitations", { method: "POST", body: { action: "accept", token: tokenToAccept } });
+          history.replaceState(null, "", location.pathname + location.search);
+          await loadWorkspace();
+          if (accepted.organization_id) await selectOrganization(accepted.organization_id);
+          errorBox("Invitation acceptée. Vous avez rejoint l’organisation.");
+        } else {
+          await loadWorkspace();
+        }
         overlay.querySelector("[data-saas-logout]")?.focus();
       } catch (err) { renderLogin(message(err)); }
       return;
@@ -461,6 +500,29 @@
       }
       return;
     }
+    if (form.id === "saas-create-invitation") {
+      e.preventDefault();
+      if (!selectedOrg) return;
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      try {
+        const invitation = await api("invitations", { method: "POST", body: {
+          organization_id: selectedOrg.id, email: form.elements.email.value, role: form.elements.role.value,
+        } });
+        await selectOrganization(selectedOrg.id);
+        const link = location.origin + location.pathname + "#invitation=" + invitation.token;
+        const notice = document.createElement("div");
+        notice.className = "saas-note";
+        notice.setAttribute("role", "status");
+        notice.innerHTML = '<strong>Invitation créée.</strong> Transmettez ce lien au destinataire. Il devra se connecter avec l’adresse confirmée correspondante. Le lien expire le ' +
+          esc(new Date(invitation.expires_at).toLocaleDateString("fr-FR")) +
+          '<p><button class="chip-btn" type="button" data-saas-copy-invitation>Copier le lien</button></p>';
+        notice.dataset.invitationLink = link;
+        overlay.querySelector("#saas-dossiers")?.prepend(notice);
+        notice.querySelector("button")?.focus();
+      } catch (err) { errorBox(message(err)); submit.disabled = false; }
+      return;
+    }
     if (form.id === "saas-create-dossier") {
       e.preventDefault();
       if (!selectedOrg) return;
@@ -475,7 +537,15 @@
   sessionReady = refreshSession().catch(() => { clearSession(); return false; });
   // Supabase renvoie le jeton de récupération dans le fragment URL ; il n'est jamais stocké.
   const recoveryParams = new URLSearchParams(location.hash.replace(/^#/, ""));
-  if (recoveryParams.get("type") === "recovery" && recoveryParams.get("access_token")) {
+  const invitationFromUrl = recoveryParams.get("invitation");
+  if (invitationFromUrl && /^[0-9a-f]{64}$/.test(invitationFromUrl)) {
+    invitationToken = invitationFromUrl;
+    history.replaceState(null, "", location.pathname + location.search);
+    ensureOverlay();
+    overlay.hidden = false;
+    returnFocus = null;
+    renderLogin("Connectez-vous avec l’adresse e-mail confirmée qui a reçu cette invitation.");
+  } else if (recoveryParams.get("type") === "recovery" && recoveryParams.get("access_token")) {
     recoveryAccessToken = recoveryParams.get("access_token");
     // Retirer immédiatement le jeton de l'URL et de l'historique de navigation.
     history.replaceState(null, "", location.pathname + location.search);
