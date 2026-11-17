@@ -89,6 +89,58 @@ test("l'espace entreprise s'ouvre et signale proprement que Supabase doit être 
   await page.close();
 });
 
+test("l’utilisateur peut demander un lien de récupération sans révéler si le compte existe", async () => {
+  const { page, errors } = await open();
+  let sentEmail = "";
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "recover") {
+      sentEmail = route.request().postDataJSON().email;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.click("[data-saas-open]");
+  await page.click("[data-saas-recover]");
+  await page.fill('#saas-recover input[name="email"]', "test@example.fr");
+  await page.click('#saas-recover button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-content")?.textContent.includes("Vérifiez votre messagerie"));
+  assert.equal(sentEmail, "test@example.fr");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("le lien de récupération ouvre le formulaire de nouveau mot de passe", async () => {
+  const page = await browser.newPage({ viewport: { width: 1300, height: 900 } });
+  const pageErrors = []; page.on("pageerror", (e) => pageErrors.push(e.message));
+  const recoveryToken = "recovery-access-token-long-enough-for-browser";
+  let updateBody = null;
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "update-password") {
+      updateBody = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.goto(BASE + "/#access_token=" + recoveryToken + "&token_type=bearer&type=recovery");
+  await page.waitForSelector("#saas-update-password");
+  await page.fill('#saas-update-password input[name="password"]', "NouVeauMotDePasse2026!");
+  await page.fill('#saas-update-password input[name="confirm"]', "NouVeauMotDePasse2026!");
+  await page.click('#saas-update-password button[type="submit"]');
+  await page.waitForSelector("#saas-login");
+  assert.equal(updateBody.access_token, recoveryToken);
+  assert.equal(updateBody.password, "NouVeauMotDePasse2026!");
+  assert.equal(await page.evaluate(() => location.hash), "");
+  assert.deepEqual(pageErrors, []);
+  await page.close();
+});
 test("parcours entreprise : connexion, création d'organisation et dossier cloud vierge", async () => {
   const { page, errors } = await open();
   const orgId = "50000000-0000-4000-8000-000000000005";
