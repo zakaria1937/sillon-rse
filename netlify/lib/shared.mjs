@@ -51,8 +51,12 @@ export async function sha(text) {
 }
 // L'adresse IP n'est jamais stockée en clair : empreinte salée, propre au jour.
 export async function ipKey(req, context) {
+  const salt = process.env.IP_SALT;
+  if (process.env.NETLIFY === "true" && (!salt || salt.length < 32)) {
+    throw new Error("ip_salt_not_configured");
+  }
   const raw = context?.ip || req.headers.get("x-nf-client-connection-ip") || "inconnu";
-  return (await sha(`${today()}|${process.env.IP_SALT || "sillon"}|${raw}`)).slice(0, 24);
+  return (await sha(`${today()}|${salt || "sillon-local-only"}|${raw}`)).slice(0, 24);
 }
 
 // Seul le site lui-même (ou une origine explicitement autorisée) peut appeler les passerelles.
