@@ -22,6 +22,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (String(url).includes("grant_type=refresh_token")) {
     if (mode === "expired") return new Response('{"msg":"expired"}', { status: 400 });
     if (mode === "refresh_unavailable") return new Response('{"msg":"unavailable"}', { status: 503 });
+    if (mode === "refresh_rate_limited") return new Response('{"msg":"limited"}', { status: 429 });
     return new Response(JSON.stringify({
       access_token: "rotated-access-token-long-enough",
       refresh_token: "rotated-refresh-token-long-enough",
@@ -153,4 +154,20 @@ test("production refuses login without a strong IP salt for IP-based rate limiti
   assert.deepEqual(await r.json(), { code: "rate_limit_not_configured" });
   if (oldNetlify === undefined) delete process.env.NETLIFY; else process.env.NETLIFY = oldNetlify;
   if (oldSalt === undefined) delete process.env.IP_SALT; else process.env.IP_SALT = oldSalt;
+});
+
+test("refresh preserves the cookie during temporary Supabase outages and rate limits", async () => {
+  const cookie = "sillon_refresh=refresh-token-value-long-enough";
+  mode = "refresh_unavailable";
+  const unavailable = await auth(req("refresh", undefined, cookie), { ip: "10.0.0.16" });
+  assert.equal(unavailable.status, 502);
+  assert.match(unavailable.headers.get("set-cookie"), /sillon_refresh=refresh-token-value-long-enough/);
+  assert.doesNotMatch(unavailable.headers.get("set-cookie"), /Max-Age=0/);
+
+  mode = "refresh_rate_limited";
+  const limited = await auth(req("refresh", undefined, cookie), { ip: "10.0.0.17" });
+  assert.equal(limited.status, 429);
+  assert.match(limited.headers.get("set-cookie"), /sillon_refresh=refresh-token-value-long-enough/);
+  assert.doesNotMatch(limited.headers.get("set-cookie"), /Max-Age=0/);
+  mode = "success";
 });
