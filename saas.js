@@ -188,8 +188,14 @@
     const orgBtn = e.target.closest("[data-saas-org]");
     if (orgBtn) { await selectOrganization(orgBtn.dataset.saasOrg); return; }
     if (e.target.closest("[data-saas-logout]")) {
-      try { await auth("logout"); } catch { /* le cookie est supprimé côté navigateur si le serveur répond */ }
-      clearSession(); renderLogin("Vous êtes déconnecté."); return;
+      try {
+        const r = await auth("logout");
+        if (!r.ok) throw new Error("logout_failed");
+        clearSession(); renderLogin("Vous êtes déconnecté.");
+      } catch {
+        errorBox("La déconnexion n'a pas pu être confirmée par le serveur. Vérifiez votre connexion puis réessayez.");
+      }
+      return;
     }
   });
 
