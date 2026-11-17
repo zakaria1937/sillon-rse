@@ -105,7 +105,9 @@ export default async (req, context) => {
   if (bad) return json(400, { code: "invalid_request", detail: bad });
 
   const day = today();
-  const ip = await ipKey(req, context);
+  let ip;
+  try { ip = await ipKey(req, context); }
+  catch { return json(503, { code: "rate_limit_not_configured" }); }
   const store = await counters();
   // Nettoyage occasionnel des compteurs des jours précédents (durée de conservation : 24 h).
   if (store && Math.random() < 0.05) {
