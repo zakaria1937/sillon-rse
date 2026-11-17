@@ -135,8 +135,9 @@ export default async function auth(req, context) {
     if (refreshToken && refreshToken.length <= 8192) {
       const refreshed = await authRequest(cfg, "/auth/v1/token?grant_type=refresh_token", { refresh_token: refreshToken });
       // Une panne réseau ne doit pas être présentée comme une révocation réussie.
-      if (refreshed.status === 502) {
-        return response(req, 502, { code: "identity_unavailable" }, refreshToken);
+      if (refreshed.status === 502 || refreshed.status === 429 || refreshed.status >= 500) {
+        return response(req, refreshed.status === 429 ? 429 : 502,
+          { code: refreshed.status === 429 ? "auth_rate_limited" : "identity_unavailable" }, refreshToken);
       }
       if (refreshed.ok && validSession(refreshed.data)) {
         const revoked = await authRequest(cfg, "/auth/v1/logout?scope=local", {}, refreshed.data.access_token);
