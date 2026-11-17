@@ -116,7 +116,8 @@ export default async function auth(req, context) {
     const parsed = await body(req);
     if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
     const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
-    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) {
+    const emailParts = email.split("@");
+    if (email.length > 254 || emailParts.length !== 2 || !emailParts[0] || !emailParts[1] || emailParts[1].lastIndexOf(".") < 1 || emailParts[1].length - emailParts[1].lastIndexOf(".") < 3 || [...email].some((ch) => ch.charCodeAt(0) <= 32)) {
       return json(400, { code: "invalid_email" });
     }
     const isNetlify = process.env.NETLIFY === "true";
