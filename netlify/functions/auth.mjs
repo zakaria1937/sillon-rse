@@ -131,7 +131,7 @@ export default async function auth(req, context) {
       }
       if (refreshed.ok && validSession(refreshed.data)) {
         const revoked = await authRequest(cfg, "/auth/v1/logout?scope=local", {}, refreshed.data.access_token);
-        if (!revoked.ok && revoked.status >= 500) {
+        if (!revoked.ok && ![401, 403].includes(revoked.status)) {
           return response(req, 502, { code: "identity_unavailable" }, refreshToken);
         }
       }
