@@ -62,14 +62,17 @@ test('membership lifecycle events are recorded without dossier contents', () => 
 
 
 test('organization invitations store only token hashes and expose controlled one-time RPCs', () => {
-  assert.match(sql, /create table if not exists public\\.organization_invitations/);
-  assert.match(sql, /token_hash text not null unique/);
-  assert.match(sql, /encode\\(digest\\(v_token, 'sha256'\\), 'hex'\\)/);
-  assert.match(sql, /create or replace function public\\.create_organization_invitation/);
-  assert.match(sql, /create or replace function public\\.accept_organization_invitation/);
-  assert.match(sql, /v_invitation\\.email <> v_email/);
-  assert.match(sql, /v_invitation\\.expires_at <= now\\(\\)/);
-  assert.match(sql, /for update/);
-  assert.match(sql, /invitation\\.created/);
-  assert.match(sql, /invitation\\.revoked/);
+  for (const fragment of [
+    'create table if not exists public.organization_invitations',
+    'token_hash text not null unique',
+    "encode(digest(v_token, 'sha256'), 'hex')",
+    'create or replace function public.create_organization_invitation',
+    'create or replace function public.accept_organization_invitation',
+    'v_invitation.email <> v_email',
+    'v_invitation.expires_at <= now()',
+    'invitation.created',
+    'invitation.revoked',
+  ]) assert.ok(sql.includes(fragment), 'missing invitation control: ' + fragment);
+  assert.match(sql, /create or replace function public\\.accept_organization_invitation[\\s\\S]*?for update/);
+  assert.match(sql, /revoke all on function public\\.accept_organization_invitation\\(text\\) from public, anon/);
 });
