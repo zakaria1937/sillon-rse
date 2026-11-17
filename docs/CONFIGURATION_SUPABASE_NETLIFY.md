@@ -33,6 +33,7 @@ Dans les variables d'environnement Netlify, ajouter pour le contexte de déploie
 | SUPABASE_ANON_KEY | Clé publique anon/publishable du projet |
 | IP_SALT | Secret aléatoire d'au moins 32 caractères, propre à l'environnement |
 | AUTH_LOGIN_LIMIT_PER_IP | Facultatif ; valeur par défaut : 20 tentatives par IP et par jour |
+| AUTH_RECOVERY_LIMIT_PER_IP | Facultatif ; valeur par défaut : 5 demandes de récupération par IP et par jour |
 
 Les deux premières variables sont nécessaires pour activer les fonctions. IP_SALT doit être différent entre staging et production et comporter au moins 32 caractères. Le compteur applicatif via Netlify Blobs est une protection complémentaire contre les abus, pas une garantie de limitation atomique sous forte concurrence : conserver également les protections natives de Supabase Auth et surveiller les tentatives anormales.
 
@@ -52,8 +53,9 @@ Après ajout des variables, effectuer un nouveau déploiement Netlify. Ne pas pu
 8. Avec un administrateur, modifier le rôle d'un membre existant ; vérifier qu'un non-administrateur ne peut pas le faire et que le dernier administrateur ne peut pas être rétrogradé.
 9. Vérifier les événements dossier.created, dossier.updated, dossier.deleted, membership.created et membership.role_changed dans audit_events.
 10. Tester le renouvellement de session, la déconnexion, les erreurs réseau et l'expiration du refresh token.
+11. Tester la récupération de mot de passe depuis l’e-mail, le retour sur `/?auth=recovery`, la mise à jour du mot de passe et l’expiration du lien.
 
-La modification du rôle des membres déjà présents est disponible pour les administrateurs. Les invitations, l'ajout autonome de membres, la récupération de mot de passe et la migration/synchronisation du dossier local ne sont pas encore livrés.
+La modification du rôle des membres déjà présents est disponible pour les administrateurs. Les invitations et le provisionnement autonome des membres, la synchronisation continue et la migration des données restent à réaliser. La récupération de mot de passe est implémentée mais doit encore être validée sur un projet Supabase de staging réel.
 
 ## 5. Conditions avant données réelles
 
