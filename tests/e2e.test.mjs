@@ -26,6 +26,8 @@ const fns = {
   "/api/claude": (await import("../netlify/functions/claude.mjs")).default,
   "/api/contact": (await import("../netlify/functions/contact.mjs")).default,
   "/api/dossier": (await import("../netlify/functions/dossier.mjs")).default,
+  "/api/auth": (await import("../netlify/functions/auth.mjs")).default,
+  "/api/tenant": (await import("../netlify/functions/tenant.mjs")).default,
 };
 // Même politique de sécurité (CSP) qu'en production, lue dans netlify.toml.
 const CSP = fs.readFileSync(path.join(root, "netlify.toml"), "utf8").match(/Content-Security-Policy = "([^"]+)"/)[1];
@@ -66,6 +68,21 @@ test("chaque page s'ouvre sans erreur et sans appel à un service tiers", async 
   }
   assert.deepEqual(errors, []);
   assert.deepEqual([...hosts], [`localhost:${PORT}`]);
+  await page.close();
+});
+
+test("l'espace entreprise s'ouvre et signale proprement que Supabase doit être configuré", async () => {
+  const { page, errors } = await open();
+  await page.click("[data-saas-open]");
+  await page.waitForSelector("#saas-login");
+  assert.match(await page.textContent("#saas-title"), /Connexion/);
+  await page.fill('#saas-login input[name="email"]', "test@example.fr");
+  await page.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await page.click('#saas-login button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("[data-saas-error]")?.textContent.includes("pas encore configuré"));
+  assert.deepEqual(errors, []);
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator(".saas-overlay").isVisible(), false);
   await page.close();
 });
 
