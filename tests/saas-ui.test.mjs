@@ -69,3 +69,12 @@ test("le journal d'activité est réservé aux administrateurs et responsables R
   assert.match(source, /dossier\.created/);
   assert.match(source, /membership\.role_changed/);
 });
+
+
+test("seul un administrateur voit la commande de retrait, avec confirmation et RPC DELETE", () => {
+  assert.match(source, /data-saas-remove-member/);
+  assert.match(source, /Retirer ce membre de l’organisation/);
+  assert.match(source, /method: "DELETE"/);
+  assert.match(source, /membership\.removed/);
+  assert.match(source, /memberId === user\?\.id/);
+});
