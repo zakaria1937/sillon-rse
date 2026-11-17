@@ -133,7 +133,11 @@ export default async function tenant(req) {
         init.body = JSON.stringify(patch);
       }
       const r = await rest(cfg, auth.token, "dossiers?id=eq." + id + "&select=id,organization_id,name,version,updated_at", init);
-      return r.error ? json(r.error, { code: "dossier_change_failed" }) : json(200, r.data);
+      if (r.error) return json(r.error, { code: "dossier_change_failed" });
+      // PostgREST renvoie une liste vide lorsqu'aucune ligne n'est visible (RLS incluse).
+      // Ne pas présenter cette absence de résultat comme une modification réussie.
+      if (!Array.isArray(r.data) || r.data.length === 0) return json(404, { code: "dossier_not_found" });
+      return json(200, req.method === "DELETE" ? { deleted: true } : r.data[0]);
     }
     return json(405, { code: "method" });
   }
