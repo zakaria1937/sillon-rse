@@ -111,8 +111,12 @@ export default async function auth(req, context) {
     if (!refreshToken || refreshToken.length > 8192) return response(req, 401, { code: "session_expired" }, "", true);
     const result = await authRequest(cfg, "/auth/v1/token?grant_type=refresh_token", { refresh_token: refreshToken });
     if (!result.ok || !validSession(result.data)) {
-      const status = result.status === 502 ? 502 : 401;
-      return response(req, status, { code: status === 502 ? "identity_unavailable" : "session_expired" }, "", true);
+      // Une indisponibilité ou un quota temporaire ne doit pas détruire le refresh token.
+      if (result.status === 502 || result.status === 429 || result.status >= 500 || (result.ok && !validSession(result.data))) {
+        const status = result.status === 429 ? 429 : 502;
+        return response(req, status, { code: status === 429 ? "auth_rate_limited" : "identity_unavailable" }, refreshToken);
+      }
+      return response(req, 401, { code: "session_expired" }, "", true);
     }
     return response(req, 200, {
       access_token: result.data.access_token,
