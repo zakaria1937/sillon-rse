@@ -71,6 +71,15 @@
     overlay.hidden = true;
     overlay.innerHTML = '<section class="saas-dialog" role="dialog" aria-modal="true" aria-labelledby="saas-title"><button class="saas-close" type="button" data-saas-close aria-label="Fermer">×</button><div id="saas-content"></div></section>';
     overlay.addEventListener("click", (e) => { if (e.target === overlay || e.target.closest("[data-saas-close]")) close(); });
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const items = [...overlay.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')]
+        .filter((el) => !el.hidden && el.getAttribute("aria-hidden") !== "true");
+      if (!items.length) { e.preventDefault(); return; }
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     document.body.appendChild(overlay);
   }
   function close() {
