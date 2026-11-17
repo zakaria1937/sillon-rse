@@ -60,3 +60,12 @@ test("seul un administrateur voit les commandes de gestion des rôles", () => {
   assert.match(source, /api\("memberships",\s*\{\s*method: "PATCH"/);
   assert.match(source, /organization_id: selectedOrg\.id, user_id: form\.dataset\.saasMember, role: form\.elements\.role\.value/);
 });
+
+
+test("le journal d'activité est réservé aux administrateurs et responsables RSE", () => {
+  assert.match(source, /const canReadAudit = ownMembership && \["admin", "rse_lead"\]\.includes\(ownMembership\.role\)/);
+  assert.match(source, /api\("audits"/);
+  assert.match(source, /Activité récente/);
+  assert.match(source, /dossier\.created/);
+  assert.match(source, /membership\.role_changed/);
+});
