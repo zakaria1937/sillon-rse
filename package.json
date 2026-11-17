@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/calculs.test.mjs tests/core.test.mjs tests/fonction.test.mjs tests/passerelles.test.mjs tests/relief.test.mjs tests/tenant-schema.test.mjs tests/tenant-api.test.mjs",
+    "test": "node --test tests/calculs.test.mjs tests/core.test.mjs tests/fonction.test.mjs tests/passerelles.test.mjs tests/relief.test.mjs tests/tenant-schema.test.mjs tests/tenant-api.test.mjs tests/auth-session.test.mjs",
     "test:e2e": "node --test tests/e2e.test.mjs"
   },
   "dependencies": {
