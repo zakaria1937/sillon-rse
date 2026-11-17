@@ -155,5 +155,11 @@ test("PATCH memberships delegates role changes to the admin-only database RPC", 
   }));
   assert.equal(forbidden.status, 403);
   assert.deepEqual(await forbidden.json(), { code: "organization_admin_required" });
+  restStatus = 400;
+  const protectedAdmin = await tenant(req("PATCH", "?resource=memberships", {
+    organization_id: orgId, user_id: userId, role: "reader",
+  }));
+  assert.equal(protectedAdmin.status, 400);
+  assert.deepEqual(await protectedAdmin.json(), { code: "last_admin_protected" });
   restStatus = 200;
 });
