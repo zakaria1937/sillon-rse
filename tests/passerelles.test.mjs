@@ -73,3 +73,20 @@ test("dossier : code inconnu, code trop court et données trop lourdes sont refu
   assert.equal((await dossier(req("/api/dossier", "PUT", { code, data: { inputs: { x: "a".repeat(500000) } } }), { ip: "6.6.6.2" })).status, 413);
   assert.equal((await dossier(req("/api/dossier", "PUT", { code, data: { inputs: {} } }, "https://pirate.example"), { ip: "6.6.6.2" })).status, 403);
 });
+
+
+test("les passerelles rejettent les corps JSON trop volumineux avant traitement", async () => {
+  const huge = "x".repeat(21_000);
+  const response = await contact(new Request("https://sillon.example/api/contact", {
+    method: "POST",
+    headers: { origin: "https://sillon.example", "content-type": "application/json" },
+    body: JSON.stringify({ evenement: "contact", message: huge, delai: 9000 }),
+  }), { ip: "7.7.7.7" });
+  assert.equal(response.status, 413);
+  const dossierResponse = await dossier(new Request("https://sillon.example/api/dossier", {
+    method: "PUT",
+    headers: { origin: "https://sillon.example", "content-type": "application/json" },
+    body: JSON.stringify({ code, data: { inputs: {}, extra: huge } }),
+  }), { ip: "7.7.7.8" });
+  assert.equal(dossierResponse.status, 413);
+});
