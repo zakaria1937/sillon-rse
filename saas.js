@@ -19,7 +19,10 @@
     user = data.user;
     clearTimeout(refreshTimer);
     const delay = Math.max(30_000, ((Number(data.expires_in) || 3600) - 60) * 1000);
-    refreshTimer = setTimeout(async () => {\n      const ok = await refreshSession();\n      if (!ok && overlay && !overlay.hidden) renderLogin("Votre session a expiré. Reconnectez-vous.");\n    }, delay);
+    refreshTimer = setTimeout(async () => {
+      const ok = await refreshSession();
+      if (!ok && overlay && !overlay.hidden) renderLogin("Votre session a expiré. Reconnectez-vous.");
+    }, delay);
   }
   // Un seul renouvellement à la fois : Supabase fait tourner les refresh tokens.
   // Deux refresh simultanés avec le même ancien token pourraient invalider la session.
