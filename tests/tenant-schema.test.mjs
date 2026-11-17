@@ -27,24 +27,22 @@ test('audit trigger records metadata and does not copy dossier payload', () => {
   assert.doesNotMatch(sql, /payload\s*,\s*actor_id/);
 });
 
-
 test('database controls dossier ownership, timestamps and version increments', () => {
-  assert.match(sql, /create or replace function private\\.guard_dossier_mutation/);
-  assert.match(sql, /new\\.created_by := auth\\.uid\\(\\)/);
-  assert.match(sql, /new\\.version := old\\.version \\+ 1/);
-  assert.match(sql, /new\\.updated_at := now\\(\\)/);
-  assert.match(sql, /new\\.organization_id is distinct from old\\.organization_id/);
-  assert.match(sql, /create trigger dossiers_guard_update[\\s\\S]*?execute function private\\.guard_dossier_mutation/);
+  assert.match(sql, /create or replace function private\.guard_dossier_mutation/);
+  assert.match(sql, /new\.created_by := auth\.uid\(\)/);
+  assert.match(sql, /new\.version := old\.version \+ 1/);
+  assert.match(sql, /new\.updated_at := now\(\)/);
+  assert.match(sql, /new\.organization_id is distinct from old\.organization_id/);
+  assert.match(sql, /create trigger dossiers_guard_update[\s\S]*?execute function private\.guard_dossier_mutation/);
 });
 
 test('dossier update policy checks both existing and destination organization membership', () => {
-  assert.match(sql, /dossiers_update_editor[\\s\\S]*?using \\([\\s\\S]*?private\\.has_org_role\\(organization_id[\\s\\S]*?with check \\([\\s\\S]*?private\\.has_org_role\\(organization_id/);
+  assert.match(sql, /dossiers_update_editor[\s\S]*?using\s*\([\s\S]*?private\.has_org_role\(organization_id[\s\S]*?with check\s*\([\s\S]*?private\.has_org_role\(organization_id/);
 });
 
-
 test('privileged SQL functions pin an empty search_path', () => {
-  const privileged = sql.split(/create or replace function/i).slice(1);
-  for (const fn of privileged) {
+  const functions = sql.split(/create or replace function/i).slice(1);
+  for (const fn of functions) {
     if (/security definer/i.test(fn.slice(0, 220))) {
       assert.match(fn.slice(0, 350), /set search_path = ''/);
     }
