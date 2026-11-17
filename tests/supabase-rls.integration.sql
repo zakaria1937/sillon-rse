@@ -87,6 +87,34 @@ insert into public.organization_memberships(organization_id, user_id, role)
 values (:'org_alpha', '20000000-0000-4000-8000-000000000002', 'reader');
 set role authenticated;
 select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
+do $assert$
+begin
+  if (select count(*) from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid) <> 1
+     or not exists (select 1 from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and user_id = auth.uid() and role = 'reader') then
+    raise exception 'reader_membership_visibility_not_scoped_to_self';
+  end if;
+end;
+$assert$;
+reset role;
+
+-- An organization admin can inspect all memberships in that organization.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+do $assert$
+begin
+  if (select count(*) from public.organization_memberships
+      where organization_id = current_setting('test.org_alpha')::uuid) <> 2 then
+    raise exception 'admin_cannot_read_organization_memberships';
+  end if;
+end;
+$assert$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
 update public.dossiers set name = 'Reader tampering' where id = :'dossier_alpha';
 reset role;
 do $assert$
