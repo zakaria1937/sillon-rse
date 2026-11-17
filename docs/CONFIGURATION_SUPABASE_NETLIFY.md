@@ -16,6 +16,16 @@ Le schéma multi-tenant est déjà installé sur le projet de staging via les mi
 
 La CI exécute déjà cette migration sur PostgreSQL 16 avec une surface Auth simulée et teste les quatre rôles, l'isolation entre deux organisations, les tentatives d'auto-attribution des rôles, le versionnement et le journal d'audit. Le projet Supabase réel devra néanmoins faire l'objet d'une validation distincte.
 
+## 3.1 Domaine Netlify et URL Auth de staging
+
+Domaine de staging communiqué : `https://staging--sillon-rse.netlify.app`.
+
+Dans Supabase > Authentication > URL Configuration :
+- Site URL : `https://staging--sillon-rse.netlify.app`
+- Redirect URLs : ajouter `https://staging--sillon-rse.netlify.app/**` (le parcours de récupération revient sur `/?auth=recovery`).
+
+Dans Authentication > Providers, activer Email/Password. Pour le pilote, garder les inscriptions publiques désactivées et créer les comptes de test depuis le Dashboard. Pour tester réellement les invitations, confirmations et récupérations sur plusieurs boîtes externes, configurer un SMTP dédié et vérifier les modèles d'e-mail.
+
 ## 3. Configurer Netlify
 
 Dans les variables d'environnement Netlify, ajouter pour le contexte de déploiement de staging :
@@ -32,7 +42,7 @@ Les deux premières variables sont nécessaires pour activer les fonctions. IP_S
 
 **Ne jamais configurer service_role dans le navigateur.** La passerelle utilise uniquement la clé publique anon/publishable et le JWT individuel de l'utilisateur ; PostgreSQL RLS reste l'autorité d'accès.
 
-Après ajout des variables, effectuer un nouveau déploiement Netlify. Ne pas publier ce déploiement en production avant les vérifications.
+Configurer les variables dans le contexte de déploiement de branche `staging` (le domaine communiqué suit le format d'un déploiement de branche), puis relancer le déploiement de cette branche. Après ajout des variables, effectuer un nouveau déploiement Netlify. Ne pas publier ce déploiement en production avant les vérifications.
 
 ## 4. Vérifications fonctionnelles de staging
 
