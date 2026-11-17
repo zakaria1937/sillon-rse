@@ -44,12 +44,12 @@ async function body(req) {
   catch { return { error: 400 }; }
 }
 
-async function authRequest(cfg, path, payload, accessToken = "") {
+async function authRequest(cfg, path, payload, accessToken = "", method = "POST") {
   try {
     const headers = { apikey: cfg.anon, "content-type": "application/json", accept: "application/json" };
     if (accessToken) headers.authorization = "Bearer " + accessToken;
     const res = await fetch(cfg.base + path, {
-      method: "POST", headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(10000),
+      method, headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(10000),
     });
     const raw = await res.text();
     let data = null;
@@ -109,6 +109,53 @@ export default async function auth(req, context) {
       expires_in: Number(result.data.expires_in) || 3600,
       user: { id: result.data.user.id, email: result.data.user.email || email },
     }, result.data.refresh_token);
+  }
+
+  if (action === "recover") {
+    const parsed = await body(req);
+    if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+    const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
+    if (email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(email)) {
+      return json(400, { code: "invalid_email" });
+    }
+    const isNetlify = process.env.NETLIFY === "true";
+    if (isNetlify && (!process.env.IP_SALT || process.env.IP_SALT.length < 32)) {
+      return json(503, { code: "rate_limit_not_configured" });
+    }
+    const limits = await store();
+    if (isNetlify && !limits) return json(503, { code: "rate_limit_unavailable" });
+    const configuredLimit = Number(process.env.AUTH_RECOVERY_LIMIT_PER_IP);
+    const limit = Number.isSafeInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 100 ? configuredLimit : 5;
+    try {
+      const key = "auth-recover/" + today() + "/" + await ipKey(req, context);
+      const withinLimit = isNetlify ? await bumpStrict(limits, key, limit) : await bump(limits, key, limit);
+      if (!withinLimit) return json(429, { code: "auth_rate_limited" });
+    } catch {
+      return json(503, { code: "rate_limit_unavailable" });
+    }
+    // Redirection fixe vers l'origine de la requête : aucun redirect_to fourni par le client.
+    const redirectTo = new URL("/?auth=recovery", new URL(req.url).origin).toString();
+    const result = await authRequest(cfg, "/auth/v1/recover?redirect_to=" + encodeURIComponent(redirectTo), { email });
+    if (result.status === 429) return json(429, { code: "auth_rate_limited" });
+    if (result.status === 502 || result.status >= 500) return json(502, { code: "identity_unavailable" });
+    // Réponse volontairement identique que l'adresse existe ou non.
+    return json(200, { ok: true });
+  }
+
+  if (action === "update-password") {
+    const parsed = await body(req);
+    if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+    const accessToken = typeof parsed.value.access_token === "string" ? parsed.value.access_token : "";
+    const password = typeof parsed.value.password === "string" ? parsed.value.password : "";
+    if (accessToken.length < 20 || accessToken.length > 8192 || password.length < 12 || password.length > 1024) {
+      return json(400, { code: "invalid_password_update" });
+    }
+    const result = await authRequest(cfg, "/auth/v1/user", { password }, accessToken, "PUT");
+    if (!result.ok) {
+      const status = result.status === 429 ? 429 : result.status === 502 || result.status >= 500 ? 502 : 400;
+      return json(status, { code: status === 429 ? "auth_rate_limited" : status === 502 ? "identity_unavailable" : "recovery_link_invalid" });
+    }
+    return json(200, { ok: true });
   }
 
   if (action === "refresh") {
