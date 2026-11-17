@@ -55,7 +55,8 @@ async function authRequest(cfg, path, payload, accessToken = "", method = "POST"
 
 function validSession(data) {
   return !!data && typeof data.access_token === "string" && data.access_token.length > 20
-    && typeof data.refresh_token === "string" && data.refresh_token.length > 20
+    // Les refresh tokens Supabase actuels sont courts (ex. 12 caractères) : ne pas exiger plus de 20.
+    && typeof data.refresh_token === "string" && data.refresh_token.length >= 8 && data.refresh_token.length <= 8192
     && data.user && typeof data.user.id === "string" && UUID.test(data.user.id);
 }
 
@@ -150,6 +151,11 @@ export default async function auth(req, context) {
     const result = await authRequest(cfg, "/auth/v1/user", { password }, accessToken, "PUT");
     if (!result.ok) {
       const status = result.status === 429 ? 429 : result.status === 502 || result.status >= 500 ? 502 : 400;
+      // Supabase refuse avec 422 un mot de passe identique à l'ancien ou trop faible : le lien,
+      // lui, reste valide. Ne pas afficher « lien expiré », qui pousse à redemander un e-mail.
+      const errorCode = result.data && typeof result.data.error_code === "string" ? result.data.error_code : "";
+      if (status === 400 && errorCode === "same_password") return json(400, { code: "password_same_as_old" });
+      if (status === 400 && errorCode === "weak_password") return json(400, { code: "password_too_weak" });
       return json(status, { code: status === 429 ? "auth_rate_limited" : status === 502 ? "identity_unavailable" : "recovery_link_invalid" });
     }
     return json(200, { ok: true });
