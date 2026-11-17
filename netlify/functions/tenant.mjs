@@ -112,8 +112,13 @@ export default async function tenant(req) {
       const r = await rest(cfg, auth.token, "rpc/set_organization_member_role", {
         method: "POST", body: JSON.stringify({ p_org: org, p_user: member, p_role: role }),
       });
-      return r.error ? json(r.error, { code: r.error === 403 ? "organization_admin_required" : "membership_role_update_failed" })
-        : json(200, { updated: true });
+      if (r.error) {
+        const code = r.error === 403 ? "organization_admin_required"
+          : r.error === 400 ? "last_admin_protected"
+          : r.error === 404 ? "member_not_found" : "membership_role_update_failed";
+        return json(r.error, { code });
+      }
+      return json(200, { updated: true });
     }
     return json(405, { code: "method" });
   }
