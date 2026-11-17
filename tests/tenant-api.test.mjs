@@ -218,7 +218,7 @@ test("POST invitations validates input and returns the one-time token only from 
   }));
   assert.equal(r.status, 201);
   assert.deepEqual(await r.json(), { id: dossierId, token: "a".repeat(64), expires_at: "2026-11-24T10:00:00Z" });
-  assert.match(calls.at(-1).url, /rpc\\/create_organization_invitation$/);
+  assert.ok(calls.at(-1).url.endsWith("/rpc/create_organization_invitation"));
   assert.deepEqual(JSON.parse(calls.at(-1).init.body), {
     p_org: orgId, p_email: "member@example.test", p_role: "contributor",
   });
@@ -237,7 +237,7 @@ test("GET and DELETE invitations use RLS and the admin-only revocation RPC", asy
   const revoked = await tenant(req("DELETE", "?resource=invitations", { invitation_id: dossierId }));
   assert.equal(revoked.status, 200);
   assert.deepEqual(await revoked.json(), { revoked: true });
-  assert.match(calls.at(-1).url, /rpc\\/revoke_organization_invitation$/);
+  assert.ok(calls.at(-1).url.endsWith("/rpc/revoke_organization_invitation"));
   assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_invitation: dossierId });
   restStatus = 403;
   const forbidden = await tenant(req("DELETE", "?resource=invitations", { invitation_id: dossierId }));
@@ -259,6 +259,6 @@ test("POST invitations accepts a strict one-time token through the authenticated
   }));
   assert.equal(accepted.status, 200);
   assert.deepEqual(await accepted.json(), { organization_id: orgId });
-  assert.match(calls.at(-1).url, /rpc\\/accept_organization_invitation$/);
+  assert.ok(calls.at(-1).url.endsWith("/rpc/accept_organization_invitation"));
   assert.deepEqual(JSON.parse(calls.at(-1).init.body), { p_token: "a".repeat(64) });
 });
