@@ -353,16 +353,18 @@ from public.create_organization_invitation(
   '  MEMBER-ALPHA@example.test  ',
   'contributor'
 ) \gset
+select set_config('test.invitation_id', current_setting('test.invitation_id')::uuid, false);
+select set_config('test.invitation_token', current_setting('test.invitation_token'), false);
 reset role;
 
 do $assert$
 begin
   if exists (select 1 from public.organization_invitations
-      where id = :'test_invitation_id' and token_hash = :'test_invitation_token') then
+      where id = current_setting('test.invitation_id')::uuid and token_hash = current_setting('test.invitation_token')) then
     raise exception 'raw_invitation_token_was_stored';
   end if;
   if not exists (select 1 from public.organization_invitations
-      where id = :'test_invitation_id'
+      where id = current_setting('test.invitation_id')::uuid
         and email = 'member-alpha@example.test'
         and role = 'contributor'
         and length(token_hash) = 64
@@ -378,7 +380,7 @@ select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003
 do $assert$
 begin
   begin
-    perform public.accept_organization_invitation(:'test_invitation_token');
+    perform public.accept_organization_invitation(current_setting('test.invitation_token'));
     raise exception 'wrong_email_accepted_invitation';
   exception when invalid_parameter_value then null;
   end;
@@ -388,7 +390,7 @@ reset role;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
-select public.accept_organization_invitation(:'test_invitation_token');
+select public.accept_organization_invitation(current_setting('test.invitation_token'));
 do $assert$
 begin
   if not exists (select 1 from public.organization_memberships
@@ -397,12 +399,12 @@ begin
     raise exception 'invitation_did_not_create_expected_membership';
   end if;
   if not exists (select 1 from public.organization_invitations
-      where id = :'test_invitation_id' and accepted_by = auth.uid()
+      where id = current_setting('test.invitation_id')::uuid and accepted_by = auth.uid()
         and accepted_at is not null) then
     raise exception 'invitation_acceptance_not_recorded';
   end if;
   begin
-    perform public.accept_organization_invitation(:'test_invitation_token');
+    perform public.accept_organization_invitation(current_setting('test.invitation_token'));
     raise exception 'invitation_token_was_reusable';
   exception when invalid_parameter_value then null;
   end;
