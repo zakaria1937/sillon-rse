@@ -38,7 +38,7 @@ Les éléments suivants existent dans la branche de préparation et doivent enco
 - Refresh token conservé dans un cookie `HttpOnly`, `SameSite=Strict` et `Secure` lorsque la requête est HTTPS ; access token court conservé en mémoire côté navigateur.
 - En cas de réponse temporaire (quota ou indisponibilité Supabase), le navigateur conserve la session active et programme une nouvelle tentative ; une session n’est effacée qu’en cas de réponse d’authentification indiquant qu’elle n’est plus valide.
 - Parcours de récupération du mot de passe implémenté côté application, mais à valider avec un vrai projet Supabase et ses URL de redirection.
-- MFA, invitations e-mail et provisionnement autonome des membres ne sont pas encore opérationnels.
+- MFA et provisionnement autonome des membres ne sont pas encore opérationnels. Les invitations manuelles sont implémentées dans la branche de préparation : lien à usage unique transmis hors application, compte Supabase existant avec e-mail confirmé requis, expiration de 7 jours, révocation et journalisation. Aucun e-mail automatique n'est envoyé et le parcours reste à valider en staging.
 
 ### Organisations, rôles et cloisonnement
 - Schéma PostgreSQL préparé pour les organisations, adhésions, dossiers et événements d'audit.
@@ -66,7 +66,7 @@ Le registre documentaire stocke des références et métadonnées. Les fichiers 
 8. Réaliser la revue RGPD : rôles responsable/sous-traitant, contrats, finalités, minimisation, durées, droits des personnes et analyse d'impact si nécessaire.
 9. Exécuter une recette métier avec des données fictives, puis un pilote limité avec des données non sensibles, avant toute ouverture plus large.
 
-Sur le commit `c615542fda9d0e7fe351238e09571231c97740f8` (17 novembre 2026), les deux workflows GitHub Actions (push et pull request) sont terminés avec succès : tests Node, migration PostgreSQL, isolation multi-tenant, permissions des rôles et tests E2E Playwright. Cette validation automatisée ne remplace pas les essais sur un projet Supabase/Netlify réel ni une revue indépendante.
+Sur le commit `23436415e9ef2895a1b27e6d5e9764fe603a66c7` (17 novembre 2026), les workflows GitHub Actions de push et de pull request sont terminés avec succès : tests Node, migration PostgreSQL, isolation multi-tenant, permissions des rôles et tests E2E Playwright. Cette validation automatisée ne remplace pas les essais sur un projet Supabase/Netlify réel ni une revue indépendante.
 
 ## Recommandation d'usage actuelle
 
