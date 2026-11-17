@@ -1,6 +1,6 @@
 # Sillon · copilotes RSE pour PME et ETI
 
-**Sillon** aide les PME et ETI françaises à structurer leur démarche RSE avec 13 copilotes. Ils calculent avec des facteurs publics (ADEME, EFRAG, EcoVadis), appliquent les seuils réglementaires en vigueur en novembre 2026, lisent les documents de l'entreprise, rédigent une analyse avec Claude et produisent un rapport PDF, Excel ou une présentation.
+**Sillon** aide les PME et ETI françaises à structurer leur démarche RSE avec 13 copilotes. Ils mobilisent, selon les modules, des sources publiques (ADEME, EFRAG, textes officiels, OCDE, ISO et EcoVadis), des calculs documentés et des grilles internes de diagnostic. Ils aident à lire des documents, préparer une analyse assistée par IA et produire un rapport PDF, Excel ou une présentation. Les indices internes ne sont pas des scores officiels ni des certifications.
 
 **Site : https://sillon-rse.netlify.app** (voir [DEPLOIEMENT.md](DEPLOIEMENT.md) pour la mise en ligne)
 
@@ -10,31 +10,32 @@
 
 | Famille | Copilote | Ce qu'il calcule |
 |---|---|---|
-| Mesurer | Bilan carbone | Scopes 1, 2 et 3 avec les facteurs ADEME |
+| Mesurer | Estimation GES simplifiée | Estimation partielle de postes sélectionnés ; facteurs préremplis à vérifier |
 | Mesurer | Carbone IA | kWh et kgCO2e des usages d'IA générative, matériel compris |
-| Mesurer | Fournisseurs | Risque RSE des achats : zone × catégorie × certification, pondéré par la dépense |
-| Mesurer | Benchmark RSE | Maturité sur 5 piliers et 20 pratiques, radar et paliers |
+| Mesurer | Fournisseurs | Indice interne d’exposition des achats : zone × catégorie, pondéré par la dépense |
+| Mesurer | Diagnostic de maturité RSE | Auto-évaluation interne sur 5 piliers et 20 pratiques, sans benchmark sectoriel |
 | Se conformer | Réglementation | Obligations applicables selon la taille (Omnibus, BEGES, Sapin II, décret tertiaire…) |
 | Se conformer | Reporting VSME | Complétude des points B1 à B11 et C1 à C9, charge de travail |
-| Se conformer | EcoVadis | Score estimé, pondération sectorielle, médaille atteignable |
-| Se conformer | Audit ISO | Conformité ISO 14001, 45001 ou 50001, écarts bloquants |
-| Convaincre | Marchés publics | Note sur le critère environnemental obligatoire depuis le 21/08/2026 |
-| Convaincre | Greenwashing | Formulations à risque (EmpCo, AGEC, loi Climat) surlignées dans le texte |
-| Convaincre | Visibilité RSE | Crédibilité de la communication RSE en ligne |
-| Convaincre | ROI de la RSE | Gains annuels, VAN sur 5 ans, délai de retour |
+| Se conformer | EcoVadis | Auto-évaluation interne non équivalente au score EcoVadis et sans prédiction de médaille |
+| Se conformer | Auto-évaluation ISO | Grille simplifiée non exhaustive ; ne conclut ni à la conformité ni à la certification |
+| Convaincre | Marchés publics | Simulation indicative à recalculer selon chaque règlement de consultation |
+| Convaincre | Greenwashing | Repérage heuristique de formulations ciblées ; ne remplace pas une validation juridique |
+| Convaincre | Visibilité RSE | Indice interne de signaux documentaires, sans vérification des preuves |
+| Convaincre | ROI de la RSE | Simulation de gains, VAN sur 5 ans et délai de retour selon hypothèses utilisateur |
 | Convaincre | Objections | Argumentaire sourcé face aux freins internes |
 
 ## Fonctionnalités
 
 - **Profil d'entreprise partagé** : renseigné une fois, repris par tous les copilotes.
-- **Copilotes reliés** : le bilan carbone remplit le point B3 de la VSME, le Benchmark et les marchés publics ; le score Greenwashing alimente Visibilité RSE.
+- **Copilotes reliés** : l’estimation GES peut alimenter une première réflexion sur le point B3 de la VSME, le diagnostic de maturité et les marchés publics ; l'indice heuristique Greenwashing alimente les signaux de Visibilité RSE.
 - **Import de documents** : PDF, image ou texte ; l'IA (Mistral) extrait les chiffres et remplit les champs.
 - **Analyse par l'IA (Mistral)** de chaque copilote, avec un plan à 30 jours, 90 jours et 12 mois.
 - **Assistant** qui connaît le profil et tous les résultats.
 - **Plan d'action global** trié par impact et effort, avec responsable, échéance et statut.
 - **Historique et référence** : courbe d'évolution des scores et comparaison avant/après.
 - **Veille réglementaire** : frise des échéances 2026-2030, celles qui concernent l'entreprise sont mises en avant.
-- **Exports** : PDF consolidé, classeur Excel, mode présentation plein écran.
+- **Exports et portabilité** : PDF consolidé, classeur Excel, mode présentation plein écran, export JSON du dossier et restauration contrôlée depuis une sauvegarde.
+- **Sauvegarde en ligne** : dossier chiffré côté navigateur (AES-GCM) avant transmission ; le code secret est nécessaire pour le restaurer. Le serveur ne reçoit pas le dossier en clair.
 - **Français** (version anglaise en préparation), thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
 
 ## Méthode
@@ -46,10 +47,15 @@ Chaque copilote affiche sa formule, ses hypothèses et ses sources (page « Mét
 - Directive Omnibus I (JOUE du 26/02/2026, en vigueur le 18/03/2026)
 - Directive (UE) 2024/825 « EmpCo », applicable au 27/09/2026
 - Loi Climat et résilience art. 35 : critère environnemental des marchés publics au 21/08/2026
-- EcoVadis, règles des médailles 2025
+- OCDE, Guide sur le devoir de diligence pour une conduite responsable des entreprises (2018)
+- EcoVadis, percentiles et seuils mensuels des médailles
 - Google (0,24 Wh par requête Gemini médiane, 2025), OpenAI (0,34 Wh), Luccioni et al. (2023)
 
-Les résultats sont des estimations. Ils ne remplacent ni un bilan GES réglementaire, ni un audit de certification, ni un conseil juridique. Les barèmes Benchmark, Marchés publics et Visibilité sont des grilles de maturité conçues pour l'outil, pas des moyennes sectorielles mesurées.
+Les résultats sont des estimations ou indices internes. Ils ne remplacent ni un BEGES réglementaire, ni une analyse de risques fournisseurs/diligence raisonnable, ni un audit de certification, ni un conseil juridique. Les indices Diagnostic de maturité, Marchés publics, Greenwashing et Visibilité sont des grilles heuristiques conçues pour l'outil, pas des moyennes sectorielles mesurées ni des validations réglementaires.
+
+## Données, sauvegarde et limites d'accès
+
+Voir [SECURITE_DONNEES.md](docs/SECURITE_DONNEES.md) pour le modèle de stockage, les sauvegardes et les limites actuelles. Sillon est aujourd'hui un dossier de travail par navigateur/session : il ne propose pas encore de comptes nominatifs, de rôles ni d'isolation multi-entreprises côté serveur. Ne l'utilisez pas comme GED ou comme espace collaboratif contenant des données confidentielles sans déploiement d'une architecture dédiée.
 
 ## Lancer en local
 

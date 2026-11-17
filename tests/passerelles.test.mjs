@@ -36,15 +36,26 @@ const code = "abcdefghjkmnpqrstuvwxyz234";
 test("dossier : sauvegarde, lecture avec le code, puis suppression", async () => {
   const put = await dossier(req("/api/dossier", "PUT", { code, data: { inputs: { a: 1 }, profile: { nom: "Atelier" } } }), { ip: "6.6.6.1" });
   assert.equal(put.status, 200);
-  const get = await dossier(req("/api/dossier?code=" + code, "GET"), { ip: "6.6.6.1" });
+  const get = await dossier(req("/api/dossier", "POST", { code }), { ip: "6.6.6.1" });
   assert.equal((await get.json()).data.profile.nom, "Atelier");
   assert.equal((await dossier(req("/api/dossier", "DELETE", { code }), { ip: "6.6.6.1" })).status, 200);
-  assert.equal((await dossier(req("/api/dossier?code=" + code, "GET"), { ip: "6.6.6.1" })).status, 404);
+  assert.equal((await dossier(req("/api/dossier", "POST", { code }), { ip: "6.6.6.1" })).status, 404);
+});
+
+test("dossier : accepte et restitue un bloc chiffré sans données métier en clair", async () => {
+  const encryptedCode = "bcdefghjkmnpqrstuvwxyz2345";
+  const envelope = { v: 2, iv: "AAAAAAAAAAAAAAAA", ciphertext: "AQIDBA==" };
+  assert.equal((await dossier(req("/api/dossier", "PUT", { code: encryptedCode, data: envelope }), { ip: "6.6.6.3" })).status, 200);
+  const restored = await dossier(req("/api/dossier", "POST", { code: encryptedCode }), { ip: "6.6.6.3" });
+  const body = await restored.json();
+  assert.equal(body.data.v, 2);
+  assert.equal(body.data.ciphertext, envelope.ciphertext);
+  assert.equal(body.data.inputs, undefined);
 });
 
 test("dossier : code inconnu, code trop court et données trop lourdes sont refusés", async () => {
-  assert.equal((await dossier(req("/api/dossier?code=" + "z".repeat(30), "GET"), { ip: "6.6.6.2" })).status, 404);
-  assert.equal((await dossier(req("/api/dossier?code=court", "GET"), { ip: "6.6.6.2" })).status, 400);
+  assert.equal((await dossier(req("/api/dossier", "POST", { code: "z".repeat(30) }), { ip: "6.6.6.2" })).status, 404);
+  assert.equal((await dossier(req("/api/dossier", "POST", { code: "court" }), { ip: "6.6.6.2" })).status, 400);
   assert.equal((await dossier(req("/api/dossier", "PUT", { code, data: { inputs: { x: "a".repeat(500000) } } }), { ip: "6.6.6.2" })).status, 413);
   assert.equal((await dossier(req("/api/dossier", "PUT", { code, data: { inputs: {} } }, "https://pirate.example"), { ip: "6.6.6.2" })).status, 403);
 });

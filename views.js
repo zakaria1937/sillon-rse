@@ -30,7 +30,7 @@
   function header() {
     const st = S(), n = copilots.filter((c) => st.used[c.id]).length;
     const h = location.hash.slice(1) || "accueil";
-    const L = [["accueil", "nav_dash"], ["profil", "nav_profile"], ["plan", "nav_plan"], ["veille", "nav_watch"], ["methode", "nav_method"], ["rapport", "nav_report"]];
+    const L = [["accueil", "nav_dash"], ["profil", "nav_profile"], ["plan", "nav_plan"], ["preuves", "nav_evidence"], ["veille", "nav_watch"], ["methode", "nav_method"], ["rapport", "nav_report"]];
     document.getElementById("hdr").innerHTML = `
       <a class="skip" href="#main" data-skip>${esc(t("skip"))}</a>
       <div class="wrap top">
@@ -175,7 +175,7 @@
     const id = `${cp.id}-${f.id}`;
     const pb = f.prof && S().profile && !(S().touched[cp.id] || {})[f.id] ? `<span class="tag-link">${esc(t("linked", { cp: t("nav_profile") }))}</span>` : "";
     if (f.type === "group") return `<div class="fgroup eyebrow">${esc(f.label)}</div>`;
-    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" ${f.min != null ? `min="${f.min}"` : ""} ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}"><span class="u">${esc(f.unit || "")}</span></div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
+    if (f.type === "number") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><input id="${id}" data-f="${f.id}" type="number" inputmode="decimal" value="${esc(v[f.id])}" min="${f.min ?? 0}" ${f.max != null ? `max="${f.max}"` : ""} step="${f.step || "any"}" aria-describedby="${id}-num-error"><span class="u">${esc(f.unit || "")}</span></div><div class="help" id="${id}-num-error" data-num-error="${f.id}" role="alert" hidden>Valeur invalide : saisissez un nombre compris entre ${f.min ?? 0}${f.max != null ? " et " + f.max : " et 1 000 000 000 000 maximum"}. Le dernier résultat valide est conservé.</div>${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "select") return `<div class="field wide"${attrs}><label for="${id}">${esc(f.label)} ${pb}</label><div class="inp"><select id="${id}" data-f="${f.id}">${f.options.map(([k, l]) => `<option value="${esc(k)}"${String(v[f.id]) === String(k) ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></div></div>`;
     if (f.type === "range") return `<div class="field"${attrs}><label for="${id}">${esc(f.label)} <span class="mono" data-out="${f.id}">${esc(v[f.id])} ${esc(f.unit || "")}</span></label><input id="${id}" data-f="${f.id}" type="range" min="${f.min}" max="${f.max}" step="${f.step || 1}" value="${esc(v[f.id])}">${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
     if (f.type === "seg") return `<div class="field wide"${attrs}><span class="lbl" id="${id}">${esc(f.label)} ${pb}</span><div class="seg" role="group" aria-labelledby="${id}">${f.options.map(([k, l]) => `<button type="button" data-seg="${f.id}" data-v="${esc(k)}" aria-pressed="${v[f.id] === k}">${esc(l)}</button>`).join("")}</div></div>`;
@@ -183,7 +183,7 @@
     if (f.type === "checklist") return `<fieldset class="field wide cl"${attrs}><legend class="eyebrow">${esc(f.label)}</legend>${f.items.map((it) => { const src = applied[f.id + "." + it.id]; return `
       <div class="check"><div class="t">${it.code ? `<span class="code">${esc(it.code)}</span>` : ""}${esc(it.label)}${src ? ` <span class="tag-link">${esc(t("linked", { cp: cpT(byId[src]).title }))}</span>` : ""}${it.hint ? `<small>${esc(it.hint)}</small>` : ""}</div>
       <div class="seg" role="group" aria-label="${esc(it.label)}">${f.states.map(([k, l]) => `<button type="button" data-ck="${f.id}" data-item="${esc(it.id)}" data-v="${esc(k)}" aria-pressed="${String((v[f.id] || {})[it.id]) === String(k)}">${esc(l)}</button>`).join("")}</div></div>`; }).join("")}</fieldset>`;
-    if (f.type === "table") return `<div class="field wide"${attrs}><div class="eyebrow" style="margin-bottom:6px">${esc(f.label)}</div><div class="tbl-wrap"><table class="ed"><thead><tr>${f.columns.map((c) => `<th scope="col">${esc(c.label)}</th>`).join("")}<th><span class="sr">Supprimer</span></th></tr></thead><tbody>${(v[f.id] || []).map((r, i) => `<tr>${f.columns.map((c) => `<td>${c.type === "select" ? `<select aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}">${c.options.map(([k, l]) => `<option value="${esc(k)}"${r[c.id] === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : `<input aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}" type="${c.type === "number" ? "number" : "text"}" value="${esc(r[c.id])}">`}</td>`).join("")}<td><button class="rm" type="button" data-rm="${f.id}" data-row="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`).join("")}</tbody></table></div><button class="chip-btn add" type="button" data-add="${f.id}">+ Ajouter un fournisseur</button></div>`;
+    if (f.type === "table") return `<div class="field wide"${attrs}><div class="eyebrow" style="margin-bottom:6px">${esc(f.label)}</div><div class="tbl-wrap"><table class="ed"><thead><tr>${f.columns.map((c) => `<th scope="col">${esc(c.label)}</th>`).join("")}<th><span class="sr">Supprimer</span></th></tr></thead><tbody>${(v[f.id] || []).map((r, i) => `<tr>${f.columns.map((c) => `<td>${c.type === "select" ? `<select aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}">${c.options.map(([k, l]) => `<option value="${esc(k)}"${r[c.id] === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : `<input aria-label="${esc(c.label)}" data-tbl="${f.id}" data-row="${i}" data-col="${c.id}" type="${c.type === "number" ? "number" : "text"}" ${c.type === "number" ? 'min="0" step="any"' : ""} value="${esc(r[c.id])}">`}</td>`).join("")}<td><button class="rm" type="button" data-rm="${f.id}" data-row="${i}" aria-label="Supprimer la ligne ${i + 1}">×</button></td></tr>`).join("")}</tbody></table></div><button class="chip-btn add" type="button" data-add="${f.id}">+ Ajouter un fournisseur</button></div>`;
     return "";
   }
 
@@ -229,6 +229,7 @@
     box.innerHTML = `
       <h2>${esc(t("results"))} ${st.used[cp.id] ? "" : `<span class="ex-flag">${esc(t("example"))}</span>`}</h2>
       <p class="sub">${esc(t("recalc"))}${base ? ` · ${esc(t("vs_ref"))} (${esc(base.d)})` : ""}</p>
+      <p class="ai-note">Résultat indicatif fondé sur les informations saisies et les hypothèses affichées. Il ne constitue ni un audit, ni une certification, ni une attestation de conformité, ni un avis juridique. Vérifiez les points réglementaires dans les textes officiels applicables à votre entreprise.</p>
       <div class="score-row">${r.gauge ? gaugeSvg(r.gauge, dG) : ""}<div class="verdict"><h3>${esc(r.verdict)}</h3><p>${esc(r.summary)}</p>${base && base.verdict !== r.verdict ? `<p class="was">${esc(base.verdict)} → <b>${esc(r.verdict)}</b></p>` : ""}${spark(st.hist[cp.id], 160, 34) ? `<div class="hist"><span class="eyebrow">${esc(t("hist"))}</span>${spark(st.hist[cp.id], 160, 34)}</div>` : ""}</div></div>
       ${r.kpis.length ? `<div class="kpis">${r.kpis.map((k, i) => { const b = base && base.k[i] != null && parseNum(k.v) != null ? parseNum(k.v) - base.k[i] : null; return `<div class="kpi"><div class="l">${esc(k.l)}</div><div class="v">${esc(k.v)}<span class="u">${esc(k.u)}</span></div><div class="s">${esc(k.s)}</div>${b ? `<div class="kd ${b > 0 ? "up" : "down"}">${b > 0 ? "+" : ""}${nf(b, Math.abs(b) < 10 && b % 1 ? 1 : 0)} ${esc(t("vs_ref"))}</div>` : ""}</div>`; }).join("")}</div>` : ""}
       ${chartSvg(r.chart)}
@@ -280,11 +281,28 @@
     if (!current) return;
     const tg = e.target, v = X.inputs(current);
     if (tg.dataset.f) {
-      v[tg.dataset.f] = tg.value;
+      const f = current.fields.find((x) => x.id === tg.dataset.f);
+      if (f && f.type === "number") {
+        const n = tg.value.trim() === "" ? NaN : Number(tg.value);
+        const min = f.min ?? 0, max = f.max ?? 1e12;
+        const valid = Number.isFinite(n) && n >= min && n <= max;
+        const err = app.querySelector(`[data-num-error="${tg.dataset.f}"]`);
+        tg.setAttribute("aria-invalid", String(!valid));
+        if (err) err.hidden = valid;
+        if (!valid) return; // conserver la dernière valeur valide, ne pas recalculer sur une donnée vide/incohérente
+        v[tg.dataset.f] = n;
+      } else v[tg.dataset.f] = tg.value;
       const o = app.querySelector(`[data-out="${tg.dataset.f}"]`); if (o) { const f = current.fields.find((x) => x.id === tg.dataset.f); o.textContent = `${tg.value} ${f.unit || ""}`; }
       markUsed(tg.dataset.f);
-    } else if (tg.dataset.tbl) { v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = tg.value; markUsed(tg.dataset.tbl); }
-    else return;
+    } else if (tg.dataset.tbl) {
+      const cell = tg.closest("input");
+      if (cell && cell.type === "number") {
+        const n = tg.value.trim() === "" ? NaN : Number(tg.value);
+        if (!Number.isFinite(n) || n < 0) { tg.setAttribute("aria-invalid", "true"); return; }
+        tg.removeAttribute("aria-invalid"); v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = n;
+      } else v[tg.dataset.tbl][+tg.dataset.row][tg.dataset.col] = tg.value;
+      markUsed(tg.dataset.tbl);
+    } else return;
     recompute();
   });
   app.addEventListener("change", (e) => {
@@ -373,7 +391,7 @@
           const id = "p-" + f.id;
           if (f.type === "select") return `<div class="field"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><select id="${id}" name="${f.id}">${f.options.map((o) => `<option${p[f.id] === o ? " selected" : ""}>${esc(o)}</option>`).join("")}</select></div></div>`;
           if (f.type === "seg") return `<div class="field"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><select id="${id}" name="${f.id}"><option value="oui"${p[f.id] === "oui" ? " selected" : ""}>${esc(t("yes"))}</option><option value="non"${p[f.id] === "non" ? " selected" : ""}>${esc(t("no"))}</option></select></div></div>`;
-          return `<div class="field${f.id === "nom" ? " wide" : ""}"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><input id="${id}" name="${f.id}" type="${f.type}" ${f.type === "number" ? 'step="any" min="0" inputmode="decimal"' : ""} value="${esc(p[f.id])}"></div></div>`;
+          return `<div class="field${f.id === "nom" ? " wide" : ""}"><label for="${id}">${esc(t(f.k))}</label><div class="inp"><input id="${id}" name="${f.id}" type="${f.type}" ${f.type === "number" ? 'step="any" min="0" inputmode="decimal" required' : ""} value="${esc(p[f.id])}"></div></div>`;
         }).join("")}</div>
         <div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("prof_apply"))}</button></div>
       </form>
@@ -382,6 +400,7 @@
     const fg = document.getElementById("forget"); if (fg) fg.onclick = () => { S().contact = null; S().chat = []; X.save(); X.toast(t("ct_forgotten")); profileView(); };
     document.getElementById("pform").onsubmit = (e) => {
       e.preventDefault();
+      if (!e.target.reportValidity()) return;
       const fd = new FormData(e.target), np = {};
       X.PROFILE_FIELDS.forEach((f) => (np[f.id] = f.type === "number" ? num(fd.get(f.id)) : String(fd.get(f.id) || "")));
       S().profile = np; X.applyProfile(); X.save(); X.toast(t("prof_saved")); header();
@@ -397,9 +416,15 @@
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("plan_title"))}</h1><p>${esc(t("plan_sub"))}</p></div>
       <div class="toolbar" style="margin:0 0 14px"><button class="chip-btn" type="button" id="addAct">${esc(t("plan_add"))}</button><button class="chip-btn" type="button" id="planX">${esc(t("xlsx"))}</button></div>
+      <div class="grid4" style="margin-bottom:14px">
+        <div class="panel"><div class="eyebrow">Actions ouvertes</div><strong>${items.filter(a => a.status !== "done").length}</strong></div>
+        <div class="panel"><div class="eyebrow">Priorité haute</div><strong>${items.filter(a => a.status !== "done" && a.impact === "high").length}</strong></div>
+        <div class="panel"><div class="eyebrow">Sans responsable</div><strong>${items.filter(a => a.status !== "done" && !a.owner.trim()).length}</strong></div>
+        <div class="panel"><div class="eyebrow">Sans échéance</div><strong>${items.filter(a => a.status !== "done" && !a.due).length}</strong></div>
+      </div>
       <form class="panel draft" id="draftF" hidden novalidate><div class="field"><label for="draftT">${esc(t("plan_new"))} *</label><div class="inp"><input id="draftT" maxlength="200" autocomplete="off"></div></div><p class="err" id="draftErr" role="alert" hidden></p><div class="toolbar"><button class="chip-btn primary" type="submit">${esc(t("plan_save"))}</button><button class="chip-btn" type="button" id="draftNo">${esc(t("md_cancel"))}</button></div></form>
-      ${items.length ? `<div class="tbl-wrap plan"><table class="ed"><thead><tr><th scope="col">Action</th><th scope="col">${esc(t("plan_src"))}</th><th scope="col">${esc(t("plan_impact"))}</th><th scope="col">${esc(t("plan_effort"))}</th><th scope="col">${esc(t("plan_owner"))}</th><th scope="col">${esc(t("plan_due"))}</th><th scope="col">${esc(t("plan_status"))}</th></tr></thead><tbody>
-      ${items.map((a) => `<tr class="${a.status === "done" ? "done" : ""}"><td class="act">${a.custom ? `<input aria-label="Action" data-plan="${a.id}" data-k="text" value="${esc(a.text)}">` : esc(a.text)}</td><td>${a.cp ? `<a href="#${a.cp}">${esc(cpT(byId[a.cp]).title)}</a>` : `${esc(t("plan_custom"))} <button class="rm" type="button" data-delact="${a.id}" aria-label="${esc(t("plan_del"))} : ${esc(a.text)}">×</button>`}</td><td><span class="dot ${a.impact}"></span>${sel(a.id, "impact", a.impact, LV)}</td><td>${sel(a.id, "effort", a.effort, LV)}</td><td><input aria-label="${esc(t("plan_owner"))}" data-plan="${a.id}" data-k="owner" placeholder="—" value="${esc(a.owner)}"></td><td><input type="date" aria-label="${esc(t("plan_due"))}" data-plan="${a.id}" data-k="due" value="${esc(a.due)}"></td><td>${sel(a.id, "status", a.status, ST)}</td></tr>`).join("")}
+      ${items.length ? `<div class="tbl-wrap plan"><table class="ed"><thead><tr><th scope="col">Action</th><th scope="col">${esc(t("plan_src"))}</th><th scope="col">${esc(t("plan_impact"))}</th><th scope="col">${esc(t("plan_effort"))}</th><th scope="col">${esc(t("plan_owner"))}</th><th scope="col">${esc(t("plan_due"))}</th><th scope="col">${esc(t("plan_status"))}</th><th scope="col">Indicateur de réussite</th><th scope="col">Preuve attendue</th><th scope="col">Référence / lien de la preuve</th><th scope="col">Date de preuve</th><th scope="col">Statut de vérification</th><th scope="col">Vérifié par</th></tr></thead><tbody>
+      ${items.map((a) => `<tr class="${a.status === "done" ? "done" : ""}"><td class="act">${a.custom ? `<input aria-label="Action" data-plan="${a.id}" data-k="text" value="${esc(a.text)}">` : esc(a.text)}</td><td>${a.cp ? `<a href="#${a.cp}">${esc(cpT(byId[a.cp]).title)}</a>` : `${esc(t("plan_custom"))} <button class="rm" type="button" data-delact="${a.id}" aria-label="${esc(t("plan_del"))} : ${esc(a.text)}">×</button>`}</td><td><span class="dot ${a.impact}"></span>${sel(a.id, "impact", a.impact, LV)}</td><td>${sel(a.id, "effort", a.effort, LV)}</td><td><input aria-label="${esc(t("plan_owner"))}" data-plan="${a.id}" data-k="owner" placeholder="—" value="${esc(a.owner)}"></td><td><input type="date" aria-label="${esc(t("plan_due"))}" data-plan="${a.id}" data-k="due" value="${esc(a.due)}"></td><td>${sel(a.id, "status", a.status, ST)}</td><td><input aria-label="Indicateur de réussite" data-plan="${a.id}" data-k="kpi" maxlength="180" placeholder="Ex. taux de réalisation, kWh, %…" value="${esc(a.kpi || "")}"></td><td><input aria-label="Preuve attendue" data-plan="${a.id}" data-k="evidence" maxlength="220" placeholder="Ex. facture, relevé, compte rendu…" value="${esc(a.evidence || "")}"></td><td><input aria-label="Référence ou lien de la preuve" data-plan="${a.id}" data-k="evidenceRef" maxlength="300" placeholder="Nom de fichier, URL, GED…" value="${esc(a.evidenceRef || "")}"></td><td><input type="date" aria-label="Date de la preuve" data-plan="${a.id}" data-k="evidenceDate" value="${esc(a.evidenceDate || "")}"></td><td><select aria-label="Statut de vérification de la preuve" data-plan="${a.id}" data-k="evidenceStatus">${[["pending","À renseigner"],["received","Reçue"],["checking","À vérifier"],["verified","Vérifiée"],["rejected","Non recevable"]].map(([k,l]) => `<option value="${k}"${(a.evidenceStatus || "pending") === k ? " selected" : ""}>${l}</option>`).join("")}</select></td><td><input aria-label="Vérifié par" data-plan="${a.id}" data-k="evidenceVerifier" maxlength="100" placeholder="Nom / fonction" value="${esc(a.evidenceVerifier || "")}"></td></tr>`).join("")}
       </tbody></table></div>` : `<p class="panel">${esc(t("plan_empty"))}</p>`}
     </div>`;
     const upd = (e) => {
@@ -419,12 +444,66 @@
       e.preventDefault();
       const text = dt.value.trim(), err = document.getElementById("draftErr");
       if (!text) { err.textContent = t("plan_need"); err.hidden = false; dt.focus(); return; }
-      S().custom.push({ id: "c" + Date.now().toString(36), text, impact: "mid", effort: "mid", owner: "", due: "", status: "todo" }); X.save(); X.toast(t("plan_added")); planView();
+      S().custom.push({ id: "c" + Date.now().toString(36), text, impact: "mid", effort: "mid", owner: "", due: "", kpi: "", evidence: "", evidenceRef: "", evidenceDate: "", evidenceStatus: "pending", evidenceVerifier: "", status: "todo" }); X.save(); X.toast(t("plan_added")); planView();
     };
     app.querySelectorAll("[data-delact]").forEach((b) => (b.onclick = () => { const st = S(); st.custom = st.custom.filter((x) => x.id !== b.dataset.delact); X.save(); planView(); }));
     // Un intitulé vidé n'est pas enregistré : l'ancien texte est rétabli.
     app.querySelectorAll('input[data-k="text"]').forEach((i) => i.addEventListener("blur", () => { if (!i.value.trim()) { const c = S().custom.find((x) => x.id === i.dataset.plan); if (c) i.value = c.text; } }));
     document.getElementById("planX").onclick = () => window.SXE.xlsx([], true);
+  }
+
+  /* ---------- registre documentaire RSE (références externes, sans hébergement de fichiers) ---------- */
+  function documentsView() {
+    current = null;
+    const st = S(), docs = Array.isArray(st.documents) ? st.documents : [];
+    const actions = X.planItems();
+    const categories = [["transversal","Transversal"],["environnement","Environnement"],["social","Social"],["gouvernance","Gouvernance"]];
+    const statuses = [["draft","À collecter"],["received","Reçu"],["review","À vérifier"],["valid","Validé en interne"],["obsolete","Obsolète"]];
+    const actionOptions = actions.map(a => [a.id, a.text]);
+    const today = X.today();
+    const expired = d => !!d.validUntil && d.validUntil < today && d.status !== "obsolete";
+    const linkedProof = a => docs.some(d => d.actionId === a.id && ["received","review","valid"].includes(d.status) && !expired(d));
+    const missingProof = actions.filter(a => a.evidence && !linkedProof(a));
+    const fmt = d => d ? new Date(d + "T12:00:00").toLocaleDateString("fr-FR") : "—";
+    app.innerHTML = `<div class="wrap">
+      <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">Traçabilité · GED / preuves</div><h1 id="pageH" tabindex="-1">Registre documentaire RSE</h1>
+      <p>Référencez les justificatifs, leur périmètre et leur statut, puis reliez-les aux actions du plan. Les fichiers restent dans votre GED ou espace documentaire habituel : Sillon ne les téléverse pas et ne les héberge pas.</p></div>
+      <section class="panel" style="margin-bottom:16px"><h2>Ajouter une référence documentaire</h2>
+        <form id="docForm" novalidate><div class="fgrid">
+          <div class="field"><label for="docTitle">Intitulé du document *</label><div class="inp"><input id="docTitle" maxlength="160" required placeholder="Ex. Bilan carbone 2026"></div></div>
+          <div class="field"><label for="docCategory">Thématique</label><div class="inp"><select id="docCategory">${categories.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div></div>
+          <div class="field"><label for="docRef">Lien sécurisé ou chemin GED *</label><div class="inp"><input id="docRef" maxlength="500" required placeholder="https://… ou GED/RSE/ENV/BC-2026"></div></div>
+          <div class="field"><label for="docDate">Date du document</label><div class="inp"><input id="docDate" type="date"></div></div>
+          <div class="field"><label for="docExpiry">Date de validité / expiration</label><div class="inp"><input id="docExpiry" type="date"></div></div>
+          <div class="field"><label for="docVersion">Version / révision</label><div class="inp"><input id="docVersion" maxlength="40" placeholder="V1, 2026-02…"></div></div>
+          <div class="field"><label for="docOwner">Pilote / dépositaire</label><div class="inp"><input id="docOwner" maxlength="100" placeholder="Nom ou fonction"></div></div>
+          <div class="field"><label for="docStatus">Statut documentaire</label><div class="inp"><select id="docStatus">${statuses.map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></div></div>
+          <div class="field"><label for="docAction">Action associée (facultatif)</label><div class="inp"><select id="docAction"><option value="">Aucune</option>${actionOptions.map(([v,l])=>`<option value="${esc(v)}">${esc(l.slice(0,100))}</option>`).join("")}</select></div></div>
+          <div class="field wide"><label for="docNote">Note de traçabilité</label><textarea id="docNote" class="ta" rows="2" maxlength="500" placeholder="Périmètre, période couverte, version remplacée…"></textarea></div>
+        </div><p id="docErr" class="err" role="alert" hidden></p><div class="toolbar"><button class="chip-btn primary" type="submit">Ajouter au registre</button></div></form>
+      </section>
+      <div class="grid4" style="margin-bottom:14px">
+        <div class="panel"><div class="eyebrow">Références enregistrées</div><strong>${docs.length}</strong></div>
+        <div class="panel"><div class="eyebrow">À collecter</div><strong>${docs.filter(d=>d.status==="draft").length}</strong></div>
+        <div class="panel"><div class="eyebrow">À vérifier</div><strong>${docs.filter(d=>d.status==="review").length}</strong></div>
+        <div class="panel"><div class="eyebrow">Validées en interne</div><strong>${docs.filter(d=>d.status==="valid").length}</strong></div>
+        <div class="panel"><div class="eyebrow">Expirées</div><strong>${docs.filter(expired).length}</strong></div>
+        <div class="panel"><div class="eyebrow">Preuves manquantes</div><strong>${missingProof.length}</strong></div>
+      </div>
+      <section class="panel" style="margin-bottom:16px"><h2>Alertes documentaires</h2><p class="sub">Une référence est signalée comme expirée lorsque sa date de validité est dépassée. Une preuve est considérée manquante ici lorsqu’une action comporte une « preuve attendue » mais qu’aucune référence active ne lui est rattachée.</p><div class="grid2"><div><h3>Documents expirés</h3>${docs.filter(expired).length ? `<ul>${docs.filter(expired).map(d=>`<li>${esc(d.title)} — échéance ${fmt(d.validUntil)}</li>`).join("")}</ul>` : `<p class="sub">Aucun document expiré.</p>`}</div><div><h3>Actions sans preuve référencée</h3>${missingProof.length ? `<ul>${missingProof.map(a=>`<li><a href="#plan">${esc(a.text)}</a> — ${esc(a.evidence)}</li>`).join("")}</ul>` : `<p class="sub">Aucune preuve manquante détectée sur les actions avec justificatif attendu.</p>`}</div></div></section>
+      <section class="panel"><h2>Index des preuves</h2><p class="sub">« Validé en interne » correspond à un statut saisi par l'utilisateur ; ce n'est ni une authentification du fichier ni une certification indépendante.</p>
+      ${docs.length ? `<div class="tbl-wrap"><table class="ed"><thead><tr><th>Document</th><th>Thématique</th><th>Référence / GED</th><th>Date</th><th>Validité</th><th>Version</th><th>Pilote</th><th>Statut</th><th>Action liée</th><th>Historique</th><th></th></tr></thead><tbody>${docs.map(d=>{const action=actions.find(a=>a.id===d.actionId);return `<tr><td>${esc(d.title)}</td><td>${esc((categories.find(x=>x[0]===d.category)||[])[1]||d.category)}</td><td>${/^https?:\/\//i.test(d.ref)?`<a href="${esc(d.ref)}" target="_blank" rel="noopener noreferrer">Ouvrir la référence ↗</a>`:`<span class="mono">${esc(d.ref)}</span>`}</td><td>${fmt(d.date)}</td><td>${expired(d)?`<span class="pill crit">Expirée</span>`:fmt(d.validUntil)}</td><td>${esc(d.version||"—")}</td><td>${esc(d.owner||"—")}</td><td>${esc((statuses.find(x=>x[0]===d.status)||[])[1]||d.status)}</td><td>${esc(action?action.text:"—")}</td><td><details><summary>${(d.history||[]).length} ancienne(s) version(s)</summary>${(d.history||[]).map(h=>`<p><b>${esc(h.version||"Version sans numéro")}</b> · ${fmt(h.changedAt?.slice(0,10))}<br>${esc(h.ref||"")} · validité : ${fmt(h.validUntil)}</p>`).join("")||"<p>Aucun historique.</p>"}</details><button type="button" class="chip-btn" data-revision="${esc(d.id)}">Nouvelle version</button></td><td><button class="rm" type="button" data-deldoc="${esc(d.id)}" aria-label="Supprimer la référence ${esc(d.title)}">×</button></td></tr>`}).join("")}</tbody></table></div>`:`<p class="sub">Aucune référence enregistrée. Commencez par indexer un document déjà présent dans votre GED.</p>`}
+      </section><div style="height:56px"></div></div>`;
+    document.getElementById("docForm").onsubmit = e => {
+      e.preventDefault();
+      const title=document.getElementById("docTitle").value.trim(), ref=document.getElementById("docRef").value.trim(), err=document.getElementById("docErr");
+      if(!title||!ref){err.textContent="L'intitulé et la référence documentaire sont obligatoires.";err.hidden=false;return;}
+      if(/^https?:\/\//i.test(ref)){try{const u=new URL(ref);if(!["http:","https:"].includes(u.protocol))throw 0;}catch{err.textContent="Le lien fourni n'est pas une URL valide.";err.hidden=false;return;}}
+      const doc={id:"d"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,category:document.getElementById("docCategory").value,ref,date:document.getElementById("docDate").value,version:document.getElementById("docVersion").value.trim(),owner:document.getElementById("docOwner").value.trim(),status:document.getElementById("docStatus").value,validUntil:document.getElementById("docExpiry").value,history:[],actionId:document.getElementById("docAction").value,note:document.getElementById("docNote").value.trim(),createdAt:new Date().toISOString()};
+      (S().documents ||= []).push(doc);X.save();X.toast("Référence documentaire ajoutée.");documentsView();
+    };
+    app.querySelectorAll("[data-revision]").forEach(b=>b.onclick=()=>{const d=(S().documents||[]).find(x=>x.id===b.dataset.revision);if(!d)return;const version=prompt("Numéro de la nouvelle version :",d.version||"V2");if(version===null)return;const ref=prompt("Nouvelle référence GED ou URL :",d.ref);if(ref===null)return;const validUntil=prompt("Nouvelle date de validité (AAAA-MM-JJ), laisser vide si sans expiration :",d.validUntil||"");if(validUntil===null)return;if(validUntil&&!/^\d{4}-\d{2}-\d{2}$/.test(validUntil)){X.toast("Format de date invalide.");return;}d.history=d.history||[];d.history.unshift({version:d.version||"",ref:d.ref,date:d.date||"",validUntil:d.validUntil||"",status:d.status,changedAt:new Date().toISOString()});d.version=version.trim();d.ref=ref.trim();d.validUntil=validUntil;d.date=today;d.status="received";X.save();documentsView();});
+    app.querySelectorAll("[data-deldoc]").forEach(b=>b.onclick=()=>{S().documents=(S().documents||[]).filter(d=>d.id!==b.dataset.deldoc);X.save();documentsView();});
   }
 
   /* ---------- veille ---------- */
@@ -451,9 +530,29 @@
   function reportView() {
     current = null;
     const st = S(), used = copilots.filter((c) => st.used[c.id]), list = used.length ? used : copilots;
+    const reportFindings = list.flatMap((c) => X.result(c).findings).filter((f) => f.lvl === "crit" || f.lvl === "warn");
+    const reportPlan = X.planItems().filter((a) => a.status !== "done");
+    const reportHigh = reportPlan.filter((a) => a.impact === "high").length;
+    const reportNoOwner = reportPlan.filter((a) => !a.owner).length;
+    const reportNoDue = reportPlan.filter((a) => !a.due).length;
+    const reportDocs = Array.isArray(st.documents) ? st.documents : [];
+    const reportExpiredDocs = reportDocs.filter(d => d.validUntil && d.validUntil < X.today() && d.status !== "obsolete").length;
+    const reportMissingProofs = reportPlan.filter(a => a.evidence && !reportDocs.some(d => d.actionId === a.id && ["received","review","valid"].includes(d.status) && !(d.validUntil && d.validUntil < X.today()))).length;
     app.innerHTML = `<div class="wrap">
       <div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><div class="eyebrow">${esc(X.profile().nom || "Sillon")} · ${new Date().toLocaleDateString(st.lang === "en" ? "en-GB" : "fr-FR", { day: "numeric", month: "long", year: "numeric" })}</div><h1 id="pageH" tabindex="-1">${esc(t("rep_title"))}</h1><p>${esc(used.length ? t("rep_sub_used", { n: used.length }) : t("rep_sub_none"))}</p></div>
       <div class="toolbar" style="margin:0 0 20px"><button class="chip-btn primary" type="button" id="pdfAll">${esc(t("rep_pdf"))}</button><button class="chip-btn" type="button" id="xlsAll">${esc(t("rep_xlsx"))}</button><a class="chip-btn" href="#presentation">${esc(t("nav_present"))}</a><button class="chip-btn" type="button" data-accomp>${esc(t("acc_cta"))}</button></div>
+      <section class="dash" aria-label="Synthèse de pilotage">
+        <div class="fam-head"><h2>Synthèse de pilotage</h2><p>${used.length} module(s) renseigné(s) · ${list.length - used.length} module(s) avec valeurs d'exemple</p></div>
+        <div class="dash-row">
+          <div class="dcell"><span class="l">Points de vigilance</span><b>${reportFindings.length}</b><span class="s">Signaux critiques ou à examiner</span></div>
+          <a class="dcell" href="#plan"><span class="l">Actions ouvertes</span><b>${reportPlan.length}</b><span class="s">${reportHigh} à impact élevé</span></a>
+          <a class="dcell" href="#plan"><span class="l">Responsables manquants</span><b>${reportNoOwner}</b><span class="s">Actions à attribuer</span></a>
+          <a class="dcell" href="#plan"><span class="l">Échéances manquantes</span><b>${reportNoDue}</b><span class="s">Actions à planifier</span></a>
+          <a class="dcell" href="#preuves"><span class="l">Documents expirés</span><b>${reportExpiredDocs}</b><span class="s">À renouveler ou retirer</span></a>
+          <a class="dcell" href="#preuves"><span class="l">Preuves manquantes</span><b>${reportMissingProofs}</b><span class="s">Actions sans pièce active liée</span></a>
+        </div>
+        <p class="ai-note">Les résultats sont des signaux d'auto-évaluation. Les modules non renseignés utilisent des valeurs d'exemple ; les constats doivent être confirmés avant toute décision.</p>
+      </section>
       <div class="grid4" style="padding-bottom:56px">${list.map((c) => { const r = X.result(c); return `<a class="card" href="#${c.id}"><div class="eyebrow">${esc(famT(families.find((f) => f.id === c.fam)).title)}</div><h3>${esc(cpT(c).title)}</h3><p><b style="color:var(--fg)">${esc(r.verdict)}</b><br>${esc(r.summary)}</p><div class="foot"><span class="state ${st.used[c.id] ? "done" : ""}">${esc(st.used[c.id] ? (st.ai[c.id] ? "IA ✓" : t("st_used")) : t("example"))}</span><span class="mono">${r.gauge ? esc(r.gauge.show || r.gauge.val) : ""}</span></div></a>`; }).join("")}</div>
     </div>`;
     document.getElementById("pdfAll").onclick = () => window.SXE.pdf(list.map((c) => c.id));
@@ -474,7 +573,7 @@
     const st = S(), c = st.contact;
     app.innerHTML = `<div class="wrap narrow"><div class="cp-head"><a class="back" href="#accueil">${esc(t("back"))}</a><h1 id="pageH" tabindex="-1">${esc(t("md_title"))}</h1><p>${esc(t("md_sub"))}</p></div>
       <section class="panel md" aria-labelledby="mdL"><h2 id="mdL">${esc(t("md_local"))}</h2><p class="sub">${esc(t("md_local_p"))}</p>
-        <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div>
+        <div class="toolbar"><button class="chip-btn" type="button" id="mdExport">${esc(t("md_export"))}</button><button class="chip-btn" type="button" id="mdImportOpen">Restaurer une sauvegarde</button><input type="file" id="mdImportFile" accept="application/json,.json" hidden><button class="chip-btn danger" type="button" id="mdErase">${esc(t("md_erase"))}</button></div><p class="fine">La restauration remplace le dossier actuellement ouvert. Exportez-le avant toute restauration si vous souhaitez conserver son état.</p>
         <div class="confirm" id="mdConfirm" hidden role="group" aria-labelledby="mdConfirmT"><p id="mdConfirmT">${esc(t("md_erase_confirm"))}</p><div class="toolbar"><button class="chip-btn danger" type="button" id="mdEraseYes">${esc(t("md_erase_yes"))}</button><button class="chip-btn" type="button" id="mdEraseNo">${esc(t("md_cancel"))}</button></div></div>
       </section>
       <section class="panel md" aria-labelledby="mdC"><h2 id="mdC">${esc(t("cl_title"))}</h2><p class="sub">${esc(t("cl_p"))}</p>
@@ -497,6 +596,21 @@
     document.getElementById("mdExport").onclick = async () => {
       const data = JSON.stringify({ exporte_le: new Date().toISOString(), source: "Sillon", donnees: S() }, null, 2);
       try { await X.saveFile(`sillon-mes-donnees-${X.today()}.json`, new Blob([data], { type: "application/json" })); } catch (e) { if (!e || e.code !== "declined") X.toast(t("toast_fail")); }
+    };
+    document.getElementById("mdImportOpen").onclick = () => document.getElementById("mdImportFile").click();
+    document.getElementById("mdImportFile").onchange = async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      try {
+        if (file.size > 10 * 1024 * 1024) throw new Error("Fichier trop volumineux (10 Mo maximum).");
+        const parsed = JSON.parse(await file.text()), incoming = parsed?.donnees;
+        if (parsed?.source !== "Sillon" || !incoming || typeof incoming !== "object" || !incoming.inputs || typeof incoming.inputs !== "object" || Array.isArray(incoming.inputs)) throw new Error("Ce fichier ne ressemble pas à une sauvegarde Sillon valide.");
+        if (!confirm("Remplacer le dossier actuellement ouvert par cette sauvegarde ? Cette opération ne peut pas être annulée.")) return;
+        const next = { ...X.blank(), ...incoming, lang: S().lang, cloud: null, chat: [] };
+        if (!next.custom || !Array.isArray(next.custom)) next.custom = [];
+        if (!next.documents || !Array.isArray(next.documents)) next.documents = [];
+        X.setState(next); X.save(); X.toast("Sauvegarde restaurée. Vérifiez les données et les résultats."); location.hash = "#accueil"; window.SXR.route();
+      } catch (err) { X.toast(err.message || "Impossible de lire cette sauvegarde."); }
+      finally { e.target.value = ""; }
     };
     const on = document.getElementById("clOn");
     if (on) on.onclick = async () => { on.disabled = true; const ok = await X.cloudEnable(); X.toast(ok ? t("cl_saved") : t("cl_fail")); myDataView(); };
@@ -548,5 +662,5 @@
     document.body.appendChild(n);
   }
 
-  window.SXV = { myDataView, notice, legalView, header, home, view, profileView, planView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
+  window.SXV = { myDataView, notice, legalView, header, home, view, profileView, planView, documentsView, watchView, methodView, reportView, md, flatInputs, resultText, profileText, gaugeSvg, spark, icon, current: () => current, renderRes, abortAI: () => aiCtl && aiCtl.abort(), clearCurrent: () => (current = null) };
 })();

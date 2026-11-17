@@ -60,7 +60,7 @@ async function fillContact(page, recontact = false) {
 test("chaque page s'ouvre sans erreur et sans appel à un service tiers", async () => {
   const { page, errors } = await open();
   const hosts = new Set(); page.on("request", (r) => hosts.add(new URL(r.url()).host));
-  for (const h of ["", "#profil", "#plan", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cgu", "#cookies", "#mentions", "#credits", "#accessibilite", "#bilan-carbone", "#carbone-ia", "#fournisseurs", "#benchmark-rse", "#reglementation", "#reporting-vsme", "#ecovadis", "#audit-iso", "#marches-publics", "#greenwashing", "#visibilite-rse", "#roi-rse", "#objections"]) {
+  for (const h of ["", "#profil", "#plan", "#preuves", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cgu", "#cookies", "#mentions", "#credits", "#accessibilite", "#bilan-carbone", "#carbone-ia", "#fournisseurs", "#benchmark-rse", "#reglementation", "#reporting-vsme", "#ecovadis", "#audit-iso", "#marches-publics", "#greenwashing", "#visibilite-rse", "#roi-rse", "#objections"]) {
     await page.goto(BASE + "/" + h); await page.waitForTimeout(120);
     assert.ok((await page.textContent("h1")).trim().length > 0, h);
   }
@@ -90,16 +90,35 @@ test("la fiche contact exige majorité et consentement, puis l'analyse IA s'affi
   await page.close();
 });
 
-test("la sauvegarde en ligne permet de reprendre le dossier dans un autre navigateur", async () => {
+test("la sauvegarde en ligne est chiffrée côté navigateur et restaurable dans un autre navigateur", async () => {
   const { page } = await open("#profil");
+  let cloudPayload;
+  page.on("request", req => { if (req.url().includes("/api/dossier") && req.method() === "PUT") cloudPayload = JSON.parse(req.postData()); });
   await page.fill("#p-nom", "Atelier Normand"); await page.click("#pform button[type=submit]");
+  await page.evaluate(() => { window.SX.state().documents = [{ id: "large", title: "Pièce volumineuse", ref: "GED/TEST", note: "x".repeat(70000) }]; window.SX.save(); });
+  await page.waitForTimeout(450);
+  await page.reload();
   await page.goto(BASE + "/#mes-donnees"); await page.click("#clOn"); await page.waitForSelector("#clCode");
+  assert.equal(cloudPayload.data.v, 2);
+  assert.equal(typeof cloudPayload.data.ciphertext, "string");
+  assert.equal(cloudPayload.data.inputs, undefined);
   const code = await page.textContent("#clCode");
   const ctx2 = await browser.newContext(); const p2 = await ctx2.newPage();
   await p2.goto(BASE + "/#dossier-" + code); await p2.waitForSelector("#cl-in");
   await p2.click("#clF button[type=submit]"); await p2.waitForFunction(() => location.hash === "#accueil");
   assert.match(await p2.textContent(".dash"), /Atelier Normand/);
+  assert.equal(await p2.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).documents[0].note.length), 70000);
   await ctx2.close(); await page.close();
+});
+
+test("une sauvegarde JSON locale peut être restaurée après confirmation", async () => {
+  const { page } = await open("#mes-donnees");
+  const backup = { source: "Sillon", exporte_le: new Date().toISOString(), donnees: { inputs: {}, profile: { nom: "Entreprise restaurée", secteur: "Industrie", eff: 42, effM: 42, ca: 8, surf: 500, gwh: 1, mp: "oui", b2c: "non" }, used: {}, custom: [], documents: [], plan: {}, hist: {}, ai: {}, touched: {}, base: {}, chat: [], cloud: null } };
+  page.on("dialog", dialog => dialog.accept());
+  await page.setInputFiles("#mdImportFile", { name: "sillon-backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(backup)) });
+  await page.waitForTimeout(400);
+  assert.match(await page.textContent(".dash"), /Entreprise restaurée/);
+  await page.close();
 });
 
 test("désinscription et demande de suppression arrivent chez l'éditeur ; l'effacement local vide le navigateur", async () => {
@@ -142,6 +161,17 @@ test("les exports PDF et Excel se téléchargent sans donner ses coordonnées, a
   await page.close();
 });
 
+test("rapport : la synthèse de pilotage est visible et le PDF exécutif est exportable", async () => {
+  const { page, errors } = await open("#rapport");
+  assert.match(await page.textContent(".dash"), /Synthèse de pilotage/);
+  assert.match(await page.textContent(".dash"), /valeurs d'exemple/);
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfAll")]);
+  assert.match(pdf.suggestedFilename(), /sillon-rapport-.*\.pdf$/);
+  assert.ok((await fs.promises.stat(await pdf.path())).size > 5000);
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
 test("les 13 copilotes : résultats, champs vidés sans valeur aberrante, exports PDF et Excel", async () => {
   const { page, errors } = await open();
   for (const id of COPILOTS) {
@@ -151,9 +181,13 @@ test("les 13 copilotes : résultats, champs vidés sans valeur aberrante, export
     await page.waitForTimeout(250);
     const res = await page.textContent("#res");
     assert.doesNotMatch(res, /NaN|undefined|Infinity|\[object/, id + " (champs vides)");
-    for (const inp of await page.locator('#form input[type="number"]').all()) await inp.fill("-5");
+    const numericInputs = await page.locator('#form input[type="number"]').all();
+    for (const inp of numericInputs) await inp.fill("-5");
     await page.waitForTimeout(250);
     assert.doesNotMatch(await page.textContent("#res"), /NaN|undefined|Infinity|\[object/, id + " (valeurs négatives)");
+    for (const inp of numericInputs) {
+      if (await inp.getAttribute("min") === "0") assert.equal(await inp.getAttribute("aria-invalid"), "true", id + " (rejet d'une valeur négative)");
+    }
     const [pdf] = await Promise.all([page.waitForEvent("download"), page.click("#pdfOne")]);
     assert.match(pdf.suggestedFilename(), new RegExp(id + ".*\\.pdf$"), id);
     const [xl] = await Promise.all([page.waitForEvent("download"), page.click("#xlsOne")]);
@@ -173,10 +207,67 @@ test("plan d'action : une action sans intitulé n'est jamais enregistrée", asyn
   await page.click("#addAct"); await page.fill("#draftT", "Former les commerciaux à la RSE"); await page.click("#draftF button[type=submit]");
   await page.waitForTimeout(400);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom.length), 1);
+  await page.fill('input[data-k="owner"]', "Responsable QSE");
+  await page.fill('input[data-k="due"]', "2027-03-31");
+  await page.fill('input[data-k="kpi"]', "100 % des commerciaux formés");
+  await page.fill('input[data-k="evidence"]', "Feuilles de présence et support de formation");
+  await page.fill('input[data-k="evidenceRef"]', "GED/RSE/FORMATION-2027");
+  await page.fill('input[data-k="evidenceDate"]', "2027-04-02");
+  await page.selectOption('select[data-k="evidenceStatus"]', "verified");
+  await page.fill('input[data-k="evidenceVerifier"]', "Auditeur interne");
+  await page.waitForTimeout(400);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0]);
+  assert.equal(saved.owner, "Responsable QSE");
+  assert.equal(saved.due, "2027-03-31");
+  assert.equal(saved.kpi, "100 % des commerciaux formés");
+  assert.equal(saved.evidence, "Feuilles de présence et support de formation");
+  assert.equal(saved.evidenceRef, "GED/RSE/FORMATION-2027");
+  assert.equal(saved.evidenceDate, "2027-04-02");
+  assert.equal(saved.evidenceStatus, "verified");
+  assert.equal(saved.evidenceVerifier, "Auditeur interne");
   await page.fill('td.act input', ""); await page.locator('td.act input').blur(); await page.waitForTimeout(400);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).custom[0].text), "Former les commerciaux à la RSE");
   await page.goto(BASE + "/#accueil");
   assert.match(await page.textContent(".dash"), /1\s*actions ouvertes/);
+  await page.close();
+});
+
+test("registre documentaire : référence GED classée et exportée", async () => {
+  const { page, errors } = await open("#preuves");
+  assert.match(await page.textContent("h1"), /Registre documentaire/);
+  await page.fill("#docTitle", "Bilan carbone 2026");
+  await page.fill("#docRef", "GED/RSE/ENV/BC-2026");
+  await page.selectOption("#docCategory", "environnement");
+  await page.fill("#docDate", "2026-10-31");
+  await page.fill("#docExpiry", "2020-01-01");
+  await page.fill("#docVersion", "V1");
+  await page.fill("#docOwner", "Responsable RSE");
+  await page.selectOption("#docStatus", "valid");
+  await page.fill("#docNote", "Périmètre France, exercice 2026");
+  await page.click('#docForm button[type="submit"]');
+  await page.waitForTimeout(350);
+  assert.match(await page.textContent(".tbl-wrap"), /Bilan carbone 2026/);
+  const doc = await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).documents[0]);
+  assert.equal(doc.ref, "GED/RSE/ENV/BC-2026");
+  assert.equal(doc.category, "environnement");
+  assert.equal(doc.status, "valid");
+  assert.equal(doc.version, "V1");
+  assert.equal(doc.validUntil, "2020-01-01");
+  assert.match(await page.textContent("body"), /Documents expirés/);
+  const prompts = ["V2", "GED/RSE/ENV/BC-2026-V2", "2027-12-31"];
+  page.on("dialog", async dialog => { await dialog.accept(prompts.shift()); });
+  await page.click('[data-revision]');
+  await page.waitForTimeout(350);
+  const revised = await page.evaluate(() => JSON.parse(localStorage.getItem("sillon.v2")).documents[0]);
+  assert.equal(revised.version, "V2");
+  assert.equal(revised.ref, "GED/RSE/ENV/BC-2026-V2");
+  assert.equal(revised.validUntil, "2027-12-31");
+  assert.equal(revised.history.length, 1);
+  assert.equal(revised.history[0].version, "V1");
+  await page.goto(BASE + "/#rapport");
+  const [xlsx] = await Promise.all([page.waitForEvent("download"), page.click("#xlsAll")]);
+  assert.match(xlsx.suggestedFilename(), /\.xlsx$/);
+  assert.deepEqual(errors, []);
   await page.close();
 });
 
@@ -205,7 +296,7 @@ test("les coordonnées sont annoncées avant le clic, et l'accord pour être rec
 for (const [nom, w, h] of [["téléphone", 390, 844], ["tablette", 820, 1180]]) {
   test(`${nom} (${w} px) : aucune page ne déborde en largeur`, async () => {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
-    for (const hsh of ["", "#profil", "#plan", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cookies", ...COPILOTS.map((c) => "#" + c)]) {
+    for (const hsh of ["", "#profil", "#plan", "#preuves", "#veille", "#methode", "#rapport", "#mes-donnees", "#confidentialite", "#cookies", ...COPILOTS.map((c) => "#" + c)]) {
       await page.goto(BASE + "/" + hsh); await page.waitForSelector("h1"); await page.waitForTimeout(100);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1), false, hsh || "accueil");
     }

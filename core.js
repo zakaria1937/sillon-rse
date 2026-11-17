@@ -10,7 +10,7 @@
   const today = () => new Date().toISOString().slice(0, 10);
 
   /* ---------- état ---------- */
-  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], profile: null, lang: "fr", chat: [], contact: null, cloud: null });
+  const blank = () => ({ inputs: {}, ai: {}, used: {}, touched: {}, hist: {}, base: {}, plan: {}, custom: [], documents: [], profile: null, lang: "fr", chat: [], contact: null, cloud: null });
   let state = blank();
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem("sillon.v1") || "null");
@@ -25,11 +25,28 @@
   /* ---------- sauvegarde en ligne (facultative, protégée par un code secret créé ici) ---------- */
   const newCode = () => { const a = new Uint8Array(20); crypto.getRandomValues(a); return [...a].map((b) => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("") + Date.now().toString(36).slice(-6); };
   const cloudPayload = () => { const { cloud, chat, ...rest } = state; return rest; };
+  const b64 = (bytes) => { let binary = ""; for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(binary); };
+  const unb64 = (value) => Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+  async function cloudKey(code) {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+    return crypto.subtle.importKey("raw", digest, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  }
+  async function encryptCloud(data, code) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await cloudKey(code), new TextEncoder().encode(JSON.stringify(data)));
+    return { v: 2, iv: b64(iv), ciphertext: b64(new Uint8Array(cipher)) };
+  }
+  async function decryptCloud(envelope, code) {
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(envelope.iv) }, await cloudKey(code), unb64(envelope.ciphertext));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
   let cloudT = null, cloudState = "idle";
   async function cloudSave() {
     if (!state.cloud || !state.cloud.code) return false;
     try {
-      const r = await fetch("/api/dossier", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code, data: cloudPayload() }) });
+      // Chiffrement côté navigateur : le serveur de stockage ne reçoit jamais le dossier en clair.
+      const data = await encryptCloud(cloudPayload(), state.cloud.code);
+      const r = await fetch("/api/dossier", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: state.cloud.code, data }) });
       if (!r.ok) { cloudState = "error"; return false; }
       state.cloud.maj = (await r.json()).maj; cloudState = "ok";
       try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
@@ -41,10 +58,16 @@
   async function cloudLoad(code) {
     code = String(code || "").trim().toLowerCase();
     if (!/^[a-z0-9]{24,64}$/.test(code)) throw { code: "invalid_code" };
-    const r = await fetch("/api/dossier?code=" + code).catch(() => { throw { code: "offline" }; });
+    const r = await fetch("/api/dossier", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ code }) }).catch(() => { throw { code: "offline" }; });
     if (!r.ok) throw { code: r.status === 404 ? "not_found" : "upstream_error" };
     const rec = await r.json();
-    state = { ...blank(), ...rec.data, lang: state.lang, cloud: { code, maj: rec.maj }, chat: [] };
+    let restored;
+    try {
+      // Compatibilité avec les anciens dossiers non chiffrés ; les nouvelles sauvegardes sont AES-GCM.
+      restored = rec.data?.v === 2 ? await decryptCloud(rec.data, code) : rec.data;
+    } catch (e) { throw { code: "decrypt_failed" }; }
+    if (!restored || typeof restored !== "object" || !restored.inputs) throw { code: "invalid_backup" };
+    state = { ...blank(), ...restored, lang: state.lang, cloud: { code, maj: rec.maj }, chat: [] };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
     return true;
   }
@@ -83,7 +106,26 @@
     });
     return v;
   }
-  const inputs = (cp) => { if (!state.inputs[cp.id]) state.inputs[cp.id] = defaults(cp); return state.inputs[cp.id]; };
+  function inputs(cp) {
+    if (!state.inputs[cp.id]) state.inputs[cp.id] = defaults(cp);
+    const v = state.inputs[cp.id];
+    // Défense en profondeur : les données déjà stockées (anciennes versions, import ou édition manuelle)
+    // ne doivent jamais injecter de valeur numérique vide, négative ou démesurée dans un calcul.
+    cp.fields.forEach((f) => {
+      if (f.type === "number" || f.type === "range") {
+        const n = v[f.id] === "" || v[f.id] == null ? NaN : Number(String(v[f.id]).replace(",", "."));
+        const min = f.min ?? (f.type === "number" ? 0 : -Infinity), max = f.max ?? 1e12;
+        if (!Number.isFinite(n) || n < min || n > max) v[f.id] = f.def ?? (Number.isFinite(min) ? min : 0);
+        else v[f.id] = n;
+      } else if (f.type === "table" && Array.isArray(v[f.id])) {
+        v[f.id].forEach((row) => f.columns.filter((c) => c.type === "number").forEach((c) => {
+          const n = row[c.id] === "" || row[c.id] == null ? NaN : Number(String(row[c.id]).replace(",", "."));
+          row[c.id] = Number.isFinite(n) && n >= 0 && n <= 1e12 ? n : 0;
+        }));
+      }
+    });
+    return v;
+  }
   function applyProfile() {
     const p = state.profile; if (!p) return;
     copilots.forEach((cp) => {
@@ -93,16 +135,14 @@
     save();
   }
 
-  /* ---------- liens entre copilotes ---------- */
-  const LINKS = [
-    { to: "reporting-vsme", field: "b", item: "B3", from: "bilan-carbone", val: () => "ok" },
-    { to: "benchmark-rse", field: "env", item: "e1", from: "bilan-carbone", val: () => "1" },
-    { to: "marches-publics", field: "ev", item: "bilan", from: "bilan-carbone", val: () => "1" },
-    { to: "ecovadis", field: "env", item: "kpi", from: "bilan-carbone", val: () => "2" },
-    { to: "benchmark-rse", field: "ach", item: "a3", from: "fournisseurs", val: () => "1" },
-    { to: "visibilite-rse", field: "ck", item: "claims", from: "greenwashing", val: (r) => (r.gauge.val >= 75 ? "1" : r.gauge.val >= 45 ? "0.5" : "0") },
-    { to: "marches-publics", field: "ev", item: "lab", from: "audit-iso", val: (r) => (r.gauge.val >= 85 ? "0.5" : null) },
-  ];
+  /* ---------- liens entre copilotes ----------
+     Aucun transfert automatique de points ou de statut de conformité.
+     Un résultat calculé dans un outil n'est pas, à lui seul, une preuve dans un autre
+     (ex. un bilan carbone ne prouve ni une politique de réduction, ni une conformité VSME).
+     Réintroduire une passerelle uniquement si elle transfère une donnée source traçable,
+     conserve sa provenance/date/périmètre et ne crédite jamais une exigence sans preuve.
+  */
+  const LINKS = [];
   const linkKey = (l) => l.field + "." + l.item;
   function resolved(cp) {
     const v = inputs(cp), tch = state.touched[cp.id] || {}, applied = {};
@@ -134,7 +174,7 @@
         const id = hash(c.id + a), meta = state.plan[id] || {};
         const effort = meta.effort || (/(audit|certification|plan de|fournisseurs|alternative|bâtir|lancer)/i.test(a) ? "high" : /(publier|désigner|fixer|choisir|ajouter|demander)/i.test(a) ? "low" : "mid");
         const impact = meta.impact || (i === 0 && sev === 3 ? "high" : sev >= 2 && i < 2 ? "high" : sev >= 2 ? "mid" : "low");
-        out.push({ id, cp: c.id, text: a, impact, effort, owner: meta.owner || "", due: meta.due || "", status: meta.status || "todo" });
+        out.push({ id, cp: c.id, text: a, impact, effort, owner: meta.owner || "", due: meta.due || "", kpi: meta.kpi || "", evidence: meta.evidence || "", evidenceRef: meta.evidenceRef || "", evidenceDate: meta.evidenceDate || "", evidenceStatus: meta.evidenceStatus || "pending", evidenceVerifier: meta.evidenceVerifier || "", status: meta.status || "todo" });
       });
     });
     state.custom.filter((x) => x.text && x.text.trim()).forEach((x) => out.push({ ...x, cp: "", custom: true }));

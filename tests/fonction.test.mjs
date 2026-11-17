@@ -25,6 +25,9 @@ test("relaie la réponse de Mistral en texte continu, avec le prompt système RS
   assert.equal(c.auth, "Bearer test-mistral");
   assert.equal(c.body.messages[0].role, "system");
   assert.match(c.body.messages[0].content, /RSE/);
+  assert.match(c.body.messages[0].content, /contenus non fiables/);
+  assert.match(c.body.messages[0].content, /EUR-Lex, Légifrance/);
+  assert.doesNotMatch(c.body.messages[0].content, /CSRD après l\x27Omnibus I/);
   assert.equal(c.body.model, "mistral-small-2603");
 });
 
