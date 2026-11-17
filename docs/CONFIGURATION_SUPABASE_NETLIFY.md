@@ -52,12 +52,12 @@ Après ajout des variables, effectuer un nouveau déploiement Netlify. Ne pas pu
 7. Tester les rôles reader, contributor, rse_lead et admin avec des comptes distincts.
 8. Avec un administrateur, modifier le rôle d'un membre existant ; vérifier qu'un non-administrateur ne peut pas le faire et que le dernier administrateur ne peut pas être rétrogradé.
 9. Vérifier les événements dossier.created, dossier.updated, dossier.deleted, membership.created, membership.role_changed et membership.removed dans audit_events.
-10. Avec un administrateur, retirer un membre de test ; vérifier l'événement membership.removed et la protection du dernier administrateur.
+10. Avec un administrateur, retirer un membre de test ; vérifier l'événement membership.removed et la protection du dernier administrateur. Après raccordement des invitations, tester également l'envoi, la révocation, l'expiration à 7 jours, l'adresse e-mail vérifiée, l'usage unique et l'impossibilité d'accepter avec un autre compte.
 11. Tester l'import ponctuel d'un dossier local, vérifier que les conversations IA et coordonnées de contact sont exclues, et confirmer qu'aucune synchronisation continue n'est annoncée.
 12. Tester le renouvellement de session, la déconnexion, les erreurs réseau et l'expiration du refresh token.
 13. Tester la récupération de mot de passe depuis l’e-mail, le retour sur `/?auth=recovery`, la mise à jour du mot de passe et l’expiration du lien.
 
-La modification du rôle des membres déjà présents est disponible pour les administrateurs. Les invitations et le provisionnement autonome des membres, la synchronisation continue et la migration des données restent à réaliser. La récupération de mot de passe est implémentée mais doit encore être validée sur un projet Supabase de staging réel.
+La modification du rôle des membres déjà présents est disponible pour les administrateurs. Le schéma contient désormais les RPC SQL de création et d'acceptation d'invitations à usage unique (jeton haché, expiration de 7 jours, vérification de l'e-mail Auth confirmé, audit et révocation d'une invitation précédente). Ces RPC ne sont pas encore exposées par l'API Netlify ni l'interface et aucun e-mail n'est envoyé : ne pas considérer les invitations comme une fonctionnalité utilisable. Le raccordement serveur, l'envoi d'e-mails, l'interface, le provisionnement autonome, la synchronisation continue et la migration des données restent à réaliser. La récupération de mot de passe est implémentée mais doit encore être validée sur un projet Supabase de staging réel.
 
 ## 5. Conditions avant données réelles
 
