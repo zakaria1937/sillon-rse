@@ -3,7 +3,8 @@
 insert into auth.users(id) values
  ('10000000-0000-4000-8000-000000000001'),
  ('20000000-0000-4000-8000-000000000002'),
- ('30000000-0000-4000-8000-000000000003')
+ ('30000000-0000-4000-8000-000000000003'),
+ ('40000000-0000-4000-8000-000000000004')
 on conflict do nothing;
 
 set role authenticated;
@@ -122,6 +123,34 @@ begin
   if not exists (select 1 from public.dossiers
     where id = current_setting('test.dossier_alpha')::uuid) then
     raise exception 'contributor_unexpectedly_deleted_dossier';
+  end if;
+end;
+$assert$;
+
+-- An RSE lead can inspect the audit trail and delete the dossier.
+insert into public.organization_memberships(organization_id, user_id, role)
+values (:'org_alpha', '40000000-0000-4000-8000-000000000004', 'rse_lead');
+set role authenticated;
+select set_config('request.jwt.claim.sub', '40000000-0000-4000-8000-000000000004', false);
+do $assert$
+begin
+  if not exists (select 1 from public.audit_events
+    where dossier_id = current_setting('test.dossier_alpha')::uuid) then
+    raise exception 'rse_lead_cannot_read_audit_trail';
+  end if;
+end;
+$assert$;
+delete from public.dossiers where id = :'dossier_alpha';
+reset role;
+do $assert$
+begin
+  if exists (select 1 from public.dossiers
+    where id = current_setting('test.dossier_alpha')::uuid) then
+    raise exception 'rse_lead_could_not_delete_dossier';
+  end if;
+  if not exists (select 1 from public.audit_events
+    where dossier_id = current_setting('test.dossier_alpha')::uuid and event_type = 'dossier.deleted') then
+    raise exception 'delete_event_missing_from_audit_trail';
   end if;
 end;
 $assert$;
