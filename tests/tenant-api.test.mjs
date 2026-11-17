@@ -132,3 +132,28 @@ test("tenant API measures request limits in UTF-8 bytes", async () => {
   const r = await tenant(req("POST", "?resource=dossiers", { organization_id: orgId, payload: { note: oversized } }));
   assert.equal(r.status, 413);
 });
+
+
+test("PATCH memberships delegates role changes to the admin-only database RPC", async () => {
+  calls.length = 0;
+  restStatus = 200;
+  const r = await tenant(req("PATCH", "?resource=memberships", {
+    organization_id: orgId, user_id: userId, role: "contributor",
+  }));
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { updated: true });
+  assert.match(calls.at(-1).url, /\/rpc\/set_organization_member_role$/);
+  assert.deepEqual(JSON.parse(calls.at(-1).init.body), {
+    p_org: orgId, p_user: userId, p_role: "contributor",
+  });
+  assert.equal((await tenant(req("PATCH", "?resource=memberships", {
+    organization_id: orgId, user_id: userId, role: "owner",
+  }))).status, 400);
+  restStatus = 403;
+  const forbidden = await tenant(req("PATCH", "?resource=memberships", {
+    organization_id: orgId, user_id: userId, role: "admin",
+  }));
+  assert.equal(forbidden.status, 403);
+  assert.deepEqual(await forbidden.json(), { code: "organization_admin_required" });
+  restStatus = 200;
+});
