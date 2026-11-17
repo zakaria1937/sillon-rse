@@ -78,3 +78,13 @@ test("seul un administrateur voit la commande de retrait, avec confirmation et R
   assert.match(source, /membership\.removed/);
   assert.match(source, /memberId === user\?\.id/);
 });
+
+
+test("l'import local vers le cloud est volontaire, ponctuel, limité et exclut les conversations et coordonnées", () => {
+  assert.match(source, /data-saas-import-local/);
+  assert.match(source, /window\.SX\.state\(\)/);
+  assert.match(source, /delete payload\.chat/);
+  assert.match(source, /delete payload\.contact/);
+  assert.match(source, /300000/);
+  assert.match(source, /Copie ponctuelle/);
+});
