@@ -1,6 +1,6 @@
 // Sillon — session Supabase côté serveur.
 // Le refresh token reste dans un cookie HttpOnly ; seul l'access token court est renvoyé au navigateur.
-import { json, sameOrigin } from "../lib/shared.mjs";
+import { json, sameOrigin, store, bump, today, ipKey } from "../lib/shared.mjs";
 
 const COOKIE = "sillon_refresh";
 const MAX_BODY = 8_000;
@@ -63,7 +63,7 @@ function validSession(data) {
     && data.user && typeof data.user.id === "string";
 }
 
-export default async function auth(req) {
+export default async function auth(req, context) {
   if (req.method !== "POST") return json(405, { code: "method" });
   if (!sameOrigin(req)) return json(403, { code: "origin" });
   const cfg = supabaseConfig();
@@ -77,6 +77,11 @@ export default async function auth(req) {
     const password = typeof parsed.value.password === "string" ? parsed.value.password : "";
     if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || password.length < 8 || password.length > 1024) {
       return json(400, { code: "invalid_credentials_format" });
+    }
+    const limits = await store();
+    const limit = Number(process.env.AUTH_LOGIN_LIMIT_PER_IP || 20);
+    if (!(await bump(limits, "auth-login/" + today() + "/" + await ipKey(req, context), limit))) {
+      return response(req, 429, { code: "auth_rate_limited" }, "", true);
     }
     const result = await authRequest(cfg, "/auth/v1/token?grant_type=password", { email, password });
     if (!result.ok || !validSession(result.data)) {
