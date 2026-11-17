@@ -454,4 +454,103 @@ begin
 end;
 $assert$;
 
-select 'tenant RLS and invitation integration checks passed' as result;
+-- Révocation : seul un admin peut révoquer, et un jeton révoqué ne peut plus être accepté.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select invitation_id as test_revoked_invitation_id, token as test_revoked_invitation_token
+from public.create_organization_invitation(
+  current_setting('test.org_alpha')::uuid,
+  'other-alpha@example.test',
+  'reader'
+) \gset
+select set_config('test.revoked_invitation_id', :'test_revoked_invitation_id', false);
+select set_config('test.revoked_invitation_token', :'test_revoked_invitation_token', false);
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
+do $assert$
+begin
+  begin
+    perform public.revoke_organization_invitation(current_setting('test.revoked_invitation_id')::uuid);
+    raise exception 'non_admin_revoked_invitation';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$assert$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select public.revoke_organization_invitation(current_setting('test.revoked_invitation_id')::uuid);
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
+do $assert$
+begin
+  begin
+    perform public.accept_organization_invitation(current_setting('test.revoked_invitation_token'));
+    raise exception 'revoked_invitation_was_accepted';
+  exception when invalid_parameter_value then null;
+  end;
+end;
+$assert$;
+reset role;
+
+do $assert$
+begin
+  if not exists (select 1 from public.organization_invitations
+      where id = current_setting('test.revoked_invitation_id')::uuid and revoked_at is not null) then
+    raise exception 'invitation_revocation_not_persisted';
+  end if;
+  if not exists (select 1 from public.audit_events
+      where organization_id = current_setting('test.org_alpha')::uuid
+        and event_type = 'invitation.revoked'
+        and actor_id = '10000000-0000-4000-8000-000000000001') then
+    raise exception 'invitation_revocation_not_audited';
+  end if;
+end;
+$assert$;
+
+-- Expiration : une invitation dont l'échéance est passée est refusée.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select invitation_id as test_expired_invitation_id, token as test_expired_invitation_token
+from public.create_organization_invitation(
+  current_setting('test.org_alpha')::uuid,
+  'other-alpha@example.test',
+  'reader'
+) \gset
+select set_config('test.expired_invitation_id', :'test_expired_invitation_id', false);
+select set_config('test.expired_invitation_token', :'test_expired_invitation_token', false);
+reset role;
+
+update public.organization_invitations
+set expires_at = now() - interval '1 minute'
+where id = current_setting('test.expired_invitation_id')::uuid;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '30000000-0000-4000-8000-000000000003', false);
+do $assert$
+begin
+  begin
+    perform public.accept_organization_invitation(current_setting('test.expired_invitation_token'));
+    raise exception 'expired_invitation_was_accepted';
+  exception when invalid_parameter_value then null;
+  end;
+end;
+$assert$;
+reset role;
+
+do $assert$
+begin
+  if not exists (select 1 from public.organization_invitations
+      where id = current_setting('test.expired_invitation_id')::uuid
+        and accepted_at is null and revoked_at is null and expires_at <= now()) then
+    raise exception 'expired_invitation_state_invalid';
+  end if;
+end;
+$assert$;
+
+select 'tenant RLS and invitation integration checks passed' as result;select 'tenant RLS and invitation integration checks passed' as result;
