@@ -65,7 +65,7 @@ test('organization invitations store only token hashes and expose controlled one
   for (const fragment of [
     'create table if not exists public.organization_invitations',
     'token_hash text not null unique',
-    "encode(digest(v_token, 'sha256'), 'hex')",
+    "encode(public.digest(v_token, 'sha256'), 'hex')",
     'create or replace function public.create_organization_invitation',
     'create or replace function public.accept_organization_invitation',
     'v_invitation.email <> v_email',
