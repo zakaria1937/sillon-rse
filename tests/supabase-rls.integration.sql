@@ -398,11 +398,6 @@ begin
         and user_id = auth.uid() and role = 'contributor') then
     raise exception 'invitation_did_not_create_expected_membership';
   end if;
-  if not exists (select 1 from public.organization_invitations
-      where id = current_setting('test.invitation_id')::uuid and accepted_by = auth.uid()
-        and accepted_at is not null) then
-    raise exception 'invitation_acceptance_not_recorded';
-  end if;
   begin
     perform public.accept_organization_invitation(current_setting('test.invitation_token'));
     raise exception 'invitation_token_was_reusable';
@@ -411,5 +406,15 @@ begin
 end;
 $assert$;
 reset role;
+do $assert$
+begin
+  if not exists (select 1 from public.organization_invitations
+      where id = current_setting('test.invitation_id')::uuid
+        and accepted_by = '20000000-0000-4000-8000-000000000002'
+        and accepted_at is not null) then
+    raise exception 'invitation_acceptance_not_recorded';
+  end if;
+end;
+$assert$;
 
 select 'tenant RLS and invitation integration checks passed' as result;
