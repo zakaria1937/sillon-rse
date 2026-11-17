@@ -462,6 +462,8 @@
   const recoveryParams = new URLSearchParams(location.hash.replace(/^#/, ""));
   if (recoveryParams.get("type") === "recovery" && recoveryParams.get("access_token")) {
     recoveryAccessToken = recoveryParams.get("access_token");
+    // Retirer immédiatement le jeton de l'URL et de l'historique de navigation.
+    history.replaceState(null, "", location.pathname + location.search);
     ensureOverlay();
     overlay.hidden = false;
     returnFocus = null;
