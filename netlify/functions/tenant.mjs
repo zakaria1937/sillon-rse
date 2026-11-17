@@ -112,6 +112,23 @@ export default async function tenant(req) {
         "organization_memberships?select=user_id,role,created_at&organization_id=eq." + org + "&order=created_at.asc");
       return r.error ? json(r.error, { code: "membership_read_failed" }) : json(200, r.data);
     }
+    if (req.method === "DELETE") {
+      const parsed = await readBody(req);
+      if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+      const { organization_id: org, user_id: member } = parsed.value;
+      if (!UUID.test(String(org || ""))) return json(400, { code: "invalid_organization_id" });
+      if (!UUID.test(String(member || ""))) return json(400, { code: "invalid_member_id" });
+      const r = await rest(cfg, auth.token, "rpc/remove_organization_member", {
+        method: "POST", body: JSON.stringify({ p_org: org, p_user: member }),
+      });
+      if (r.error) {
+        const code = r.error === 403 ? "organization_admin_required"
+          : r.error === 400 ? "last_admin_protected"
+          : r.error === 404 ? "member_not_found" : "membership_remove_failed";
+        return json(r.error, { code });
+      }
+      return json(200, { removed: true });
+    }
     if (req.method === "PATCH") {
       const parsed = await readBody(req);
       if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
