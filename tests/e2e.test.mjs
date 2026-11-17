@@ -93,7 +93,7 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   const { page, errors } = await open();
   const orgId = "50000000-0000-4000-8000-000000000005";
   const dossierId = "60000000-0000-4000-8000-000000000006";
-  let orgCreated = false, dossierCreated = false, roleUpdated = false;
+  let orgCreated = false, dossierCreated = false, roleUpdated = false, localImported = false;
   await page.route("**/api/auth**", async (route) => {
     const url = new URL(route.request().url());
     if (url.searchParams.get("action") === "refresh") {
@@ -133,14 +133,27 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
         { id: 1, event_type: "membership.role_changed", actor_id: "70000000-0000-4000-8000-000000000007", target_user_id: "80000000-0000-4000-8000-000000000008", previous_role: "reader", new_role: "contributor", occurred_at: "2026-11-17T10:00:00Z" }
       ] : []) });
     } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "GET") {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(dossierCreated ? [
-        { id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" }
-      ] : []) });
+      const rows = [];
+      if (dossierCreated) rows.push({ id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" });
+      if (localImported) rows.push({ id: "61000000-0000-4000-8000-000000000006", name: "Dossier test local", version: 1, updated_at: "2026-11-17T10:00:00Z" });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
     } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "POST") {
-      dossierCreated = true;
-      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
-        id: dossierId, organization_id: orgId, name: "Diagnostic initial", version: 1
-      }) });
+      const body = request.postDataJSON();
+      if (body.name === "Dossier test local") {
+        assert.ok(body.payload.inputs && Object.keys(body.payload.inputs).length);
+        assert.equal("chat" in body.payload, false);
+        assert.equal("contact" in body.payload, false);
+        assert.equal("cloud" in body.payload, false);
+        localImported = true;
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+          id: "61000000-0000-4000-8000-000000000006", organization_id: orgId, name: body.name, version: 1
+        }) });
+      } else {
+        dossierCreated = true;
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+          id: dossierId, organization_id: orgId, name: "Diagnostic initial", version: 1
+        }) });
+      }
     } else {
       await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ code: "not_found" }) });
     }
@@ -161,9 +174,21 @@ test("parcours entreprise : connexion, création d'organisation et dossier cloud
   await page.click('form[data-saas-member="80000000-0000-4000-8000-000000000008"] button[type="submit"]');
   await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Contributeur"));
   await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Rôle modifié"));
+  await page.evaluate(() => window.SX.setState({
+    ...window.SX.state(),
+    profile: { nom: "Dossier test local" },
+    inputs: { bilan: { energie: 120 } },
+    chat: ["conversation privée"],
+    contact: { email: "personne@example.test" },
+    cloud: { code: "secret-local" },
+  }));
+  page.once("dialog", dialog => dialog.accept());
+  await page.click("[data-saas-import-local]");
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Dossier test local"));
   assert.equal(orgCreated, true);
   assert.equal(dossierCreated, true);
   assert.equal(roleUpdated, true);
+  assert.equal(localImported, true);
   assert.deepEqual(errors, []);
   await page.close();
 });
