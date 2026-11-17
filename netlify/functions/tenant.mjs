@@ -130,7 +130,7 @@ export default async function tenant(req) {
       const email = typeof parsed.value.email === "string" ? parsed.value.email.trim().toLowerCase() : "";
       const role = parsed.value.role;
       if (!UUID.test(String(org || ""))) return json(400, { code: "invalid_organization_id" });
-      if (email.length < 5 || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json(400, { code: "invalid_invitation_email" });
+      if (email.length < 5 || email.length > 254 || email.includes(" ") || email.split("@").length !== 2 || !email.split("@")[0] || email.split("@")[1].lastIndexOf(".") < 1) return json(400, { code: "invalid_invitation_email" });
       if (!["admin", "rse_lead", "contributor", "reader"].includes(role)) return json(400, { code: "invalid_invitation_role" });
       const r = await rest(cfg, auth.token, "rpc/create_organization_invitation", {
         method: "POST", body: JSON.stringify({ p_org: org, p_email: email, p_role: role }),
