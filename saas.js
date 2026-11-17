@@ -198,7 +198,7 @@
 
   document.addEventListener("click", async (e) => {
     const openBtn = e.target.closest("[data-saas-open]");
-    if (openBtn) { open(); return; }
+    if (openBtn) { await open(); return; }
     if (!overlay || overlay.hidden) return;
     if (e.target.closest("[data-saas-reload]")) { await loadWorkspace(); return; }
     const orgBtn = e.target.closest("[data-saas-org]");
