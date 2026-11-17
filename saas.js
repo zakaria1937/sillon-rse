@@ -83,6 +83,7 @@
       last_admin_protected: "Cette organisation doit conserver au moins un administrateur. Attribuez d’abord ce rôle à une autre personne.",
       member_not_found: "Ce membre n’appartient plus à cette organisation.",
       membership_remove_failed: "Impossible de retirer ce membre. Vérifiez vos droits et réessayez.",
+      local_dossier_too_large: "Le dossier dépasse la taille maximale autorisée pour cet import.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
@@ -241,7 +242,8 @@
       (ownMembership ? '<p class="saas-muted">Votre rôle : <strong>' + esc(roleNames[ownMembership.role] || ownMembership.role) + '</strong></p>' : '') +
       '<div class="saas-list">' + rows + '</div>' +
       (canEdit
-        ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>'
+        ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>' +
+          '<div class="saas-inline"><button class="chip-btn" type="button" data-saas-import-local>Importer mon dossier local</button><small>Copie ponctuelle ; les conversations IA et coordonnées de contact sont exclues. Pas encore de synchronisation continue.</small></div>'
         : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>') +
       (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '') +
       (canReadAudit ? '<h4>Activité récente</h4><div class="saas-list">' + auditRows + '</div>' : '');
@@ -252,6 +254,41 @@
     if (openBtn) { await open(); return; }
     if (!overlay || overlay.hidden) return;
     if (e.target.closest("[data-saas-reload]")) { await loadWorkspace(); return; }
+    const importLocalBtn = e.target.closest("[data-saas-import-local]");
+    if (importLocalBtn) {
+      if (!selectedOrg || !window.SX?.state) return;
+      const local = window.SX.state();
+      const hasContent = local && local.inputs && Object.keys(local.inputs).length > 0;
+      if (!hasContent) {
+        errorBox("Aucun diagnostic local à importer. Renseignez d’abord les modules RSE.");
+        return;
+      }
+      if (!window.confirm("Copier votre dossier RSE local dans l’espace cloud de cette organisation ? Cette opération crée une copie indépendante et exclut les conversations IA et les coordonnées de contact.")) return;
+      importLocalBtn.disabled = true;
+      try {
+        const payload = { ...local };
+        delete payload.cloud;
+        delete payload.chat;
+        delete payload.contact;
+        const serialized = JSON.stringify(payload);
+        if (new TextEncoder().encode(serialized).byteLength > 300000) {
+          throw new Error("local_dossier_too_large");
+        }
+        const name = String(local.profile?.nom || "Dossier RSE importé").trim().slice(0, 160) || "Dossier RSE importé";
+        await api("dossiers", {
+          method: "POST",
+          body: { organization_id: selectedOrg.id, name, payload },
+        });
+        await selectOrganization(selectedOrg.id);
+        errorBox("Dossier local copié dans l’espace cloud. Les deux versions sont désormais indépendantes.");
+      } catch (err) {
+        errorBox(err?.message === "local_dossier_too_large"
+          ? "Le dossier dépasse la taille maximale autorisée pour cet import. Exportez ou allégez certaines pièces."
+          : message(err));
+        importLocalBtn.disabled = false;
+      }
+      return;
+    }
     const removeMemberBtn = e.target.closest("[data-saas-remove-member]");
     if (removeMemberBtn) {
       const memberId = removeMemberBtn.dataset.saasRemoveMember;
