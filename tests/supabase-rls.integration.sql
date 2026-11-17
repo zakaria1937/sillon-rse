@@ -164,6 +164,51 @@ end;
 $assert$;
 reset role;
 
+-- Only an admin can change existing member roles; the last admin cannot be demoted.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000002', false);
+do $assert$
+begin
+  begin
+    perform public.set_organization_member_role(
+      current_setting('test.org_alpha')::uuid,
+      '20000000-0000-4000-8000-000000000002',
+      'contributor'
+    );
+    raise exception 'reader_changed_member_role';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$assert$;
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
+select public.set_organization_member_role(
+  current_setting('test.org_alpha')::uuid,
+  '20000000-0000-4000-8000-000000000002',
+  'contributor'
+);
+select public.set_organization_member_role(
+  current_setting('test.org_alpha')::uuid,
+  '20000000-0000-4000-8000-000000000002',
+  'reader'
+);
+do $assert$
+begin
+  begin
+    perform public.set_organization_member_role(
+      current_setting('test.org_alpha')::uuid,
+      '10000000-0000-4000-8000-000000000001',
+      'rse_lead'
+    );
+    raise exception 'last_admin_was_demoted';
+  exception when check_violation then null;
+  end;
+end;
+$assert$;
+reset role;
+
 -- A contributor can update, but cannot delete.
 insert into public.organization_memberships(organization_id, user_id, role)
 values (:'org_alpha', '30000000-0000-4000-8000-000000000003', 'contributor');
