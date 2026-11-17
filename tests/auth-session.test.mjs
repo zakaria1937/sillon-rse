@@ -204,7 +204,7 @@ test("password recovery sends a same-origin redirect and does not reveal whether
   const r = await auth(req("recover", { email: " USER@example.fr " }), { ip: "10.0.0.21" });
   assert.equal(r.status, 200);
   assert.deepEqual(await r.json(), { ok: true });
-  assert.match(calls[0].url, /auth\\/v1\\/recover/);
+  assert.ok(calls[0].url.includes("/auth/v1/recover"));
   assert.match(decodeURIComponent(calls[0].url), /redirect_to=https:\/\/sillon\.example\//);
   assert.equal(JSON.parse(calls[0].init.body).email, "user@example.fr");
   assert.equal(calls[0].init.headers.apikey, "test-anon-key");
