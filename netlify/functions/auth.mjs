@@ -55,7 +55,8 @@ async function authRequest(cfg, path, payload, accessToken = "", method = "POST"
 
 function validSession(data) {
   return !!data && typeof data.access_token === "string" && data.access_token.length > 20
-    && typeof data.refresh_token === "string" && data.refresh_token.length > 20
+    // Les refresh tokens Supabase actuels sont courts (ex. 12 caractères) : ne pas exiger plus de 20.
+    && typeof data.refresh_token === "string" && data.refresh_token.length >= 8 && data.refresh_token.length <= 8192
     && data.user && typeof data.user.id === "string" && UUID.test(data.user.id);
 }
 
