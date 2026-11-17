@@ -104,7 +104,7 @@ Bibliothèques et polices hébergées dans le dépôt (`vendor/`, `fonts/`) : Th
 
 ## Conformité
 
-- **Aucun cookie ni traceur**, aucune requête vers un service tiers (polices et scripts auto-hébergés, politique de sécurité CSP stricte dans `netlify.toml`).
+- **Aucun cookie ni traceur sur l'espace public**, aucune requête vers un service tiers (polices et scripts auto-hébergés, politique CSP stricte). Si l'espace entreprise est activé, il utilise un cookie de session strictement nécessaire, HttpOnly et SameSite=Strict.
 - Pages : confidentialité, CGU, politique cookies, mentions légales, crédits et licences, accessibilité, **Mes données** (export, effacement, désinscription, demande de suppression).
 - Fiche contact : consentement explicite et attestation de majorité et d'usage professionnel, cases non pré-cochées.
 - Adresses IP jamais stockées en clair (empreinte salée, effacée sous 24 h).
