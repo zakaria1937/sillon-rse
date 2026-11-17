@@ -40,3 +40,13 @@ test('database controls dossier ownership, timestamps and version increments', (
 test('dossier update policy checks both existing and destination organization membership', () => {
   assert.match(sql, /dossiers_update_editor[\\s\\S]*?using \\([\\s\\S]*?private\\.has_org_role\\(organization_id[\\s\\S]*?with check \\([\\s\\S]*?private\\.has_org_role\\(organization_id/);
 });
+
+
+test('privileged SQL functions pin an empty search_path', () => {
+  const privileged = sql.split(/create or replace function/i).slice(1);
+  for (const fn of privileged) {
+    if (/security definer/i.test(fn.slice(0, 220))) {
+      assert.match(fn.slice(0, 350), /set search_path = ''/);
+    }
+  }
+});
