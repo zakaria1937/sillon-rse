@@ -124,6 +124,7 @@ for each row execute function private.guard_dossier_mutation();
 create trigger dossiers_guard_update
 before update on public.dossiers
 for each row execute function private.guard_dossier_mutation();
+revoke all on function private.guard_dossier_mutation() from public, anon, authenticated;
 
 create or replace function private.audit_dossier_change()
 returns trigger
@@ -154,6 +155,7 @@ drop trigger if exists dossiers_audit on public.dossiers;
 create trigger dossiers_audit
 after insert or update or delete on public.dossiers
 for each row execute function private.audit_dossier_change();
+revoke all on function private.audit_dossier_change() from public, anon, authenticated;
 
 alter table public.organizations enable row level security;
 alter table public.organization_memberships enable row level security;
