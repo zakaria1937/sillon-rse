@@ -79,7 +79,8 @@ export default async function auth(req, context) {
       return json(400, { code: "invalid_credentials_format" });
     }
     const limits = await store();
-    const limit = Number(process.env.AUTH_LOGIN_LIMIT_PER_IP || 20);
+    const configuredLimit = Number(process.env.AUTH_LOGIN_LIMIT_PER_IP);
+    const limit = Number.isSafeInteger(configuredLimit) && configuredLimit >= 1 && configuredLimit <= 1000 ? configuredLimit : 20;
     if (!(await bump(limits, "auth-login/" + today() + "/" + await ipKey(req, context), limit))) {
       return response(req, 429, { code: "auth_rate_limited" }, "", true);
     }
