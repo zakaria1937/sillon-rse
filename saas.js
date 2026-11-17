@@ -79,6 +79,8 @@
       dossier_create_failed: "Impossible de créer le dossier.",
       dossier_change_failed: "Cette opération n’a pas été autorisée.",
       membership_role_update_failed: "Impossible de modifier ce rôle. Vérifiez vos droits et réessayez.",
+      last_admin_protected: "Cette organisation doit conserver au moins un administrateur. Attribuez d’abord ce rôle à une autre personne.",
+      member_not_found: "Ce membre n’appartient plus à cette organisation.",
     };
     return messages[code] || "Une erreur est survenue. Vérifiez la configuration et réessayez.";
   }
