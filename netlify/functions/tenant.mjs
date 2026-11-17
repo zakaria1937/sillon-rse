@@ -118,7 +118,8 @@ export default async function tenant(req) {
           method: "POST", body: JSON.stringify({ p_token: token }),
         });
         if (accepted.error) {
-          const code = accepted.error === 403 ? "invitation_identity_mismatch"
+          const code = accepted.error === 409 ? "invitation_already_member"
+            : accepted.error === 403 ? "invitation_identity_mismatch"
             : accepted.error === 404 || accepted.error === 400 || accepted.error === 422 ? "invitation_invalid_or_expired"
             : "invitation_accept_failed";
           return json(accepted.error, { code });
