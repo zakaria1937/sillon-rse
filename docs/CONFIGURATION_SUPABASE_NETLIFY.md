@@ -2,24 +2,17 @@
 
 ## État actuel
 
-Les fonctions /api/auth et /api/tenant, l'interface de connexion et la migration PostgreSQL sont présentes dans le dépôt. **Aucun projet Supabase n'est encore relié à l'application.** Le mode entreprise n'est donc pas opérationnel en production tant que les étapes ci-dessous ne sont pas réalisées.
+Les fonctions /api/auth et /api/tenant, l'interface de connexion et la migration PostgreSQL sont présentes dans le dépôt. **Projet Supabase de staging créé le 17 novembre 2026 :** `sillon-staging` (`obubfuwpanaecwzqunsd`), région Paris (`eu-west-3`), statut `ACTIVE_HEALTHY`. URL API : `https://obubfuwpanaecwzqunsd.supabase.co`. Le schéma multi-entreprise et les migrations de durcissement sont appliqués et vérifiés sur ce projet. L'application Netlify n'est pas encore reliée : les variables Netlify et les URL Auth restent à configurer. La production n'a pas été modifiée.
 
 Ne pas appliquer la migration sur une base contenant déjà des données métier sans sauvegarde et revue préalable.
 
-## 1. Créer un projet Supabase de test
+## 1. Projet Supabase de staging
 
-1. Créer un projet Supabase dédié au staging.
-2. Choisir une région européenne adaptée à la politique de données qui sera retenue.
-3. Conserver les identifiants du projet dans un gestionnaire de secrets.
-4. Activer le fournisseur d'authentification e-mail/mot de passe.
-5. Pour la première phase, désactiver l'inscription publique et créer manuellement un premier compte administrateur depuis le tableau de bord Supabase.
-6. Configurer les URL du site et de redirection avec le domaine Netlify de test.
+Le projet dédié est déjà créé : `sillon-staging`, ID `obubfuwpanaecwzqunsd`, région `eu-west-3`, URL `https://obubfuwpanaecwzqunsd.supabase.co`. Conserver les clés dans un gestionnaire de secrets. Il reste à activer/vérifier le fournisseur e-mail/mot de passe, désactiver l'inscription publique pour la phase pilote, créer manuellement le premier compte administrateur et configurer les URL Auth.
 
-## 2. Appliquer le schéma
+## 2. Schéma appliqué
 
-Dans le SQL Editor du projet de staging, exécuter le contenu de :
-
-supabase/migrations/0001_multi_tenant_foundation.sql
+Le schéma multi-tenant est déjà installé sur le projet de staging via les migrations versionnées Supabase. Ne pas réexécuter manuellement `0001_multi_tenant_foundation.sql` sur ce projet. Vérifier l'historique avec `supabase migration list` et les tables/RLS avant tout nouveau changement.
 
 La CI exécute déjà cette migration sur PostgreSQL 16 avec une surface Auth simulée et teste les quatre rôles, l'isolation entre deux organisations, les tentatives d'auto-attribution des rôles, le versionnement et le journal d'audit. Le projet Supabase réel devra néanmoins faire l'objet d'une validation distincte.
 
@@ -29,8 +22,8 @@ Dans les variables d'environnement Netlify, ajouter pour le contexte de déploie
 
 | Variable | Valeur |
 |---|---|
-| SUPABASE_URL | URL HTTPS du projet Supabase |
-| SUPABASE_ANON_KEY | Clé publique anon/publishable du projet |
+| SUPABASE_URL | `https://obubfuwpanaecwzqunsd.supabase.co` |
+| SUPABASE_ANON_KEY | Clé publique publishable (`sb_publishable_…`) du projet `sillon-staging` |
 | IP_SALT | Secret aléatoire d'au moins 32 caractères, propre à l'environnement |
 | AUTH_LOGIN_LIMIT_PER_IP | Facultatif ; valeur par défaut : 20 tentatives par IP et par jour |
 | AUTH_RECOVERY_LIMIT_PER_IP | Facultatif ; valeur par défaut : 5 demandes de récupération par IP et par jour |
