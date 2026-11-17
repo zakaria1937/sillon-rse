@@ -1,12 +1,49 @@
 name: Tests
+concurrency:
+  group: sillon-ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 on: [push, pull_request]
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sillon_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sillon_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: sillon_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       - run: npm ci
       - run: npm test
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Bootstrap Supabase Auth test surface
+        run: psql -v ON_ERROR_STOP=1 -f tests/supabase-bootstrap.sql
+      - name: Apply multi-tenant migration
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/0001_multi_tenant_foundation.sql
+      - name: Apply Supabase parity and pgcrypto fix
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/0002_supabase_parity_pgcrypto.sql
+      - name: Verify tenant isolation and role permissions in PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f tests/supabase-rls.integration.sql
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        run: npm run test:e2e

@@ -6,7 +6,7 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <title>Sillon RSE</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Sillon : 13 copilotes RSE pour PME et ETI. Bilan carbone, VSME, EcoVadis, réglementation 2026, greenwashing, marchés publics. Calculs sourcés, analyse par Claude, exports PDF et Excel.">
+<meta name="description" content="Sillon : 13 copilotes RSE pour PME et ETI. Bilan carbone, VSME, EcoVadis, réglementation 2026, greenwashing, marchés publics. Calculs documentés, analyse assistée par IA, exports PDF et Excel.">
 <link rel="preload" href="fonts/atkinson-hyperlegible-next-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/gloock-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -435,6 +435,34 @@ h1,h2,h3{font-weight:400;letter-spacing:-.015em}
 .hero-txt>:nth-child(2){animation-delay:.08s}.hero-txt>:nth-child(3){animation-delay:.2s}.hero-txt>:nth-child(4){animation-delay:.3s}
 .hero-fig{animation:rise 1s .15s cubic-bezier(.2,.7,.2,1) both}
 .ledger{animation:rise .8s .45s cubic-bezier(.2,.7,.2,1) both}
+
+/* ---------- espace entreprise : préversion SaaS ---------- */
+.saas-overlay{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px;background:rgba(15,18,15,.68);backdrop-filter:blur(5px)}
+.saas-overlay[hidden]{display:none}
+.saas-dialog{position:relative;width:min(700px,100%);max-height:min(850px,calc(100dvh - 32px));overflow:auto;background:var(--surface);color:var(--fg);border:1px solid var(--fg);box-shadow:8px 8px 0 var(--soil);padding:clamp(20px,4vw,34px)}
+.saas-close{position:absolute;right:14px;top:10px;border:1px solid var(--line);background:transparent;color:var(--fg);width:34px;height:34px;font-size:23px;line-height:1;cursor:pointer}
+.saas-dialog h2{font-family:var(--f-display);font-size:clamp(32px,5vw,46px);font-weight:400;margin:8px 40px 8px 0}
+.saas-intro,.saas-muted{color:var(--muted);font-size:14px}
+.saas-form{display:grid;gap:14px;margin:22px 0}
+.saas-form label,.saas-inline label{display:grid;gap:6px;font-size:13px;font-weight:600}
+.saas-form input,.saas-inline input,.saas-inline select{width:100%;min-height:42px;padding:9px 11px;background:var(--bg);border:1px solid var(--line);border-radius:0;color:var(--fg)}
+.saas-form input:focus,.saas-inline input:focus,.saas-inline select:focus{outline:2px solid var(--accent);outline-offset:1px}
+.saas-note{padding:11px 13px;border-left:3px solid var(--soil);background:var(--surface-2);font-size:12.5px;color:var(--muted);margin:12px 0}
+.saas-error{min-height:1.3em;color:var(--crit);font-size:13px}
+.saas-user{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:8px 0 12px;font-size:13px}
+.saas-section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:22px 0 10px}
+.saas-section-head h3{font-family:var(--f-display);font-size:22px;font-weight:400}
+.saas-list{display:grid;border-top:1px solid var(--line)}
+.saas-row{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:12px 10px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--fg);font:inherit}
+button.saas-row{cursor:pointer}
+button.saas-row:hover,.saas-row.selected{background:var(--surface-2)}
+.saas-row small{font-family:var(--f-mono);font-size:10px;color:var(--muted);white-space:nowrap}
+.dossier-row{cursor:default}
+.saas-inline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-top:16px}
+.saas-inline .chip-btn{min-height:42px;white-space:nowrap}
+.saas-import{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:16px}.saas-import .chip-btn{position:relative;z-index:1;align-self:flex-start}.saas-import small{display:block;position:relative;max-width:100%;line-height:1.45;pointer-events:none}
+@media(max-width:600px){.saas-overlay{padding:8px}.saas-dialog{max-height:calc(100dvh - 16px);padding:22px 16px}.saas-inline{grid-template-columns:1fr}.saas-inline .chip-btn{width:100%}.top-actions [data-saas-open]{font-size:12px;padding:6px 8px}}
+
 </style>
 </head>
 <body>
@@ -455,5 +483,6 @@ h1,h2,h3{font-weight:400;letter-spacing:-.015em}
 <script src="extras.js" defer></script>
 <script src="exports.js" defer></script>
 <script src="main.js" defer></script>
+<script src="saas.js" defer></script>
 </body>
 </html>

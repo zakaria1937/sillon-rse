@@ -1,4 +1,4 @@
-/* Sillon — définitions des 12 copilotes : champs, calculs et sources. */
+/* Sillon — définitions des 13 copilotes : champs, calculs et sources. */
 (function () {
   const nf = (x, d = 0) => (isFinite(x) ? Number(x).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }) : "–");
   const eur = (x) => nf(Math.round(x)) + " €";
@@ -8,17 +8,24 @@
     google: { n: "Google — énergie d'une requête Gemini", t: "Google / MIT Technology Review (août 2025) : requête texte médiane Gemini = 0,24 Wh ; 0,03 gCO2e ; 0,26 ml d'eau", url: "https://www.technologyreview.com/2025/08/21/1122288/google-gemini-ai-energy/" },
     altman: { n: "OpenAI — énergie d'une requête ChatGPT", t: "OpenAI (S. Altman, juin 2025) : ≈ 0,34 Wh par requête ChatGPT moyenne", url: "https://blog.samaltman.com/the-gentle-singularity" },
     luccioni: { n: "Luccioni et al. — énergie de la génération d'images", t: "Luccioni et al., « Power Hungry Processing » (2023) : ≈ 2,9 kWh pour 1 000 images générées", url: "https://arxiv.org/abs/2311.16863" },
-    ademe: { n: "ADEME — Base Empreinte et impactCO2", t: "ADEME, Base Empreinte et impactCO2 (facteurs d'émission France)", url: "https://impactco2.fr" },
+    ademe: { n: "ADEME — Base Empreinte", t: "Base publique de facteurs d’émission et de données d’inventaire. Les valeurs préremplies dans Sillon ne sont pas rapprochées individuellement d’une fiche, d’une version et d’un périmètre ADEME ; elles ne doivent pas être présentées comme des facteurs ADEME certifiés.", url: "https://base-empreinte.ademe.fr/" },
     vsme: { n: "EFRAG — norme VSME", t: "EFRAG, norme VSME (déc. 2024) et recommandation de la Commission européenne (juil. 2025)", url: "https://www.efrag.org/en/vsme" },
-    omnibus: { n: "Union européenne — directive Omnibus I", t: "Directive Omnibus I, publiée au JOUE le 26/02/2026, en vigueur le 18/03/2026", url: "https://www.lw.com/en/insights/eu-sustainability-omnibus-published-in-the-official-journal" },
-    ecovadis: { n: "EcoVadis — médailles et badges", t: "EcoVadis, « Understanding EcoVadis Medals and Badges » (règles 2025)", url: "https://support.ecovadis.com/hc/en-us/articles/210460227-Understanding-EcoVadis-Medals-and-Badges" },
-    empco: { n: "Union européenne — directive EmpCo (2024/825)", t: "Directive (UE) 2024/825 « EmpCo » : application au 27/09/2026 (KPMG Avocats, oct. 2026)", url: "https://kpmg.com/av/fr/avocats/eclairages/2026/10/directive-empco-dite-ecgt.html" },
-    agec: { n: "Légifrance — loi AGEC, décret 2022-748", t: "Loi AGEC art. 13 et décret 2022-748 : mentions « biodégradable » et « respectueux de l'environnement » interdites sur produits et emballages", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
+    omnibus: { n: "EUR-Lex — directive (UE) 2026/470 (Omnibus I)", t: "Texte officiel publié au Journal officiel de l’Union européenne le 26/02/2026 ; modifications CSRD et CSDDD.", url: "https://eur-lex.europa.eu/eli/dir/2026/470/oj?locale=fr" },
+    ocde: { n: "OCDE — Guide sur le devoir de diligence pour une conduite responsable des entreprises", t: "Guide OCDE 2018 : diligence fondée sur le risque, proportionnée à la gravité et à la probabilité des impacts négatifs ; processus continu en six étapes.", url: "https://www.oecd.org/en/publications/oecd-due-diligence-guidance-for-responsible-business-conduct_15f5f4b3-en.html" },
+    ecovadis: { n: "EcoVadis — médailles, badges et seuils mensuels", t: "EcoVadis : médailles fondées sur les percentiles, seuils de score publiés mensuellement et critères d’éligibilité complémentaires.", url: "https://support.ecovadis.com/hc/fr/articles/39606014723090-Mise-%C3%A0-jour-des-seuils-mensuels-des-m%C3%A9dailles" },
+    empco: { n: "EUR-Lex — directive (UE) 2024/825 (EmpCo)", t: "Directive relative à la protection des consommateurs contre les allégations environnementales trompeuses ; application à partir du 27/09/2026.", url: "https://eur-lex.europa.eu/eli/dir/2024/825/oj?locale=fr" },
+    agec: { n: "Légifrance — loi AGEC, art. 13 et décret n° 2022-748", t: "Encadrement des mentions « biodégradable » et « respectueux de l’environnement » sur les produits et emballages.", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045726094" },
+    dechets: { n: "Légifrance — Code de l’environnement, art. L.541-21-2 et D.543-281", t: "Tri à la source et collecte séparée des flux de déchets non dangereux applicables, avec règles spécifiques aux déchets de chantier et aux textiles.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000041626981" },
     climat12: { n: "Légifrance — loi Climat et résilience, décret 2022-539", t: "Loi Climat et résilience art. 12 et décret 2022-539 : encadrement des allégations de neutralité carbone", url: "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045570611" },
     mp: { n: "Service-Public — critère environnemental des marchés publics", t: "Service-Public Entreprendre (18/08/2026) : critère et condition d'exécution environnementaux obligatoires au 21/08/2026", url: "https://entreprendre.service-public.gouv.fr/actualites/A19042" },
     fs: { n: "France Stratégie — RSE et compétitivité", t: "France Stratégie (2016), « RSE et compétitivité » : écart de performance économique d'environ 13 % en moyenne", url: "https://www.strategie.gouv.fr/publications/responsabilite-sociale-entreprises-competitivite" },
-    iso: { n: "ISO — normes de systèmes de management", t: "ISO, structure harmonisée des normes de systèmes de management (Annexe SL)", url: "https://www.iso.org/management-system-standards.html" },
-    beges: { n: "Ministère de la Transition écologique — BEGES", t: "Code de l'environnement art. L229-25 (BEGES) et ministère de la Transition écologique", url: "https://www.ecologie.gouv.fr/politiques-publiques/bilans-demissions-gaz-effet-serre" },
+    iso14001: { n: "ISO 14001:2026", t: "Édition 4 publiée en avril 2026 ; remplace ISO 14001:2015.", url: "https://www.iso.org/standard/14001" },
+    iso45001: { n: "ISO 45001:2018", t: "Édition actuelle confirmée en 2024 ; amendement climat 2024.", url: "https://www.iso.org/standard/45001" },
+    iso50001: { n: "ISO 50001:2018", t: "Édition actuelle confirmée en 2024 ; amendement climat 2024.", url: "https://www.iso.org/standard/69426.html" },
+    beges: { n: "Légifrance — Code de l’environnement, art. L.229-25", t: "Seuils BEGES : entreprises privées >500 salariés en métropole, >250 en outre-mer ; personnes morales de droit public >250 salariés, et collectivités concernées de plus de 50 000 habitants.", url: "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000051559662" },
+    energie: { n: "Légifrance — Code de l’énergie, art. L.233-1", t: "Loi n° 2025-391 du 30 avril 2025, art. 25 : seuils de 2,75 et 23,6 GWh, audit quadriennal et système de management certifié.", url: "https://www.legifrance.gouv.fr/codes/section_lc/LEGITEXT000023983208/LEGISCTA000027718472/" },
+    pay: { n: "EUR-Lex — directive (UE) 2023/970, art. 9", t: "Échéances de reporting des écarts de rémunération : 250+, 150–249 et 100–149 salariés.", url: "https://eur-lex.europa.eu/legal-content/FR/ALL/?uri=celex:32023L0970" },
+    sapin: { n: "Agence française anticorruption — entreprises assujetties à l’article 17", t: "Sapin II : société ou EPIC dont le siège est en France, au moins 500 salariés et plus de 100 M€ de chiffre d’affaires ; vérifier l’appréciation entité/groupe et les cas particuliers.", url: "https://www.agence-francaise-anticorruption.gouv.fr/acteurs-economiques/connaitre-les-obligations-des-entreprises" },
   };
   const YNP = [["1", "Oui"], ["0.5", "En partie"], ["0", "Non"]];
 
@@ -26,20 +33,20 @@
   /* ---------- 0. Bilan carbone ---------- */
   const FE = window.SILLON_REF.facteurs, SEUIL = window.SILLON_REF.seuils;
   const bilanC = {
-    id: "bilan-carbone", fam: "mesurer", title: "Bilan carbone",
-    short: "Vos émissions scopes 1, 2 et 3 avec les facteurs ADEME.",
-    intro: "Un bilan simplifié à partir de vos factures et de vos volumes d'activité. Il alimente directement le point B3 de la VSME, le Benchmark et le critère environnemental des marchés publics.",
-    calc: "scopes 1-2-3 · facteurs ADEME",
+    id: "bilan-carbone", fam: "mesurer", title: "Estimation GES simplifiée",
+    short: "Une première estimation de plusieurs postes des scopes 1, 2 et 3.",
+    intro: "Estimation pédagogique sur un nombre limité de postes à partir de données d’activité et de ratios. Ce module n’est pas un BEGES complet : plusieurs postes du scope 3 ne sont pas couverts et les facteurs préremplis doivent être vérifiés avant tout usage externe, réglementaire ou décisionnel.",
+    calc: "postes sélectionnés · facteurs indicatifs",
     icon: "flame",
     fields: [
       { type: "group", label: "Scope 1 · combustion et fuites" },
-      { type: "number", id: "gaz", label: "Gaz naturel", unit: "kWh/an", def: 350000, min: 0, help: "0,227 kgCO2e/kWh" },
-      { type: "number", id: "fioul", label: "Fioul domestique", unit: "L/an", def: 0, min: 0, help: "3,25 kgCO2e/L" },
-      { type: "number", id: "gazole", label: "Gazole des véhicules", unit: "L/an", def: 12000, min: 0, help: "3,16 kgCO2e/L" },
-      { type: "number", id: "essence", label: "Essence des véhicules", unit: "L/an", def: 2000, min: 0, help: "2,80 kgCO2e/L" },
-      { type: "number", id: "clim", label: "Recharges de climatisation (R410A)", unit: "kg/an", def: 3, min: 0, help: "PRG 2 088" },
+      { type: "number", id: "gaz", label: "Gaz naturel", unit: "kWh/an", def: 350000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "fioul", label: "Fioul domestique", unit: "L/an", def: 0, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "gazole", label: "Gazole des véhicules", unit: "L/an", def: 12000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "essence", label: "Essence des véhicules", unit: "L/an", def: 2000, min: 0, help: "Valeur indicative préremplie ; vérifier le facteur exact, son année et son périmètre dans Base Empreinte." },
+      { type: "number", id: "clim", label: "Recharges de climatisation (R410A)", unit: "kg/an", def: 3, min: 0, help: "PRG indicatif à confirmer selon le gaz exact et la référence méthodologique retenue." },
       { type: "group", label: "Scope 2 · électricité" },
-      { type: "number", id: "elec", label: "Électricité consommée", unit: "kWh/an", def: 420000, min: 0, help: "0,052 kgCO2e/kWh, mix France" },
+      { type: "number", id: "elec", label: "Électricité consommée", unit: "kWh/an", def: 420000, min: 0, help: "Valeur indicative préremplie. Le facteur électrique dépend notamment de l’année, du périmètre et de la méthode ; vérifier la fiche ADEME adaptée." },
       { type: "group", label: "Scope 3 · déplacements" },
       { type: "number", id: "train", label: "Train", unit: "km/an", def: 40000, min: 0 },
       { type: "number", id: "avc", label: "Avion court et moyen courrier", unit: "km/an", def: 25000, min: 0 },
@@ -75,14 +82,15 @@
       F.push({ lvl: "crit", t: `Premier poste : ${top[0][0]} avec ${nf(t(top[0][2]))} tCO2e, soit ${nf((top[0][2] / (tot || 1)) * 100)} % du total.` });
       F.push({ lvl: sc[2] / (tot || 1) > 0.7 ? "warn" : "info", t: `Le scope 3 représente ${nf((sc[2] / (tot || 1)) * 100)} % des émissions : c'est là que se jouent les réductions.` });
       if (k("avl") * FE.avl > k("train") * FE.train * 5) F.push({ lvl: "warn", t: `L'avion pèse ${nf(t(k("avc") * FE.avc + k("avl") * FE.avl), 1)} tCO2e. Un trajet en TGV émet environ 90 fois moins par km qu'un vol court-courrier.` });
-      F.push({ lvl: "info", t: `Les achats sont estimés par ratios monétaires : précision faible, à affiner avec les données de vos principaux fournisseurs.` });
+      F.push({ lvl: "warn", t: `Périmètre incomplet : le scope 3 ne couvre ici que certains déplacements, le domicile-travail et trois catégories d’achats. Les déchets, le fret, les immobilisations, les combustibles et l’énergie en amont, l’utilisation et la fin de vie des produits vendus, entre autres postes pertinents, ne sont pas évalués.` });
+      F.push({ lvl: "info", t: `Les achats sont estimés par ratios monétaires : précision faible, à affiner avec les données physiques et les facteurs documentés des principaux fournisseurs.` });
       return {
         gauge: { val: Math.round(t(tot)), max: Math.max(1, Math.round(t(tot)) / Math.max(0.01, sc[2] / (tot || 1))), label: "TCO2E / AN", raw: true, show: nf(t(tot)) + " t" },
         verdict: `${nf(t(tot))} tCO2e par an`,
-        summary: `Scope 1 : ${nf(t(sc[0]))} t · Scope 2 : ${nf(t(sc[1]))} t · Scope 3 : ${nf(t(sc[2]))} t. ${nf(per, 1)} tCO2e par salarié.`,
+        summary: `Estimation partielle — postes sélectionnés uniquement. Scope 1 : ${nf(t(sc[0]))} t · Scope 2 : ${nf(t(sc[1]))} t · Scope 3 partiel : ${nf(t(sc[2]))} t. ${nf(per, 1)} tCO2e par salarié sur ce périmètre incomplet.`,
         kpis: [
           { l: "Scopes 1 et 2", v: nf(t(sc[0] + sc[1]), 1), u: "tCO2e", s: "Périmètre BEGES et VSME B3" },
-          { l: "Scope 3", v: nf(t(sc[2])), u: "tCO2e", s: `${nf((sc[2] / (tot || 1)) * 100)} % du total` },
+          { l: "Scope 3 (partiel)", v: nf(t(sc[2])), u: "tCO2e", s: `${nf((sc[2] / (tot || 1)) * 100)} % du total calculé` },
           { l: "Par salarié", v: nf(per, 1), u: "tCO2e", s: `${nf(k("sal"))} salariés` },
         ],
         chart: { type: "bars", unit: "tCO2e/an", items: P.filter((p) => p[2] > 0).map((p) => ({ l: p[0], v: t(p[2]), hot: p === top[0] })) },
@@ -91,9 +99,9 @@
           `Bâtir un plan de réduction sur « ${top[0][0]} » et « ${top[1][0]} », qui pèsent ${nf(((top[0][2] + top[1][2]) / (tot || 1)) * 100)} % du total.`,
           "Demander à vos 10 premiers fournisseurs leur empreinte carbone pour remplacer les ratios monétaires.",
           "Fixer une politique de déplacements : train obligatoire sous 4 h de trajet.",
-          "Publier les scopes 1 et 2 dans le rapport VSME (point B3).",
+          "Compléter les postes manquants et documenter les facteurs avant toute intégration dans un reporting VSME ou un BEGES.",
         ],
-        hyp: "Facteurs ADEME (Base Empreinte, impactCO2) : gaz 0,227 kg/kWh ; fioul 3,25 kg/L ; gazole 3,16 kg/L ; essence 2,80 kg/L ; électricité 0,052 kg/kWh ; TGV 2,9 g/km ; avion 258 g/km (court) et 152 g/km (long, traînées incluses) ; voiture 218 g/km. Ratios monétaires indicatifs et modifiables.",
+        hyp: "Les facteurs préremplis sont des ordres de grandeur de démonstration, pas une extraction vérifiée de fiches ADEME. Leur année, géographie, unité fonctionnelle, périmètre (amont, combustion, fabrication, traînées aériennes, etc.) et statut doivent être rapprochés individuellement d’une fiche Base Empreinte avant utilisation. Les ratios monétaires d’achats sont des hypothèses modifiables. Le calcul ne couvre qu’une sélection de postes : il ne constitue ni un BEGES réglementaire, ni un bilan carbone exhaustif, ni un audit.",
         sources: [S.ademe, S.beges, S.vsme],
       };
     },
@@ -103,7 +111,7 @@
   const carbone = {
     id: "carbone-ia", fam: "mesurer", title: "Carbone IA",
     short: "Empreinte carbone de vos usages d'IA générative, matériel compris.",
-    intro: "Estimez l'énergie et les émissions de vos requêtes texte, des requêtes longues de type « raisonnement » et des images générées, puis comparez-les au matériel acheté.",
+    intro: "Estimation exploratoire des usages texte, des requêtes longues et des images générées. Les consommations par requête et les facteurs géographiques sont des hypothèses variables selon les modèles, les centres de données et les méthodes de calcul : ce module ne mesure pas les consommations réelles du fournisseur.",
     calc: "kWh · kgCO2e · équivalences ADEME",
     icon: "leaf",
     fields: [
@@ -133,8 +141,8 @@
       F.push({ lvl: "info", t: `L'usage annuel de l'IA (${nf(kg, 1)} kgCO2e) équivaut à ${nf(kg / 0.218)} km en voiture thermique ou ${nf((kg / 156) * 100)} % de la fabrication d'un ordinateur portable.` });
       if (n > 0) F.push({ lvl: "ok", t: `Une requête texte standard reste sobre : environ 0,3 Wh, l'ordre de grandeur publié par Google (0,24 Wh) et OpenAI (0,34 Wh).` });
       return {
-        gauge: { val: score, max: 100, label: "SOBRIÉTÉ" },
-        verdict: score >= 75 ? "Usage sobre" : score >= 50 ? "Usage à optimiser" : "Usage intensif",
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: score >= 75 ? "Indice interne favorable" : score >= 50 ? "Indice interne intermédiaire" : "Indice interne à optimiser",
         summary: `${nf(total)} kgCO2e par an au total, dont ${nf(kg)} pour l'usage de l'IA et ${nf(kgPc)} pour le matériel.`,
         kpis: [
           { l: "Énergie consommée", v: nf(kwh), u: "kWh/an", s: `${nf(n)} requêtes texte/an` },
@@ -150,7 +158,7 @@
           "Allonger la durée de vie des postes à 5 ans minimum avant d'en acheter pour l'IA.",
           "Intégrer ce poste au scope 3 (catégorie « biens et services achetés ») de votre bilan carbone.",
         ],
-        hyp: "Hypothèses : 0,3 Wh par requête standard, 3 Wh par requête longue (ordre de grandeur ×10), 2,9 Wh par image ; facteurs d'émission indiqués dans le formulaire.",
+        hyp: "Estimation indicative et non mesure réelle : 0,3 Wh par requête standard et 3 Wh par requête longue sont des hypothèses de modélisation (la seconde est une hypothèse ×10, non une donnée mesurée universelle) ; 2,9 Wh/image est issu d’une étude sur un modèle et un protocole donnés, non généralisable à tous les générateurs. Le facteur kgCO2e/kWh dépend de la localisation et de l’année du mix électrique. Le facteur de fabrication du PC est un ordre de grandeur à vérifier selon le modèle et le cycle de vie. Le calcul ne couvre pas de manière exhaustive les équipements des centres de données, le refroidissement, le réseau, l’eau ni l’ensemble du cycle de vie des infrastructures. L’indice 0–100 est une formule interne Sillon, sans référentiel externe ni valeur de certification.",
         sources: [S.google, S.altman, S.luccioni, S.ademe],
       };
     },
@@ -161,23 +169,23 @@
   const vsmeB = [
     ["B1", "Base d'établissement", "Périmètre, filiales, option retenue", "ok"],
     ["B2", "Pratiques, politiques et initiatives de transition", "", "part"],
-    ["B3", "Énergie et émissions de GES", "Consommations, scopes 1 et 2, intensité", "part"],
-    ["B4", "Pollution de l'air, de l'eau et des sols", "", "na"],
-    ["B5", "Biodiversité", "Sites dans ou près de zones sensibles", "no"],
-    ["B6", "Eau", "Prélèvements, zones de stress hydrique", "ok"],
-    ["B7", "Ressources, économie circulaire et déchets", "", "part"],
-    ["B8", "Effectifs : caractéristiques générales", "Contrats, genre, pays, turnover", "ok"],
-    ["B9", "Effectifs : santé et sécurité", "Accidents, décès", "ok"],
-    ["B10", "Rémunération, négociation collective, formation", "", "part"],
+    ["B3", "Énergie et émissions de GES", "Consommation totale d'énergie (MWh), ventilation renouvelable/non renouvelable si disponible, scopes 1 et 2 location-based, intensité GES", "part"],
+    ["B4", "Pollution de l'air, de l'eau et des sols", "Polluants déclarés aux autorités ou suivis volontairement dans un système de management environnemental", "na"],
+    ["B5", "Biodiversité", "Nombre et surface des sites détenus, loués ou gérés dans ou près de zones sensibles", "no"],
+    ["B6", "Eau", "Prélèvements totaux et prélèvements sur sites en zones de stress hydrique ; consommation si procédés fortement consommateurs", "ok"],
+    ["B7", "Ressources, économie circulaire et déchets", "Principes d'économie circulaire, déchets dangereux/non dangereux, réemploi/recyclage et flux matières significatifs", "part"],
+    ["B8", "Effectifs : caractéristiques générales", "Effectifs par type de contrat et genre, pays si activité multi-pays ; turnover si 50 salariés ou plus", "ok"],
+    ["B9", "Effectifs : santé et sécurité", "Accidents du travail enregistrables, taux d'accidents et décès liés au travail", "ok"],
+    ["B10", "Rémunération, négociation collective, formation", "Rémunération adéquate, couverture de négociation collective et heures de formation", "part"],
     ["B11", "Condamnations et amendes pour corruption", "", "ok"],
   ];
   const vsmeC = [
     ["C1", "Stratégie : modèle d'affaires et durabilité", "", "no"],
     ["C2", "Description des pratiques et politiques", "", "part"],
-    ["C3", "Objectifs GES et transition climatique", "", "no"],
-    ["C4", "Risques climatiques", "", "no"],
+    ["C3", "Objectifs GES et transition climatique", "Cibles absolues scopes 1 et 2, année de base/cible, périmètre et principales actions ; scope 3 significatif si cible fixée", "no"],
+    ["C4", "Risques climatiques", "Aléas physiques et événements de transition identifiés, exposition et horizon temporel", "no"],
     ["C5", "Effectifs : informations complémentaires", "", "part"],
-    ["C6", "Droits humains : politiques et processus", "", "no"],
+    ["C6", "Droits humains : politiques et processus", "Politiques, mécanismes de diligence raisonnable et canaux de signalement", "no"],
     ["C7", "Incidents graves en matière de droits humains", "", "ok"],
     ["C8", "Revenus de certains secteurs, exclusions des indices UE", "", "na"],
     ["C9", "Diversité de genre dans l'organe de gouvernance", "", "ok"],
@@ -186,7 +194,7 @@
   const vsme = {
     id: "reporting-vsme", fam: "conformer", title: "Reporting VSME",
     short: "État de préparation de votre rapport volontaire PME, point par point.",
-    intro: "La VSME est le standard volontaire européen pour les PME. Depuis l'Omnibus, c'est aussi le plafond de ce que vos grands clients peuvent vous demander. Cochez où vous en êtes sur chaque point.",
+    intro: "La VSME est le standard volontaire européen pour les PME. La protection « value-chain cap » issue de la directive Omnibus concerne les entreprises protégées de la chaîne de valeur d’une entreprise soumise au reporting CSRD : elles peuvent refuser certaines demandes d’informations dépassant les standards volontaires applicables, dans le cadre et sous les conditions du texte. Ce n’est pas un plafond universel opposable à toute demande client. Cochez où vous en êtes sur chaque point.",
     calc: "B1–B11 · C1–C9 · jours de travail",
     icon: "doc",
     fields: [
@@ -204,7 +212,7 @@
       const days = miss.length * 1.5 + part.length * 0.7;
       const F = [];
       const b3 = items.find((i) => i.code === "B3");
-      if (b3 && b3.s !== "ok") F.push({ lvl: "crit", t: "B3 (énergie et GES) incomplet : c'est la donnée la plus demandée par les banques et les donneurs d'ordre. Priorité n°1." });
+      if (b3 && b3.s !== "ok") F.push({ lvl: "warn", t: "B3 (énergie et GES) incomplet : point important du module de base à documenter, selon les données pertinentes et disponibles pour l’entreprise." });
       miss.filter((i) => i.code !== "B3").forEach((i) => F.push({ lvl: "warn", t: `${i.code} · ${i.label} : à constituer.` }));
       part.filter((i) => i.code !== "B3").slice(0, 4).forEach((i) => F.push({ lvl: "info", t: `${i.code} · ${i.label} : à compléter.` }));
       if (!miss.length && !part.length) F.push({ lvl: "ok", t: "Tous les points pertinents sont prêts : vous pouvez rédiger le rapport." });
@@ -224,9 +232,9 @@
           "Désigner un responsable par point de données et une date de collecte.",
           "Commencer par B3 : relevés d'énergie sur 12 mois, puis calcul des scopes 1 et 2 avec les facteurs ADEME.",
           "Réutiliser les données RH existantes (registre du personnel, DUERP, bilan formation) pour B8 à B10.",
-          "Envoyer le rapport VSME à vos clients plutôt que de remplir chaque questionnaire séparément.",
+          "Proposer un reporting VSME comme base de dialogue avec les clients, en vérifiant les demandes complémentaires et le champ de protection juridique applicable.",
         ],
-        hyp: "Charge : 1,5 jour par point manquant et 0,7 jour par point partiel, pour une PME de 20 à 250 salariés.",
+        hyp: "Le pourcentage est un indice interne de complétude, avec une pondération égale des points déclarés pertinents ; il ne s’agit pas d’un score EFRAG. La charge de 1,5 jour par point manquant et 0,7 jour par point partiel est une hypothèse indicative à recalibrer selon la taille, les systèmes de données et le niveau de preuve. Les points ne sont à renseigner que lorsqu’ils sont applicables. La protection value-chain cap n’est pas générale : elle vise les entreprises protégées au sens de la directive 2026/470 et les demandes formulées pour le reporting CSRD d’une entreprise déclarante.",
         sources: [S.vsme, S.omnibus],
       };
     },
@@ -242,13 +250,12 @@
   };
   const bdef = { g1: "1", g2: "0.5", g3: "0", g4: "0", e1: "0.5", e2: "0", e3: "1", e4: "1", s1: "1", s2: "1", s3: "0.5", s4: "0", t1: "0.5", t2: "0", t3: "1", t4: "0", a1: "0", a2: "0.5", a3: "0", a4: "1" };
   const bench = {
-    id: "benchmark-rse", fam: "mesurer", title: "Benchmark RSE",
-    short: "Votre maturité sur 5 piliers, face à une grille de référence.",
-    intro: "Vingt pratiques concrètes réparties en cinq piliers. Le résultat vous situe sur une grille de maturité en trois paliers : Démarrage, Structuré, Avancé.",
-    calc: "5 piliers · radar · paliers",
+    id: "benchmark-rse", fam: "mesurer", title: "Diagnostic de maturité RSE",
+    short: "Auto-évaluation de 20 pratiques sur 5 piliers.",
+    intro: "Vingt pratiques concrètes réparties en cinq piliers. Le résultat vous situe sur une grille interne de maturité en quatre paliers. Il ne s'agit pas d'un benchmark sectoriel : aucune base de comparaison d'entreprises ou de moyennes sectorielles n'est utilisée.",
+    calc: "5 piliers · radar · indice interne",
     icon: "chart",
     fields: [
-      { type: "select", id: "sect", label: "Secteur", def: "Industrie", prof: "secteur", options: [["Industrie", "Industrie"], ["Services", "Services aux entreprises"], ["BTP", "BTP"], ["Commerce", "Commerce et distribution"], ["Numérique", "Numérique"], ["Transport", "Transport et logistique"], ["Agroalimentaire", "Agroalimentaire"]] },
       ...Object.entries(pillars).map(([k, [lab, items]]) => ({ type: "checklist", id: k, label: lab, states: YNP, items: items.map(([id, label]) => ({ id, label, def: bdef[id] })) })),
     ],
     compute(v) {
@@ -266,12 +273,12 @@
       return {
         gauge: { val: avg, max: 100, label: "MATURITÉ" },
         verdict: `Palier ${stage}`,
-        summary: `Score moyen ${avg}/100 dans le secteur ${v.sect || "Industrie"}. Palier suivant : ${avg >= 80 ? "maintenir et prouver" : avg >= 55 ? "Avancé à 80" : "Structuré à 55"}.`,
+        summary: `Indice interne moyen ${avg}/100. Palier suivant : ${avg >= 80 ? "maintenir et prouver" : avg >= 55 ? "Avancé à 80" : "Structuré à 55"}.`,
         kpis: res.map((r) => ({ l: r.lab, v: r.s, u: "/100", s: r.s >= 80 ? "Avancé" : r.s >= 55 ? "Structuré" : r.s >= 25 ? "Démarrage" : "Initial" })),
         chart: { type: "radar", axes: res.map((r) => r.lab), values: res.map((r) => r.s), rings: [[25, "Démarrage"], [55, "Structuré"], [80, "Avancé"]] },
         findings: F,
         actions: sorted.slice(0, 3).map((r) => `${r.lab} : traiter « ${r.gaps[0] || "consolider les preuves"} » dans les 90 jours.`),
-        hyp: "Grille Sillon : Oui = 1, En partie = 0,5, Non = 0. Les paliers sont des repères de maturité, pas des moyennes sectorielles mesurées.",
+        hyp: "Grille interne Sillon : Oui = 1, En partie = 0,5, Non = 0. Pondération égale des 20 pratiques. Les paliers sont des repères pédagogiques non validés par une étude sectorielle, sans comparaison à des entreprises homologues et sans valeur de certification.",
         sources: [S.vsme, S.ecovadis],
       };
     },
@@ -280,13 +287,13 @@
   /* ---------- 4. Fournisseurs ---------- */
   const ZONES = [["fr", "France", 1], ["ue", "Union européenne", 1.5], ["ocde", "OCDE hors UE", 2.5], ["mod", "Hors OCDE, risque modéré", 3.5], ["high", "Hors OCDE, risque élevé", 5]];
   const CATS = [["textile", "Textile, habillement", 5], ["elec", "Électronique", 4.5], ["agro", "Agroalimentaire", 4], ["chim", "Chimie, plastiques", 4], ["btp", "Matériaux, BTP", 3.5], ["energie", "Énergie", 3], ["transport", "Transport, logistique", 3], ["emb", "Emballages", 3], ["mob", "Mobilier, fournitures", 3], ["num", "Services numériques", 2], ["intel", "Services intellectuels", 1.5]];
-  const CERTS = [["none", "Aucune", 1], ["iso", "ISO 14001", 0.8], ["eco", "Médaille EcoVadis", 0.7], ["sa", "SA8000 / amfori BSCI", 0.75]];
+  const CERTS = [["none", "Aucune preuve déclarée", 1], ["iso", "ISO 14001", 1], ["eco", "Évaluation EcoVadis", 1], ["sa", "SA8000 / amfori BSCI", 1]];
   const lk = (arr, k) => arr.find((x) => x[0] === k) || arr[0];
   const fourn = {
     id: "fournisseurs", fam: "mesurer", title: "Fournisseurs",
     short: "Cartographie des risques RSE de vos achats, pondérée par la dépense.",
-    intro: "Listez vos principaux fournisseurs. Le risque combine la zone géographique, la catégorie d'achat et les certifications, puis il est pondéré par le montant dépensé.",
-    calc: "risque pays × catégorie × dépense",
+    intro: "Pré-cartographie exploratoire des risques d’achats : la grille combine une exposition géographique et une sensibilité sectorielle, puis pondère les résultats par les dépenses. Elle ne constitue pas une analyse de risques de diligence raisonnable. Les labels et certificats sont des éléments de preuve à examiner, pas une garantie d’absence de risque ni une réduction automatique du score.",
+    calc: "indice de présélection pays × catégorie × dépense",
     icon: "truck",
     fields: [
       { type: "table", id: "rows", label: "Vos fournisseurs", columns: [
@@ -294,7 +301,7 @@
         { id: "zone", label: "Zone", type: "select", options: ZONES.map((z) => [z[0], z[1]]) },
         { id: "cat", label: "Catégorie", type: "select", options: CATS.map((c) => [c[0], c[1]]) },
         { id: "dep", label: "Dépense €/an", type: "number" },
-        { id: "cert", label: "Certification", type: "select", options: CERTS.map((c) => [c[0], c[1]]) } ],
+        { id: "cert", label: "Preuve ou démarche déclarée", type: "select", options: CERTS.map((c) => [c[0], c[1]]) } ],
         def: [
           { nom: "Atelier de confection", zone: "high", cat: "textile", dep: 42000, cert: "none" },
           { nom: "Cartes électroniques", zone: "mod", cat: "elec", dep: 65000, cert: "iso" },
@@ -308,23 +315,23 @@
       const tot = rows.reduce((a, r) => a + num(r.dep), 0) || 1;
       const sc = rows.map((r) => {
         const z = lk(ZONES, r.zone), c = lk(CATS, r.cat), ce = lk(CERTS, r.cert);
-        const risk = Math.round(((z[2] * c[2]) / 25) * 100 * ce[2]);
+        const risk = Math.round(((z[2] * c[2]) / 25) * 100);
         return { nom: r.nom || "Sans nom", risk, dep: num(r.dep), share: num(r.dep) / tot, z: z[1], c: c[1], cert: ce[0] };
       });
       const w = Math.round(sc.reduce((a, s) => a + s.risk * s.share, 0));
       const hi = sc.filter((s) => s.risk >= 50);
       const hiShare = hi.reduce((a, s) => a + s.share, 0);
       const top = [...sc].sort((a, b) => b.risk * b.share - a.risk * a.share);
-      const F = top.slice(0, 3).map((s) => ({ lvl: s.risk >= 50 ? "crit" : s.risk >= 25 ? "warn" : "ok", t: `${s.nom} : risque ${s.risk}/100 (${s.c}, ${s.z}), ${nf(s.share * 100)} % de la dépense${s.cert === "none" ? ", sans certification" : ""}.` }));
+      const F = top.slice(0, 3).map((s) => ({ lvl: s.risk >= 50 ? "crit" : s.risk >= 25 ? "warn" : "ok", t: `${s.nom} : risque ${s.risk}/100 (${s.c}, ${s.z}), ${nf(s.share * 100)} % de la dépense${s.cert === "none" ? ", sans preuve déclarée" : ""}.` }));
       if (!sc.length) F.push({ lvl: "info", t: "Ajoutez au moins un fournisseur pour lancer l'analyse." });
       return {
-        gauge: { val: 100 - w, max: 100, label: "MAÎTRISE" },
-        verdict: w >= 45 ? "Exposition élevée" : w >= 25 ? "Exposition modérée" : "Exposition contenue",
-        summary: `${sc.length} fournisseurs, ${eur(tot)} de dépenses. ${nf(hiShare * 100)} % de la dépense est à risque élevé.`,
+        gauge: { val: w, max: 100, label: "EXPOSITION" },
+        verdict: w >= 45 ? "Exposition présumée élevée" : w >= 25 ? "Exposition présumée modérée" : "Exposition présumée contenue",
+        summary: `${sc.length} fournisseurs, ${eur(tot)} de dépenses. ${nf(hiShare * 100)} % de la dépense est associée à une exposition élevée selon la grille interne.`,
         kpis: [
-          { l: "Risque pondéré", v: w, u: "/100", s: "Pondéré par la dépense" },
+          { l: "Indice d'exposition pondéré", v: w, u: "/100", s: "Indice interne pondéré par la dépense" },
           { l: "Dépense à risque élevé", v: nf(hiShare * 100), u: "%", s: `${hi.length} fournisseur(s)` },
-          { l: "Dépense analysée", v: nf(tot / 1000), u: "k€", s: `${sc.filter((s) => s.cert !== "none").length} certifié(s)` },
+          { l: "Dépense analysée", v: nf(tot / 1000), u: "k€", s: `${sc.filter((s) => s.cert !== "none").length} avec preuve déclarée` },
         ],
         chart: { type: "matrix", xl: "Risque RSE", yl: "Part de la dépense", points: sc.map((s) => ({ l: s.nom, x: s.risk, y: s.share * 100 })) },
         findings: F,
@@ -334,8 +341,8 @@
           "Demander une preuve datée : certificat ISO 14001, scorecard EcoVadis ou audit social.",
           "Rechercher une alternative européenne pour les catégories textile et électronique les plus exposées.",
         ],
-        hyp: "Risque = (zone 1 à 5 × catégorie 1,5 à 5) / 25, réduit de 20 à 30 % si certifié. Grille indicative à affiner avec un audit.",
-        sources: [S.omnibus, S.ecovadis],
+        hyp: "Indice interne de présélection : exposition géographique (échelle qualitative Sillon de 1 à 5) × sensibilité de catégorie (échelle qualitative Sillon de 1,5 à 5), normalisées sur 25, puis pondérées par la dépense. Ces coefficients ne sont ni des données statistiques ni une notation pays/secteur validée. Les preuves déclarées (ISO 14001, évaluation EcoVadis, SA8000/BSCI) ne réduisent pas mécaniquement l’indice : leur périmètre, validité, site couvert, date, audit et éventuelles non-conformités doivent être vérifiés. Le résultat n’est pas un score de conformité ni une diligence raisonnable complète.",
+        sources: [S.ocde, S.omnibus],
       };
     },
   };
@@ -353,6 +360,9 @@
       { type: "number", id: "ca", label: "Chiffre d'affaires", unit: "M€", def: 28, min: 0, prof: "ca" },
       { type: "number", id: "surf", label: "Surface tertiaire (bureaux, commerces)", unit: "m²", def: 1200, min: 0, prof: "surf" },
       { type: "number", id: "gwh", label: "Consommation d'énergie annuelle", unit: "GWh", def: 3.1, min: 0, step: 0.1, prof: "gwh" },
+      { type: "select", id: "begesStatut", label: "Statut pour le BEGES", def: "prive", options: [["prive", "Entreprise privée"], ["public", "Autre personne morale de droit public"], ["collectivite", "Collectivité territoriale / groupement"]] },
+      { type: "select", id: "begesTerritoire", label: "Territoire (entreprise privée)", def: "metro", options: [["metro", "Métropole"], ["outremer", "Outre-mer"]] },
+      { type: "number", id: "begesPop", label: "Population de la collectivité (si concernée)", unit: "hab.", def: 0, min: 0 },
       { type: "seg", id: "mp", label: "Vous répondez à des marchés publics", def: "oui", prof: "mp", options: [["oui", "Oui"], ["non", "Non"]] },
       { type: "seg", id: "b2c", label: "Vous communiquez des arguments écologiques", def: "oui", prof: "b2c", options: [["oui", "Oui"], ["non", "Non"]] },
     ],
@@ -361,23 +371,27 @@
       const L = [];
       const add = (st, name, t) => L.push({ st, name, t });
       add("oblig", "DUERP", "Document unique d'évaluation des risques, obligatoire dès le 1er salarié.");
-      add("oblig", "Loi AGEC : tri des déchets", "Tri 7 flux (papier, métal, plastique, verre, bois, minéraux, textiles) et biodéchets.");
+      add("oblig", "Tri à la source des déchets", "Tri à la source et collecte séparée des déchets non dangereux selon les flux effectivement produits : papier/carton, métal, plastique, verre, bois et textiles ; fractions minérales et plâtre pour les déchets de chantier. Tri à la source des biodéchets selon les règles applicables. Vérifier les exceptions, seuils et modalités propres au site.");
       if (e >= 20) add("oblig", "Emploi des travailleurs handicapés", "Obligation de 6 % de l'effectif (dès 20 salariés).");
       if (e >= 50) add("oblig", "Index égalité professionnelle", "Publication annuelle avant le 1er mars (dès 50 salariés).");
-      if (e >= 50) add("verif", "Mobilité des salariés", "Thème obligatoire de la négociation annuelle si 50 salariés sur un même site.");
-      if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Transposition française à suivre : rapports d'écart de rémunération à partir de 100 salariés.");
+      if (e >= 50) add("verif", "Mobilité des salariés", "À vérifier : la négociation sur les mobilités vise notamment les entreprises concernées par la négociation obligatoire et employant au moins 50 salariés sur un même site ; l’effectif total France seul ne suffit pas à conclure.");
+      if (e >= 250) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération chaque année à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
+      else if (e >= 150) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2027 (art. 9). Vérifier les modalités françaises de transposition.");
+      else if (e >= 100) add("verif", "Transparence salariale (directive 2023/970)", "Rapport sur les écarts de rémunération tous les trois ans à compter du 7 juin 2031 (art. 9). Vérifier les modalités françaises de transposition.");
       if (e >= 300) add("oblig", "Bilan social", "Annuel, dès 300 salariés.");
-      if (e > SEUIL.begesEffectif) add("oblig", "BEGES réglementaire", "Bilan des émissions tous les 4 ans et plan de transition (plus de 500 salariés).");
-      else add("info", "BEGES réglementaire", "Non obligatoire sous 501 salariés : un bilan volontaire reste attendu par les clients.");
-      if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("oblig", "Loi Sapin II", "Programme anticorruption (500 salariés et 100 M€ de CA).");
+      const statut = v.begesStatut || "prive", territoire = v.begesTerritoire || "metro", pop = num(v.begesPop);
+      const seuilBEGES = statut === "collectivite" ? (pop > 50000) : statut === "public" ? (e > 250) : territoire === "outremer" ? (e > 250) : (e > 500);
+      if (seuilBEGES) add("oblig", "BEGES réglementaire", statut === "collectivite" ? "Collectivité de plus de 50 000 habitants : BEGES et plan de transition publics, mise à jour tous les 3 ans." : statut === "public" ? "Personne morale de droit public de plus de 250 salariés : BEGES et plan de transition publics, mise à jour tous les 3 ans." : territoire === "outremer" ? "Personne morale de droit privé de plus de 250 salariés en outre-mer : BEGES et plan de transition publics, mise à jour tous les 4 ans." : "Personne morale de droit privé de plus de 500 salariés en métropole : BEGES et plan de transition publics, mise à jour tous les 4 ans.");
+      else add("info", "BEGES réglementaire", "Seuil non atteint avec les informations saisies. Vérifier le statut juridique, le territoire, l'effectif de référence, le périmètre de groupe et les éventuelles obligations sectorielles avant de conclure.");
+      if (e >= SEUIL.sapin2Effectif && ca > SEUIL.sapin2CA) add("verif", "Loi Sapin II", "Assujettissement à confirmer : société ou EPIC dont le siège est en France, au moins 500 salariés et plus de 100 M€ de chiffre d'affaires. Vérifier le périmètre entité/groupe, les règles de calcul et les cas particuliers prévus par les textes.");
       if (e >= 1000) add("oblig", "Loi Rixain", "Quotas de femmes parmi les cadres dirigeants (dès 1 000 salariés).");
-      if (e >= 5000 || em >= 10000) add("oblig", "Devoir de vigilance", "Plan de vigilance publié (5 000 salariés en France ou 10 000 dans le monde).");
+      if (e >= 5000 || em >= 10000) add("verif", "Devoir de vigilance", "Seuil d'alerte atteint : vérifier le calcul des effectifs de la société et de ses filiales directes/indirectes et confirmer que le seuil est atteint à la clôture de deux exercices consécutifs (5 000 salariés en France ou 10 000 dans le monde).");
       if (em > SEUIL.csrdEffectif && ca > SEUIL.csrdCA) add("oblig", "CSRD", "Dans le champ après l'Omnibus (plus de 1 000 salariés et plus de 450 M€ de CA).");
-      else add("info", "CSRD", "Hors champ depuis l'Omnibus. Vos clients ne peuvent pas exiger plus que le niveau VSME.");
+      else add("info", "CSRD", "Hors champ selon les seuils CSRD simplifiés ; vérifier le périmètre consolidé et les dispositions applicables. Les demandes de données des clients doivent être examinées au regard du statut d’entreprise protégée et du standard volontaire pertinent.");
       if (em > SEUIL.csdddEffectif && ca > SEUIL.csdddCA) add("oblig", "CSDDD", "Devoir de vigilance européen, conformité au 26/07/2029.");
       if (surf >= SEUIL.tertiaireSurface) add("oblig", "Décret tertiaire", "Réduction des consommations de -40 % en 2030, déclaration annuelle sur OPERAT.");
-      if (g > SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "ISO 50001 au-delà d'environ 23,6 GWh/an (transposition de la directive efficacité énergétique).");
-      else if (g > SEUIL.auditEnergieGWh) add("verif", "Audit énergétique", "Audit tous les 4 ans au-delà d'environ 2,75 GWh/an, selon la loi DDADUE 2025 : calendrier à confirmer.");
+      if (g >= SEUIL.smeEnergieGWh) add("oblig", "Système de management de l'énergie", "Système de management de l'énergie certifié requis dès 23,6 GWh/an de consommation annuelle moyenne (Code de l'énergie, art. L.233-1).");
+      else if (g >= SEUIL.auditEnergieGWh) add("verif", "Audit énergétique", "Audit énergétique tous les quatre ans dès 2,75 GWh/an de consommation annuelle moyenne, si l'entreprise n'a pas de système de management de l'énergie certifié (Code de l'énergie, art. L.233-1).");
       if (v.mp === "oui") add("oblig", "Marchés publics", "Depuis le 21/08/2026 : au moins un critère d'attribution et une condition d'exécution environnementaux.");
       if (v.b2c === "oui") add("oblig", "Allégations environnementales", "Directive EmpCo applicable depuis le 27/09/2026 ; le droit français sanctionne déjà les pratiques trompeuses.");
       const ob = L.filter((x) => x.st === "oblig"), vf = L.filter((x) => x.st === "verif");
@@ -399,7 +413,7 @@
           "Mettre en place une veille réglementaire trimestrielle (transpositions EmpCo et transparence salariale en cours).",
         ],
         hyp: "Seuils simplifiés : certains textes s'apprécient par établissement, sur deux exercices consécutifs ou avec le bilan. Ceci n'est pas un avis juridique.",
-        sources: [S.omnibus, S.beges, S.mp, S.empco],
+        sources: [S.omnibus, S.beges, S.dechets, S.mp, S.empco, S.energie, S.pay, S.sapin],
       };
     },
   };
@@ -411,9 +425,9 @@
   const W = { Industrie: [3, 2, 2, 1], Services: [1, 3, 2, 1], Commerce: [2, 2, 2, 3], BTP: [2, 3, 2, 2], Numérique: [2, 3, 2, 1], Transport: [3, 2, 2, 1], Agroalimentaire: [3, 2, 2, 2] };
   const ecov = {
     id: "ecovadis", fam: "conformer", title: "EcoVadis",
-    short: "Estimation de votre score et de la médaille atteignable.",
-    intro: "Évaluez vos pratiques sur les quatre thèmes EcoVadis. Le copilote estime le score, la pondération de votre secteur et la médaille visée.",
-    calc: "4 thèmes · pondération · médailles 2025",
+    short: "Auto-évaluation pédagogique des pratiques sur les quatre thèmes.",
+    intro: "Évaluez vos pratiques et vos preuves sur quatre thèmes. Le résultat est un indice interne Sillon, non un score EcoVadis : la méthodologie de notation, les pondérations et les percentiles ne sont pas reproduits par cet outil. Aucune médaille ne peut être prédite.",
+    calc: "4 thèmes · indice interne non officiel",
     icon: "medal",
     fields: [
       { type: "select", id: "sect", label: "Secteur", def: "Industrie", prof: "secteur", options: Object.keys(W).map((k) => [k, k]) },
@@ -426,20 +440,14 @@
         return { lab, sc: Math.round(15 + (s / 12) * 80), w: w[i] };
       });
       const tot = Math.round(th.reduce((a, t) => a + t.sc * t.w, 0) / th.reduce((a, t) => a + t.w, 0));
-      const blocked = th.filter((t) => t.sc < 30);
-      let medal = "Aucune médaille";
-      if (!blocked.length) medal = tot >= 81 ? "Platine probable" : tot >= 73 ? "Or probable" : tot >= 66 ? "Argent probable" : tot >= 58 ? "Bronze probable" : tot >= 45 ? "Badge « Committed »" : "Aucune médaille";
-      const next = [[58, "Bronze"], [66, "Argent"], [73, "Or"], [81, "Platine"]].find(([s]) => s > tot);
       const F = [];
-      blocked.forEach((t) => F.push({ lvl: "crit", t: `${t.lab} : ${t.sc}/100. Sous 30 sur un thème, aucune médaille n'est possible.` }));
-      [...th].sort((a, b) => a.sc * b.w - b.sc * a.w).slice(0, 2).forEach((t) => !blocked.includes(t) && F.push({ lvl: "warn", t: `${t.lab} (${t.sc}/100, poids ${t.w}) : thème prioritaire pour gagner des points.` }));
-      if (next) F.push({ lvl: "info", t: `Il manque environ ${next[0] - tot} points pour viser le ${next[1]} (seuil indicatif ${next[0]}).` });
+      F.push({ lvl: "warn", t: "Cet indice est une grille pédagogique interne Sillon : il ne reproduit pas le score EcoVadis et ne permet pas de prédire une médaille. Les percentiles et seuils varient chaque mois ; l’éligibilité dépend aussi de la veille 360° et de restrictions sectorielles." });
       return {
         gauge: { val: tot, max: 100, label: "SCORE EST." },
-        verdict: medal,
-        summary: `Score estimé ${tot}/100 pour le secteur ${v.sect || "Industrie"}. Les médailles se décident au percentile, sur 12 mois glissants.`,
+        verdict: "Indice interne de maturité",
+        summary: "Indice pédagogique Sillon : résultat non officiel, sans équivalence avec le score EcoVadis et sans prédiction de médaille.",
         kpis: th.map((t) => ({ l: t.lab, v: t.sc, u: "/100", s: `Poids ${t.w}` })),
-        chart: { type: "radar", axes: th.map((t) => t.lab), values: th.map((t) => t.sc), rings: [[30, "Seuil 30"], [58, "Bronze"], [73, "Or"]] },
+        chart: { type: "radar", axes: th.map((t) => t.lab), values: th.map((t) => t.sc), rings: [[30, "Repère"], [60, "Intermédiaire"], [80, "Avancé"]] },
         findings: F,
         actions: [
           "Formaliser une politique signée par la direction pour chaque thème : c'est le premier critère noté.",
@@ -447,7 +455,7 @@
           "Publier au moins deux indicateurs chiffrés par thème avec leur évolution sur deux ans.",
           "Lancer une charte achats responsables : le thème Achats est souvent le plus faible des PME.",
         ],
-        hyp: "Médailles 2025 : Platine top 1 %, Or top 5 %, Argent top 15 %, Bronze top 35 %. Seuils de score indicatifs EcoVadis au 1/07/2024 : 81, 73, 66, 58. Estimation non officielle.",
+        hyp: "Grille interne Sillon, sans validation ni équivalence avec le questionnaire ou l’algorithme EcoVadis. EcoVadis attribue les médailles selon des percentiles mondiaux (Top 1 %, 5 %, 15 %, 35 %) et publie des seuils mensuels variables. En novembre 2026, les seuils initiaux publiés étaient 89, 82, 75 et 67, mais ils peuvent évoluer au cours du mois. L’éligibilité dépend aussi du score minimal de 30 dans chacun des quatre thèmes réels, de la veille 360° et de restrictions sectorielles. Aucun résultat du module ne prédit une médaille.",
         sources: [S.ecovadis],
       };
     },
@@ -467,13 +475,13 @@
     "50001": hls([["6.3", "Revue énergétique et usages significatifs", "part"], ["6.4", "Indicateurs et situation énergétique de référence", "nc"]]),
   };
   const isoA = {
-    id: "audit-iso", fam: "conformer", title: "Audit ISO",
-    short: "Audit interne guidé, clause par clause, avant la certification.",
-    intro: "Passez en revue les exigences clés de la norme choisie. Le copilote calcule votre taux de conformité et signale les écarts bloquants pour l'audit de certification.",
-    calc: "15 clauses · écarts bloquants",
+    id: "audit-iso", fam: "conformer", title: "Auto-évaluation ISO",
+    short: "Grille de repérage avant une revue approfondie du système de management.",
+    intro: "Auto-évaluation pédagogique d'un échantillon de points de contrôle. Ce module n'est ni un audit clause par clause, ni une détermination de conformité ou de certification. Attention : ISO 14001:2026 a remplacé l'édition 2015 en avril 2026 ; les listes de contrôle Sillon doivent encore être remappées et validées sur les textes complets des éditions en vigueur.",
+    calc: "15 points de contrôle simplifiés · grille interne",
     icon: "clip",
     fields: [
-      { type: "seg", id: "norme", label: "Norme", def: "14001", options: [["14001", "ISO 14001"], ["45001", "ISO 45001"], ["50001", "ISO 50001"]] },
+      { type: "seg", id: "norme", label: "Norme", def: "14001", options: [["14001", "ISO 14001:2026"], ["45001", "ISO 45001:2018"], ["50001", "ISO 50001:2018"]] },
       { type: "checklist", id: "c14001", label: "ISO 14001 · management environnemental", states: ISOS, items: isoLists["14001"], showIf: { norme: "14001" } },
       { type: "checklist", id: "c45001", label: "ISO 45001 · santé et sécurité au travail", states: ISOS, items: isoLists["45001"], showIf: { norme: "45001" } },
       { type: "checklist", id: "c50001", label: "ISO 50001 · management de l'énergie", states: ISOS, items: isoLists["50001"], showIf: { norme: "50001" } },
@@ -483,32 +491,28 @@
       const it = list.map((x) => ({ ...x, s: st[x.id] || x.def }));
       const pct = Math.round((it.reduce((a, x) => a + (x.s === "ok" ? 1 : x.s === "part" ? 0.5 : 0), 0) / it.length) * 100);
       const nc = it.filter((x) => x.s === "nc"), pa = it.filter((x) => x.s === "part");
-      const crit = ["9.2", "9.3", "6.1.3", "5.2"];
-      const blk = nc.filter((x) => crit.includes(x.code));
-      const ready = pct >= 85 && !blk.length;
       const F = [];
-      blk.forEach((x) => F.push({ lvl: "crit", t: `§${x.code} ${x.label} : écart majeur probable, il bloque la certification.` }));
-      nc.filter((x) => !blk.includes(x)).forEach((x) => F.push({ lvl: "crit", t: `§${x.code} ${x.label} : non conforme.` }));
-      pa.slice(0, 4).forEach((x) => F.push({ lvl: "warn", t: `§${x.code} ${x.label} : à compléter (écart mineur probable).` }));
-      if (!nc.length && !pa.length) F.push({ lvl: "ok", t: "Aucun écart déclaré : planifiez un audit à blanc par un tiers." });
+      nc.forEach((x) => F.push({ lvl: "warn", t: "§" + x.code + " " + x.label + " : point de contrôle déclaré non traité dans la grille Sillon ; qualifier l'écart au regard du texte intégral et des preuves." }));
+      pa.slice(0, 4).forEach((x) => F.push({ lvl: "info", t: "§" + x.code + " " + x.label + " : point de contrôle à compléter et à documenter." }));
+      if (!nc.length && !pa.length) F.push({ lvl: "ok", t: "Aucun écart déclaré sur cet échantillon : cela ne démontre pas la conformité à la norme." });
       return {
-        gauge: { val: pct, max: 100, label: "CONFORMITÉ" },
-        verdict: ready ? "Prêt pour l'audit à blanc" : blk.length ? "Écarts bloquants" : "En préparation",
-        summary: `ISO ${n} : ${it.length - nc.length - pa.length} clauses conformes, ${pa.length} partielles, ${nc.length} non conformes.`,
+        gauge: { val: pct, max: 100, label: "COUVERTURE SILLON" },
+        verdict: pct >= 85 && !nc.length ? "Avancement élevé sur la grille interne" : "Auto-évaluation à compléter",
+        summary: "ISO " + n + " : " + (it.length - nc.length - pa.length) + " points conformes selon la déclaration, " + pa.length + " partiels, " + nc.length + " à traiter.",
         kpis: [
-          { l: "Conformité", v: pct, u: "%", s: "Objectif : 85 % et plus" },
-          { l: "Écarts bloquants", v: blk.length, u: "", s: "Audit interne, revue, veille, politique" },
-          { l: "Délai estimé", v: ready ? "1–2" : blk.length ? "6–9" : "3–6", u: "mois", s: "Avant l'audit de certification" },
+          { l: "Couverture de la grille", v: pct, u: "%", s: "Indice interne, non normatif" },
+          { l: "Points à traiter", v: nc.length, u: "", s: "Sur cet échantillon de contrôle" },
+          { l: "Points partiels", v: pa.length, u: "", s: "À documenter et vérifier" },
         ],
-        chart: { type: "bars", unit: "clauses", items: [{ l: "Conformes", v: it.length - nc.length - pa.length }, { l: "Partielles", v: pa.length }, { l: "Non conformes", v: nc.length, hot: true }] },
+        chart: { type: "bars", unit: "points de contrôle", items: [{ l: "Déclarés conformes", v: it.length - nc.length - pa.length }, { l: "Partiels", v: pa.length }, { l: "À traiter", v: nc.length, hot: true }] },
         findings: F,
         actions: [
-          "Planifier l'audit interne complet (§9.2) au moins 2 mois avant la certification.",
-          "Tenir une revue de direction formalisée avec compte rendu (§9.3).",
-          "Ouvrir une fiche d'action corrective par écart, avec pilote et échéance.",
+          "Vérifier la version de la norme et établir une matrice de correspondance avec les exigences officielles en vigueur.",
+          "Réaliser un audit interne couvrant l'ensemble du domaine d'application, des processus et des exigences applicables.",
+          "Documenter les constats, preuves, responsables, actions correctives et échéances.",
         ],
-        hyp: "Structure harmonisée ISO (Annexe SL). Délais indicatifs pour une PME de 50 à 250 salariés.",
-        sources: [S.iso],
+        hyp: "Grille Sillon simplifiée et non exhaustive : 15 points de contrôle génériques ou sélectionnés, avec des clauses héritées de versions antérieures. ISO 14001:2026 est publiée depuis avril 2026 ; ISO 45001:2018 et ISO 50001:2018 restent les éditions publiées en vigueur, avec amendements climat 2024. Les numéros de clauses, les exigences et les preuves doivent être revérifiés dans chaque édition officielle avant tout audit. Le pourcentage et le verdict ne préjugent ni d'un écart majeur/mineur, ni d'une décision de certification.",
+        sources: [S.iso14001, S.iso45001, S.iso50001],
       };
     },
   };
@@ -522,8 +526,8 @@
   ];
   const mp = {
     id: "marches-publics", fam: "convaincre", title: "Marchés publics",
-    short: "Votre note probable sur le critère environnemental, devenu obligatoire.",
-    intro: "Depuis le 21 août 2026, chaque marché public comporte au moins un critère environnemental et une condition d'exécution environnementale. Estimez votre note et les points que vous laissez sur la table.",
+    short: "Simulez une note environnementale à partir d'une grille interne.",
+    intro: "Depuis le 21 août 2026, les acheteurs publics doivent intégrer des considérations environnementales dans les critères d'attribution et les conditions d'exécution des marchés concernés. Ce simulateur applique une grille Sillon générique : il ne prédit pas la note d'un appel d'offres réel, dont les critères, la pondération et les preuves exigées figurent dans le règlement de consultation.",
     calc: "note /20 · points perdus",
     icon: "bank",
     fields: [
@@ -546,8 +550,8 @@
         summary: `Note environnementale estimée ${nf(note, 1)}/20, soit ${nf(pts, 1)} points sur les ${w} du critère.`,
         kpis: [
           { l: "Note estimée", v: nf(note, 1), u: "/20", s: "Critère environnemental" },
-          { l: "Points perdus", v: nf(lost, 1), u: "pts", s: `Sur 100 points de notation` },
-          { l: "Volume en jeu", v: nf((num(v.nb) * num(v.ticket)) / 1000), u: "k€/an", s: `${nf(num(v.nb))} consultations` },
+          { l: "Écart au maximum du critère", v: nf(lost, 1), u: "pts", s: `Sur les ${w} points du critère environnemental` },
+          { l: "Montant cumulé ciblé", v: nf((num(v.nb) * num(v.ticket)) / 1000), u: "k€", s: `${nf(num(v.nb))} consultations × montant moyen saisi` },
         ],
         chart: { type: "bars", unit: "pts /20", items: it.map((x) => ({ l: x.sh, v: x.p * x.s, max: x.p })) },
         findings: F,
@@ -556,7 +560,7 @@
           "Proposer 2 ou 3 indicateurs suivis pendant l'exécution, avec un reporting trimestriel à l'acheteur.",
           "Calculer l'empreinte carbone d'une offre type (transport, matériaux, déchets) une fois, puis l'adapter.",
         ],
-        hyp: "Barème Sillon sur 20 points, inspiré des pratiques d'acheteurs publics. Chaque règlement de consultation fixe ses propres sous-critères.",
+        hyp: "Barème fictif Sillon sur 20 points, sans valeur prédictive ni correspondance garantie avec les critères d'un acheteur. Chaque règlement de consultation fixe ses propres sous-critères, pondérations, exigences de preuve et modalités d'évaluation. La note doit être recalculée à partir du dossier réel.",
         sources: [S.mp],
       };
     },
@@ -599,10 +603,10 @@
       F.push({ lvl: "ok", t: `Premier levier : ${parts[0][0]} avec ${eur(parts[0][1])} par an (${nf((parts[0][1] / (gross || 1)) * 100)} % des gains).` });
       if (net <= 0) F.push({ lvl: "crit", t: "Les gains annuels ne couvrent pas le coût de fonctionnement : revoyez le périmètre ou les objectifs." });
       else if (pb > 4) F.push({ lvl: "warn", t: `Retour sur investissement long (${nf(pb, 1)} ans) : commencez par les actions sans investissement.` });
-      F.push({ lvl: "info", t: "France Stratégie a mesuré un écart de performance d'environ 13 % en moyenne en faveur des entreprises engagées en RSE." });
+      F.push({ lvl: "info", t: "Une étude de France Stratégie publiée en 2016 a observé une association moyenne entre engagement RSE et performance économique. Ce résultat historique n'est ni une causalité démontrée pour chaque entreprise ni une prévision de gains pour votre simulation." });
       return {
         gauge: { val: isFinite(pb) ? Math.round(clamp((5 - pb) / 5, 0, 1) * 100) : 0, max: 100, label: "RETOUR", show: isFinite(pb) ? (pb < 1 ? nf(pb * 12) + " mois" : nf(pb, 1) + " ans") : "–" },
-        verdict: van > 0 ? "Démarche rentable sur 5 ans" : "Rentabilité non atteinte sur 5 ans",
+        verdict: van > 0 ? "VAN positive selon les hypothèses" : "VAN non positive selon les hypothèses",
         summary: `${eur(net)} de gains nets par an, VAN à 5 ans de ${eur(van)} au taux de 5 %.`,
         kpis: [
           { l: "Gains nets annuels", v: nf(net / 1000, 1), u: "k€", s: `Brut ${nf(gross / 1000, 1)} k€` },
@@ -616,7 +620,7 @@
           "Suivre chaque gain dans un tableau mensuel pour prouver le ROI à la direction.",
           "Présenter le CA préservé aux commerciaux : c'est souvent l'argument qui débloque le budget.",
         ],
-        hyp: "Le coût d'un départ et le risque client sont vos hypothèses : ajustez-les avec vos chiffres RH et commerciaux.",
+        hyp: "Simulation simplifiée : économies d'énergie et déchets, coûts évités de turnover et marge associée au risque commercial estimé. Les taux de baisse, de perte client, de marge et le coût d'un départ sont des hypothèses utilisateur, non des gains garantis. VAN calculée sur 5 ans avec flux annuels constants et taux d'actualisation fixe de 5 % ; délai de retour simple inv/net. Le modèle n'intègre pas le calendrier réel des investissements, fiscalité, inflation, financement, risques de double comptage ni incertitudes. Construire un business case avec scénarios et données historiques avant décision.",
         sources: [S.fs, S.ademe],
       };
     },
@@ -677,7 +681,7 @@
   const gw = {
     id: "greenwashing", fam: "convaincre", title: "Greenwashing",
     short: "Détecte les formulations à risque avant publication, textes de loi à l'appui.",
-    intro: "Collez un texte : site, plaquette, fiche produit, post. Chaque formulation risquée est surlignée et rattachée à la règle qu'elle enfreint.",
+    intro: "Collez un texte : site, plaquette, fiche produit, post. Le moteur repère certaines expressions et les rapproche de règles ciblées. Il ne vérifie pas exhaustivement le droit applicable ni la véracité des preuves : absence d'alerte ne signifie pas conformité juridique.",
     calc: "10 règles · EmpCo · AGEC · Climat",
     icon: "search",
     fields: [{ type: "textarea", id: "txt", label: "Texte à vérifier", def: gwDef, rows: 9, wide: true }],
@@ -698,8 +702,8 @@
       if (precise) F.push({ lvl: "ok", tag: "Bonne pratique", t: `${precise} allégation(s) chiffrée(s) et datée(s) détectée(s) : c'est le format à généraliser.` });
       if (!hits.length) F.push({ lvl: "ok", t: "Aucune formulation à risque détectée par les règles automatiques." });
       return {
-        gauge: { val: score, max: 100, label: "FIABILITÉ" },
-        verdict: nc >= 3 ? "Risque élevé" : nc >= 1 ? "Risque à corriger" : nw ? "Vigilance" : "Texte sûr",
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: nc >= 3 ? "Signaux de risque nombreux" : nc >= 1 ? "Signaux de risque à revoir" : nw ? "Points à préciser" : "Aucun signal détecté — relecture nécessaire",
         summary: `${nc} formulation(s) à risque juridique, ${nw} à préciser, ${precise} allégation(s) chiffrée(s).`,
         kpis: [
           { l: "À risque", v: nc, u: "", s: "À retirer ou reformuler" },
@@ -713,7 +717,7 @@
           "Retirer toute neutralité carbone fondée sur la compensation ; parler de contribution à des projets, séparément.",
           "Garder un dossier de preuves pour chaque allégation publiée.",
         ],
-        hyp: "Détection par règles : un juriste doit valider les textes à fort enjeu.",
+        hyp: "Indice heuristique interne : pénalités/bonus par expressions repérées et par présence de motifs chiffrés. Ce score n'est ni un score juridique ni une probabilité de conformité. Les règles automatiques peuvent produire des faux positifs et faux négatifs ; elles ne contrôlent ni les preuves, ni le contexte, ni l'ensemble des obligations. Faire relire les allégations à enjeu par un juriste compétent.",
         sources: [S.empco, S.agec, S.climat12],
       };
     },
@@ -749,9 +753,9 @@
       }
       score = Math.round(score);
       return {
-        gauge: { val: score, max: 100, label: "CRÉDIBILITÉ" },
-        verdict: score >= 75 ? "Communication crédible" : score >= 45 ? "Communication à renforcer" : "Communication peu convaincante",
-        summary: `Score de crédibilité ${score}/100. Des chiffres datés et des preuves rendent une communication RSE plus crédible.`,
+        gauge: { val: score, max: 100, label: "INDICE INTERNE" },
+        verdict: score >= 75 ? "Signaux documentaires nombreux" : score >= 45 ? "Signaux à renforcer" : "Peu de signaux documentaires",
+        summary: `Indice interne de présence de signaux documentaires : ${score}/100. Il ne vérifie ni l'authenticité des preuves ni la conformité des allégations.`,
         kpis: [
           { l: "Crédibilité", v: score, u: "/100", s: "10 critères pondérés" },
           { l: "Critères remplis", v: it.filter((x) => x.s === 1).length, u: "/10", s: `${it.filter((x) => x.s === 0.5).length} en partie` },
@@ -764,7 +768,7 @@
           "Afficher chaque objectif avec une date, une valeur cible et l'avancement.",
           "Faire relire la page avec le copilote Greenwashing avant mise en ligne.",
         ],
-        hyp: "Grille Sillon sur 100 points.",
+        hyp: "Grille heuristique interne Sillon sur 100 points. Le texte est seulement analysé par expressions régulières : le module compte certains chiffres, années, périmètres et labels, sans vérifier les sources, les calculs, les pièces justificatives ou la validité d'un label. Un score élevé n'établit pas la crédibilité réelle de la communication.",
         sources: [S.empco, S.vsme],
       };
     },

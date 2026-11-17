@@ -42,12 +42,65 @@
     doc.text(clean(`${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} · ${p.secteur} · ${p.eff} salariés · ${p.ca} M€ · ${ids.length} copilote(s)`), M, 45, { maxWidth: TW });
     doc.setFontSize(8); doc.text(clean(t("foot2")), M, 55, { maxWidth: TW });
     y = 84;
+    const entered = ids.filter((id) => st.used[id]).length;
+    text("PÉRIMÈTRE ET QUALITÉ DES DONNÉES", 11, acc, "bold");
+    text("Périmètre : " + ids.length + " copilote(s) ; " + entered + " avec saisies utilisateur ; " + (ids.length - entered) + " avec valeurs de démonstration.", 9, mut);
+    text("Les données saisies ne sont pas vérifiées et les justificatifs ne sont pas audités. Auto-évaluation indicative : ni audit, ni certification, ni avis juridique, ni attestation de conformité.", 8.5, soil);
+
+    // Synthèse de pilotage : constats calculés à partir des modules sélectionnés et plan opérationnel.
+    const results = ids.map((id) => ({ id, cp: byId[id], r: X.result(byId[id]) }));
+    const findings = results.flatMap(({ id, cp, r }) => r.findings
+      .filter((f) => f.lvl === "crit" || f.lvl === "warn")
+      .map((f) => ({ id, title: cpT(cp).title, ...f, demo: !st.used[id] })))
+      .sort((a, b) => (a.lvl === "crit" ? 0 : 1) - (b.lvl === "crit" ? 0 : 1));
+    const plan = X.planItems();
+    const openPlan = plan.filter((a) => a.status !== "done");
+    const highPlan = openPlan.filter((a) => a.impact === "high");
+    const missingOwner = openPlan.filter((a) => !a.owner);
+    const missingDue = openPlan.filter((a) => !a.due);
+    text("SYNTHÈSE EXÉCUTIVE", 14, ink, "bold");
+    text(`Périmètre analysé : ${entered}/${ids.length} module(s) renseigné(s) par l'utilisateur. ${ids.length - entered} module(s) utilisent encore des valeurs d'exemple. Les constats issus de ces derniers sont illustratifs et ne décrivent pas nécessairement l'organisation.`, 9, mut);
+    text(`Points de vigilance détectés : ${findings.filter((f) => f.lvl === "crit").length} critique(s) et ${findings.filter((f) => f.lvl === "warn").length} à examiner. Il s'agit de signaux issus des règles des copilotes, à confirmer avec les données et le contexte réels.`, 9, mut);
+    text(`Pilotage : ${openPlan.length} action(s) ouverte(s), dont ${highPlan.length} à impact élevé ; ${missingOwner.length} sans responsable et ${missingDue.length} sans échéance.`, 9, mut);
+    if (findings.length) {
+      y += 2; text("PRINCIPAUX POINTS DE VIGILANCE", 11, acc, "bold");
+      findings.slice(0, 8).forEach((f, i) => text(`${i + 1}. [${f.lvl === "crit" ? "Priorité critique" : "À examiner"}] ${f.title}${f.demo ? " (exemple)" : ""} — ${f.tag ? f.tag + " : " : ""}${f.t}`, 8.7, ink, "normal", 2));
+      if (findings.length > 8) text(`Et ${findings.length - 8} autre(s) signal(aux) à consulter dans les fiches détaillées.`, 8, mut, "normal", 2);
+    } else {
+      text("Aucun signal critique ou de vigilance n'a été remonté par les règles des modules sélectionnés. Cela ne constitue pas une preuve d'absence de risque ni une validation de conformité.", 8.7, mut);
+    }
+    if (plan.length) {
+      y += 3; text("FEUILLE DE ROUTE PRIORISÉE", 11, acc, "bold");
+      openPlan.slice(0, 12).forEach((a, i) => {
+        const cpName = a.cp && byId[a.cp] ? cpT(byId[a.cp]).title : "Action manuelle";
+        text(`${i + 1}. [${a.impact === "high" ? "Impact élevé" : a.impact === "mid" ? "Impact modéré" : "Impact limité"}] ${a.text} — ${cpName} — ${a.owner || "Responsable à désigner"} — ${a.due || "Échéance à fixer"} — ${t("st_" + a.status)}`, 8.6, ink, "normal", 2);
+        if (a.kpi) text("Indicateur de réussite : " + a.kpi, 8, mut, "normal", 4);
+        if (a.evidence) text("Preuve attendue : " + a.evidence, 8, mut, "normal", 2);
+        if (a.evidenceRef || a.evidenceDate || a.evidenceStatus !== "pending" || a.evidenceVerifier) text("Traçabilité : " + [a.evidenceRef ? "Réf. " + a.evidenceRef : "", a.evidenceDate ? "Date " + a.evidenceDate : "", "Statut " + ({ pending: "à renseigner", received: "reçue", checking: "à vérifier", verified: "vérifiée", rejected: "non recevable" }[a.evidenceStatus] || a.evidenceStatus), a.evidenceVerifier ? "Vérifié par " + a.evidenceVerifier : ""].filter(Boolean).join(" · "), 7.7, mut, "normal", 4);
+      });
+      if (openPlan.length > 12) text(`${openPlan.length - 12} autre(s) action(s) figurent dans l'export Excel et le plan d'action de l'application.`, 8, mut);
+    } else {
+      text("Aucune action n'est actuellement enregistrée dans le plan. Construire la feuille de route à partir des constats confirmés.", 8.7, mut);
+    }
+    y += 4;
     if (ids.length > 1) {
       text(st.lang === "en" ? "Summary" : "Synthèse", 14, ink, "bold"); y += 1;
       ids.forEach((id) => { const c = byId[id], r = X.result(c); text(`${cpT(c).title} : ${r.verdict}${r.gauge ? ` (${r.gauge.show || r.gauge.val}${r.gauge.raw || r.gauge.show ? "" : "/100"})` : ""}${st.used[id] ? "" : " [exemple]"}`, 10, mut, "normal", 2); });
       const pl = X.planItems().filter((a) => a.status !== "done").slice(0, 10);
-      if (pl.length) { y += 4; text(t("plan_title"), 14, ink, "bold"); y += 1; pl.forEach((a, i) => text(`${i + 1}. [${t(a.impact)}] ${a.text}${a.owner ? " · " + a.owner : ""}${a.due ? " · " + a.due : ""}`, 9.5, ink, "normal", 2)); }
+      if (pl.length) { y += 4; text(t("plan_title"), 14, ink, "bold"); y += 1; pl.forEach((a, i) => { text(`${i + 1}. [${t(a.impact)}] ${a.text}${a.owner ? " · Responsable : " + a.owner : " · Responsable à désigner"}${a.due ? " · Échéance : " + a.due : " · Échéance à fixer"}`, 9.5, ink, "normal", 2); if (a.kpi) text("Indicateur : " + a.kpi, 8.5, mut, "normal", 1); if (a.evidence) text("Preuve attendue : " + a.evidence, 8.5, mut, "normal", 1); }); }
     }
+      const docRefs = Array.isArray(st.documents) ? st.documents : [];
+      if (docRefs.length) {
+        const today = X.today();
+        const expiredDocs = docRefs.filter(d => d.validUntil && d.validUntil < today && d.status !== "obsolete");
+        const missingDocs = X.planItems().filter(a => a.evidence && !docRefs.some(d => d.actionId === a.id && ["received","review","valid"].includes(d.status) && !(d.validUntil && d.validUntil < today)));
+        y += 4; text("Registre documentaire et alertes", 14, ink, "bold"); y += 1;
+        text(`Références : ${docRefs.length} · Documents expirés : ${expiredDocs.length} · Actions sans preuve référencée : ${missingDocs.length}`, 9.5, mut);
+        expiredDocs.forEach(d => text(`Expiré : ${d.title} · validité jusqu'au ${d.validUntil}`, 8.5, soil, "normal", 2));
+        missingDocs.forEach(a => text(`Preuve à rattacher : ${a.text} · attendue : ${a.evidence}`, 8.5, mut, "normal", 2));
+        docRefs.forEach(d => text(`[${d.status}] ${d.title} · ${d.version || "sans version"} · validité : ${d.validUntil || "non définie"} · ${d.ref}${(d.history||[]).length ? " · " + d.history.length + " ancienne(s) version(s)" : ""}`, 8.5, ink, "normal", 2));
+        text("Les alertes sont calculées à partir des dates et rattachements renseignés ; elles ne vérifient pas l'existence ni l'authenticité des fichiers dans la GED.", 8, mut, "italic");
+      }
     ids.forEach((id, k) => {
       const c = byId[id], r = X.result(c);
       if (k > 0 || ids.length > 1) { doc.addPage(); y = 22; }
@@ -90,6 +143,8 @@
     const XL = window.XLSX, wb = XL.utils.book_new(), st = S(), p = X.profile();
     const add = (name, rows, widths) => { const ws = XL.utils.aoa_to_sheet(rows); ws["!cols"] = (widths || [30, 50, 18, 14]).map((w) => ({ wch: w })); XL.utils.book_append_sheet(wb, ws, name.slice(0, 31).replace(/[\\/?*[\]:]/g, "")); };
     add("Profil", [["Champ", "Valeur"], ...X.PROFILE_FIELDS.map((f) => [t(f.k), p[f.id]])], [36, 30]);
+    const entered = ids.filter((id) => st.used[id]).length;
+    add("Qualité & périmètre", [["Contrôle", "Constat"], ["Date export", new Date().toLocaleString("fr-FR")], ["Périmètre", ids.length + " copilote(s)"], ["Modules renseignés", entered + " / " + ids.length], ["Modules avec valeurs de démonstration", String(ids.length - entered)], ["Vérification", "Données non vérifiées ; justificatifs non contrôlés"], ["Analyse IA", ids.some((id) => !!st.ai[id]) ? "Présente ; contenu à relire" : "Aucune analyse enregistrée"], ["Portée", "Auto-évaluation indicative ; ni audit, certification, avis juridique ou attestation de conformité"], ["Scores", "Indicateurs internes ; aucune preuve indépendante"]], [38, 92]);
     if (ids.length) add("Synthèse", [["Copilote", "Verdict", "Score", "Résumé", "Données"], ...ids.map((id) => { const c = byId[id], r = X.result(c); return [cpT(c).title, r.verdict, r.gauge ? r.gauge.show || r.gauge.val : "", r.summary, st.used[id] ? "saisies" : "exemple"]; })], [22, 30, 10, 70, 10]);
     ids.forEach((id) => {
       const c = byId[id], r = X.result(c), v = X.resolved(c).v, rows = [["Section", "Libellé", "Valeur", "Unité"]];
@@ -100,7 +155,7 @@
         else if (f.type === "select" || f.type === "seg") rows.push(["Saisie", f.label, (f.options.find((o) => String(o[0]) === String(v[f.id])) || [, v[f.id]])[1], ""]);
         else rows.push(["Saisie", f.label, f.type === "textarea" ? v[f.id] : X.num(v[f.id]), f.unit || ""]);
       });
-      rows.push([], ["Résultat", "Verdict", r.verdict, ""], ["Résultat", "Résumé", r.summary, ""]);
+      rows.push([], ["Traçabilité", "Statut des données", st.used[id] ? "Saisies utilisateur — non vérifiées" : "Valeurs par défaut / démonstration", ""], ["Résultat", "Verdict", r.verdict, ""], ["Résultat", "Résumé", r.summary, ""]);
       r.kpis.forEach((k) => rows.push(["Indicateur", k.l, k.v, k.u]));
       r.findings.forEach((f) => rows.push(["Constat", f.tag || f.lvl, f.t, ""]));
       r.actions.forEach((a) => rows.push(["Action", "", a, ""]));
@@ -109,7 +164,8 @@
       r.sources.forEach((s) => rows.push(["Source", s.t, s.url, ""]));
       add(cpT(c).title, rows);
     });
-    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status)])], [70, 20, 10, 10, 20, 12, 12]);
+    if (withPlan && Array.isArray(st.documents) && st.documents.length) add("Registre documentaire", [["Intitulé","Thématique","Référence / GED","Date","Validité","Version actuelle","Pilote","Statut","Action liée","Historique des versions","Note","Ajouté le"], ...st.documents.map(d => [d.title, ({transversal:"Transversal",environnement:"Environnement",social:"Social",gouvernance:"Gouvernance"}[d.category] || d.category), d.ref, d.date || "", d.validUntil || "", d.version || "", d.owner || "", ({draft:"À collecter",received:"Reçu",review:"À vérifier",valid:"Validé en interne",obsolete:"Obsolète"}[d.status] || d.status), X.planItems().find(a=>a.id===d.actionId)?.text || "", (d.history||[]).map(h=>[h.version,h.ref,h.changedAt].filter(Boolean).join(" | ")).join("\n"), d.note || "", d.createdAt || ""])], [32,18,45,12,14,16,20,18,42,48,45,22]);
+    if (withPlan) add("Plan d'action", [["Action", "Copilote", "Impact", "Effort", "Responsable", "Échéance", "Statut action", "Indicateur de réussite", "Preuve attendue", "Référence / lien preuve", "Date preuve", "Statut preuve", "Vérifié par"], ...X.planItems().map((a) => [a.text, a.cp ? cpT(byId[a.cp]).title : t("plan_custom"), t(a.impact), t(a.effort), a.owner, a.due, t("st_" + a.status), a.kpi || "", a.evidence || "", a.evidenceRef || "", a.evidenceDate || "", ({ pending: "À renseigner", received: "Reçue", checking: "À vérifier", verified: "Vérifiée", rejected: "Non recevable" }[a.evidenceStatus] || a.evidenceStatus), a.evidenceVerifier || ""])], [60, 20, 10, 10, 20, 12, 12, 32, 38, 35, 12, 16, 20]);
     const out = XL.write(wb, { bookType: "xlsx", type: "array" });
     const name = ids.length === 1 && !withPlan ? `sillon-${ids[0]}-${stamp()}.xlsx` : `sillon-dossier-rse-${stamp()}.xlsx`;
     try { await X.saveFile(name, new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })); X.toast(t("toast_xlsx")); status(t("exp_ok", { f: name })); tell("Export Excel téléchargé", { copilote: ids.join(", ") || "plan d'action", resume: summary(ids) }); } catch (e) { fail(e); }
