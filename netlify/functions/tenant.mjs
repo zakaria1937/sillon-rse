@@ -19,7 +19,7 @@ function supabaseConfig() {
 
 async function readBody(req) {
   const raw = await req.text();
-  if (raw.length > MAX_BODY) return { error: 413 };
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY) return { error: 413 };
   try { return { value: raw ? JSON.parse(raw) : {} }; }
   catch { return { error: 400 }; }
 }
