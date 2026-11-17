@@ -3,6 +3,7 @@
 import { json, sameOrigin, store, bump, today, ipKey } from "../lib/shared.mjs";
 
 const COOKIE = "sillon_refresh";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY = 8_000;
 const COOKIE_AGE = 60 * 60 * 24 * 30;
 
@@ -60,7 +61,7 @@ async function authRequest(cfg, path, payload, accessToken = "") {
 function validSession(data) {
   return !!data && typeof data.access_token === "string" && data.access_token.length > 20
     && typeof data.refresh_token === "string" && data.refresh_token.length > 20
-    && data.user && typeof data.user.id === "string";
+    && data.user && typeof data.user.id === "string" && UUID.test(data.user.id);
 }
 
 export default async function auth(req, context) {
