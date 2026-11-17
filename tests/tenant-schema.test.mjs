@@ -69,6 +69,7 @@ test('organization invitations store only token hashes and expose controlled one
     'create or replace function public.create_organization_invitation',
     'create or replace function public.accept_organization_invitation',
     'v_invitation.email <> v_email',
+    'u.email_confirmed_at is not null',
     'v_invitation.expires_at <= now()',
     'invitation.created',
     'invitation.revoked',
