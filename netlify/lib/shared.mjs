@@ -78,10 +78,34 @@ export async function alertOwner(req, s, code, detail) {
 }
 
 
-// Lecture JSON bornée : vérifie la taille avant de parser et d'allouer l'objet.
+// Lecture JSON en flux : interrompt la consommation dès que la limite d'octets est dépassée.
+// Cela évite de matérialiser un corps arbitrairement volumineux avant le contrôle.
 export async function readJsonLimited(req, maxBytes) {
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > maxBytes) return { error: 413 };
-  try { return { value: raw ? JSON.parse(raw) : {} }; }
-  catch { return { error: 400 }; }
+  const declaredLength = Number(req.headers.get("content-length"));
+  if (Number.isSafeInteger(declaredLength) && declaredLength > maxBytes) return { error: 413 };
+  if (!req.body) return { value: {} };
+
+  const reader = req.body.getReader();
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let raw = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        await reader.cancel("request_body_too_large").catch(() => {});
+        return { error: 413 };
+      }
+      raw += decoder.decode(value, { stream: true });
+    }
+    raw += decoder.decode();
+    try { return { value: raw ? JSON.parse(raw) : {} }; }
+    catch { return { error: 400 }; }
+  } catch {
+    return { error: 400 };
+  } finally {
+    try { reader.releaseLock(); } catch { /* flux déjà libéré */ }
+  }
 }
