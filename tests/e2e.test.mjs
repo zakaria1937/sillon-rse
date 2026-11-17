@@ -78,7 +78,7 @@ test("l'espace entreprise s'ouvre et signale proprement que Supabase doit être 
   assert.match(await page.textContent("#saas-title"), /Connexion/);
   await page.locator("[data-saas-close]").focus();
   await page.keyboard.press("Shift+Tab");
-  assert.equal(await page.evaluate(() => document.activeElement.getAttribute("type")), "submit");
+  assert.equal(await page.evaluate(() => document.activeElement.matches("[data-saas-recover]")), true);
   await page.fill('#saas-login input[name="email"]', "test@example.fr");
   await page.fill('#saas-login input[name="password"]', "motdepasse-test");
   await page.click('#saas-login button[type="submit"]');
