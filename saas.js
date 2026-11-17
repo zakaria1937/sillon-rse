@@ -101,6 +101,8 @@
       local_dossier_too_large: "Le dossier dépasse la taille maximale autorisée pour cet import.",
       invalid_email: "Saisissez une adresse e-mail valide.",
       recovery_link_invalid: "Ce lien de récupération est invalide ou expiré. Demandez un nouveau lien.",
+      password_same_as_old: "Ce mot de passe est identique à l’ancien : votre mot de passe actuel fonctionne toujours. Choisissez-en un nouveau, ou connectez-vous avec l’actuel.",
+      password_too_weak: "Ce mot de passe est trop faible. Choisissez-en un plus long, avec des caractères variés.",
       invalid_password_update: "Le mot de passe doit contenir au moins 12 caractères.",
       recovery_unavailable: "Impossible d'envoyer le lien pour le moment. Réessayez plus tard.",
       invitation_already_member: "Vous êtes déjà membre de cette organisation. Aucune nouvelle adhésion n’a été créée.",
