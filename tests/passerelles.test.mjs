@@ -86,7 +86,7 @@ test("les passerelles rejettent les corps JSON trop volumineux avant traitement"
   const dossierResponse = await dossier(new Request("https://sillon.example/api/dossier", {
     method: "PUT",
     headers: { origin: "https://sillon.example", "content-type": "application/json" },
-    body: JSON.stringify({ code, data: { inputs: {}, extra: huge } }),
+    body: JSON.stringify({ code, data: { inputs: {}, extra: "x".repeat(420_000) } }),
   }), { ip: "7.7.7.8" });
   assert.equal(dossierResponse.status, 413);
 });
