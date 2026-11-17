@@ -36,7 +36,7 @@
 - **Veille réglementaire** : frise des échéances 2026-2030, celles qui concernent l'entreprise sont mises en avant.
 - **Exports et portabilité** : PDF consolidé, classeur Excel, mode présentation plein écran, export JSON du dossier et restauration contrôlée depuis une sauvegarde.
 - **Sauvegarde en ligne historique** : dossier chiffré côté navigateur (AES-GCM) avant transmission ; le code secret est nécessaire pour le restaurer. Le serveur ne reçoit pas le dossier en clair.
-- **Espace entreprise en préversion** : fondation Supabase/PostgreSQL RLS, connexion avec refresh token HttpOnly, organisations et dossiers cloud vierges. Cette fonction reste inactive tant que le projet Supabase et les variables Netlify ne sont pas configurés ; elle ne synchronise pas encore les dossiers locaux.
+- **Espace entreprise en préversion** : fondation Supabase/PostgreSQL RLS, connexion avec refresh token HttpOnly, organisations, dossiers cloud vierges, rôles par membre et journal d'activité réservé aux administrateurs/responsables RSE. Cette fonction reste inactive tant que le projet Supabase et les variables Netlify ne sont pas configurés ; elle ne synchronise pas encore les dossiers locaux.
 - **Français** (version anglaise en préparation), thème clair et sombre, navigation au clavier, respect de `prefers-reduced-motion`.
 
 ## Méthode
