@@ -108,3 +108,19 @@ test("une indisponibilité temporaire du refresh ne détruit pas une session act
   assert.match(source, /sessionUnavailable \? "Le service d’authentification est temporairement indisponible/);
   assert.match(source, /clearSession\(\);\s*return false;/);
 });
+
+
+test("les administrateurs peuvent créer, consulter et révoquer les invitations", () => {
+  assert.match(source, /id="saas-create-invitation"/);
+  assert.match(source, /data-saas-revoke-invitation/);
+  assert.match(source, /api\("invitations",\s*\{\s*method: "POST"/);
+  assert.match(source, /api\("invitations",\s*\{\s*method: "DELETE"/);
+  assert.match(source, /data-saas-copy-invitation/);
+});
+
+test("un destinataire accepte l'invitation après connexion avec son compte authentifié", () => {
+  assert.match(source, /invitationToken = invitationFromUrl/);
+  assert.match(source, /action: "accept", token: tokenToAccept/);
+  assert.match(source, /Connectez-vous avec l’adresse e-mail confirmée qui a reçu cette invitation/);
+  assert.match(source, /invitation_invalid_or_expired/);
+});
