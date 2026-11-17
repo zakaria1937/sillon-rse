@@ -42,7 +42,13 @@ create table if not exists public.audit_events (
   organization_id uuid not null references public.organizations(id) on delete cascade,
   dossier_id uuid,
   actor_id uuid,
-  event_type text not null check (event_type in ('dossier.created', 'dossier.updated', 'dossier.deleted')),
+  target_user_id uuid,
+  previous_role text,
+  new_role text,
+  event_type text not null check (event_type in (
+    'dossier.created', 'dossier.updated', 'dossier.deleted',
+    'membership.created', 'membership.role_changed', 'membership.removed'
+  )),
   dossier_version bigint,
   occurred_at timestamptz not null default now()
 );
@@ -156,6 +162,64 @@ create trigger dossiers_audit
 after insert or update or delete on public.dossiers
 for each row execute function private.audit_dossier_change();
 revoke all on function private.audit_dossier_change() from public, anon, authenticated;
+
+-- Record membership lifecycle changes as metadata, including the actor and role transition.
+-- This trigger runs with table-owner privileges so client roles cannot forge audit entries.
+create or replace function private.audit_membership_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_org uuid;
+  v_user uuid;
+  v_old_role text;
+  v_new_role text;
+  v_event text;
+begin
+  if tg_op = 'DELETE' then
+    v_org := old.organization_id;
+    v_user := old.user_id;
+    v_old_role := old.role;
+    v_new_role := null;
+    v_event := 'membership.removed';
+  elsif tg_op = 'INSERT' then
+    v_org := new.organization_id;
+    v_user := new.user_id;
+    v_old_role := null;
+    v_new_role := new.role;
+    v_event := 'membership.created';
+  else
+    if new.role is not distinct from old.role then return new; end if;
+    v_org := new.organization_id;
+    v_user := new.user_id;
+    v_old_role := old.role;
+    v_new_role := new.role;
+    v_event := 'membership.role_changed';
+  end if;
+
+  insert into public.audit_events(
+    organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+  ) values (
+    v_org, auth.uid(), v_user, v_old_role, v_new_role, v_event
+  );
+
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$;
+
+create trigger memberships_audit_insert
+after insert on public.organization_memberships
+for each row execute function private.audit_membership_change();
+create trigger memberships_audit_update
+after update of role on public.organization_memberships
+for each row execute function private.audit_membership_change();
+create trigger memberships_audit_delete
+after delete on public.organization_memberships
+for each row execute function private.audit_membership_change();
+revoke all on function private.audit_membership_change() from public, anon, authenticated;
 
 alter table public.organizations enable row level security;
 alter table public.organization_memberships enable row level security;
