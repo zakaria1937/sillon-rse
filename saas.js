@@ -276,7 +276,7 @@
       '<div class="saas-list">' + rows + '</div>' +
       (canEdit
         ? '<form id="saas-create-dossier" class="saas-inline"><label>Nouveau dossier<input name="name" maxlength="160" value="Nouveau dossier RSE" required></label><button class="chip-btn primary" type="submit">Créer le dossier</button></form>' +
-          '<div class="saas-inline"><button class="chip-btn" type="button" data-saas-import-local>Importer mon dossier local</button><small>Copie ponctuelle ; les conversations IA et coordonnées de contact sont exclues. Pas encore de synchronisation continue.</small></div>'
+          '<div class="saas-inline saas-import"><button class="chip-btn" type="button" data-saas-import-local>Importer mon dossier local</button><small>Copie ponctuelle ; les conversations IA et coordonnées de contact sont exclues. Pas encore de synchronisation continue.</small></div>'
         : '<p class="saas-note">Accès en lecture seule : votre rôle ne permet pas de créer ou modifier un dossier.</p>') +
       (memberships.length ? '<h4>Membres de l’organisation</h4><div class="saas-list">' + memberRows + '</div>' : '') +
       (canReadAudit ? '<h4>Activité récente</h4><div class="saas-list">' + auditRows + '</div>' : '');
