@@ -115,3 +115,10 @@ test("PATCH et DELETE signalent un dossier absent ou invisible plutôt qu'un suc
   const del = await tenant(req("DELETE", "?resource=dossiers&id=" + dossierId));
   assert.equal(del.status, 404);
 });
+
+
+test("tenant API measures request limits in UTF-8 bytes", async () => {
+  const oversized = "é".repeat(180000);
+  const r = await tenant(req("POST", "?resource=dossiers", { organization_id: orgId, payload: { note: oversized } }));
+  assert.equal(r.status, 413);
+});
