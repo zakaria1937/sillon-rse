@@ -1,8 +1,22 @@
 // Tests des passerelles /api/contact et /api/dossier.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { bumpProtected } from "../netlify/lib/shared.mjs";
 
 const sent = [];
+
+test("les quotas protégés échouent fermés si Netlify Blobs est indisponible", async () => {
+  const previous = process.env.NETLIFY;
+  process.env.NETLIFY = "true";
+  const unavailable = { async get() { throw new Error("storage_down"); }, async set() {} };
+  try {
+    await assert.rejects(() => bumpProtected(unavailable, "quota/test", 2), /storage_down/);
+    await assert.rejects(() => bumpProtected(null, "quota/test", 2), /persistent_store_unavailable/);
+  } finally {
+    if (previous === undefined) delete process.env.NETLIFY;
+    else process.env.NETLIFY = previous;
+  }
+});
 globalThis.fetch = async (url, init) => { sent.push({ url: String(url), body: Object.fromEntries(new URLSearchParams(init.body)) }); return new Response("ok", { status: 200 }); };
 process.env.CONTACT_LIMIT_PER_IP = "3";
 const { default: contact } = await import("../netlify/functions/contact.mjs");
