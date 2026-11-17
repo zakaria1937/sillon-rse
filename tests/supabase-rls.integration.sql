@@ -9,6 +9,23 @@ on conflict do nothing;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', false);
 select public.create_organization('Organisation Alpha') as org_alpha \gset
+-- Authenticated clients must not be able to self-assign roles or forge audit rows.
+do $assert$
+begin
+  begin
+    insert into public.organization_memberships(organization_id, user_id, role)
+    values (:'org_alpha', '20000000-0000-4000-8000-000000000002', 'admin');
+    raise exception 'membership_write_should_be_denied';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.audit_events(organization_id, event_type)
+    values (:'org_alpha', 'dossier.created');
+    raise exception 'audit_write_should_be_denied';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$assert$;
 insert into public.dossiers(organization_id, name, payload, created_by, updated_by)
 values (:'org_alpha', 'Dossier Alpha', '{}'::jsonb,
         '20000000-0000-4000-8000-000000000002',
