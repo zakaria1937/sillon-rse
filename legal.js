@@ -61,10 +61,11 @@
 <li>Après une désinscription ou une demande de suppression : suppression sous un mois. L'éditeur peut garder l'adresse e-mail dans une liste d'opposition, uniquement pour ne plus vous contacter.</li>
 <li>Compteurs d'usage : 24 heures.</li>
 <li>Données dans votre navigateur : jusqu'à ce que vous les effaciez.</li>
+<li>Espace entreprise : fonctionnalité non ouverte en production ; les durées de conservation et la procédure de suppression de compte/dossier devront être fixées et publiées avant l'ouverture. Ne pas y saisir de données réelles pendant la préversion.</li>
 </ul>
 
 <h2>Destinataires</h2>
-<p>L'éditeur uniquement, et ses prestataires techniques : Netlify, Inc. (hébergement et formulaires, États-Unis), Mistral AI (IA, France) et Groq, Inc. (IA de secours, États-Unis). Les transferts hors de l'Union européenne reposent sur les garanties prévues par ces prestataires (clauses contractuelles types de la Commission européenne ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue, louée ou utilisée à des fins publicitaires.</p>
+<p>L'éditeur et ses prestataires techniques : Netlify, Inc. (hébergement et formulaires, États-Unis), Mistral AI (IA, France), Groq, Inc. (IA de secours, États-Unis) et, uniquement si l'espace entreprise est activé, Supabase, Inc. (authentification et base de données, région d'hébergement à sélectionner dans l'Union européenne avant activation). Les transferts hors de l'Union européenne reposent sur les garanties prévues par ces prestataires (clauses contractuelles types de la Commission européenne ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue, louée ou utilisée à des fins publicitaires.</p>
 
 <h2>Mineurs</h2>
 <p>Sillon est réservé aux personnes majeures agissant pour le compte d'une entreprise ou d'une organisation. Une case à cocher le confirme avant tout envoi de coordonnées. Si vous apprenez qu'un mineur nous a transmis des données, écrivez à ${mail} : elles seront supprimées.</p>
@@ -128,7 +129,7 @@
 
 <h2>Stockage local du navigateur</h2>
 <p>Sillon utilise le stockage local (<code>localStorage</code>) de votre navigateur, uniquement pour faire fonctionner le service que vous utilisez. Ce stockage ne quitte pas votre appareil.</p>
-<table class="ltable"><thead><tr><th scope="col">Clé</th><th scope="col">Contenu</th><th scope="col">Durée</th></tr></thead><tbody>
+<table class="ltable"><thead><tr><th scope="col">Clé / cookie</th><th scope="col">Contenu</th><th scope="col">Durée</th></tr></thead><tbody>
 <tr><td><code>sillon.v2</code></td><td>Vos réponses, profil, plan d'action, historique, coordonnées, langue</td><td>Jusqu'à effacement par vous</td></tr>
 <tr><td><code>sillon.v2</code> (champ <code>cloud</code>)</td><td>Le code de votre sauvegarde en ligne, si vous l'avez activée</td><td>Jusqu'à effacement par vous</td></tr>
 <tr><td><code>sillon.notice</code></td><td>Le fait que vous avez fermé le bandeau d'information</td><td>Jusqu'à effacement par vous</td></tr>
@@ -150,6 +151,8 @@
 <p>${B.owner}<br>Statut : ${B.status}${B.siret ? `<br>SIRET : ${B.siret}` : ""}${B.address ? `<br>Adresse : ${B.address}` : ""}<br>Contact : ${mail}<br>Directeur de la publication : ${B.owner}</p>
 <h2>Hébergement</h2>
 <p>${B.host}</p>
+<h2>Authentification et base de données (préversion)</h2>
+<p>Supabase, Inc. — service d'authentification et base PostgreSQL, non relié à la production à la date de mise à jour. La région d'hébergement devra être sélectionnée et communiquée avant toute activation.</p>
 <h2>Prestataires d'intelligence artificielle</h2>
 <p>Mistral AI, Paris, France — mistral.ai. Groq, Inc., Mountain View, Californie, États-Unis — groq.com (secours).</p>
 <h2>Nature des résultats</h2>
@@ -210,7 +213,7 @@
   };
 
   const en = {
-    confidentialite: { title: "Privacy policy", updated: "Updated " + B.updated, html: `<p>The French version is the reference. The public area uses local browser storage and no tracking cookies. If the enterprise preview is enabled, Supabase Auth processes account email/password, and Supabase stores organizations, memberships, RSE dossiers and audit metadata under organization-level RLS. A strictly necessary HttpOnly, Secure, SameSite=Strict refresh cookie is used for the session. This feature is not yet connected to a production Supabase project; retention, account deletion and contractual processing terms must be finalized before opening it to real users. Contact details submitted through forms are sent via Netlify Forms. AI analyses send necessary content to Mistral AI (France) or Groq (USA, backup). Contact the publisher for data requests: ${mail}.</p>` },
+    confidentialite: { title: "Privacy policy", updated: "Updated " + B.updated, html: `<p>The French version is the reference. The public area uses local browser storage and no tracking cookies. The enterprise feature is not open in production; its retention and account-deletion policy must be finalized before activation. If the enterprise preview is enabled, Supabase Auth processes account email/password, and Supabase stores organizations, memberships, RSE dossiers and audit metadata under organization-level RLS. A strictly necessary HttpOnly, Secure, SameSite=Strict refresh cookie is used for the session. This feature is not yet connected to a production Supabase project; retention, account deletion and contractual processing terms must be finalized before opening it to real users. Contact details submitted through forms are sent via Netlify Forms. AI analyses send necessary content to Mistral AI (France) or Groq (USA, backup). Contact the publisher for data requests: ${mail}.</p>` },
     cgu: { title: "Terms of use", updated: "Updated " + B.updated, html: `<p>The French version is the reference. Sillon is free, with no subscription, paid option or hidden fees. It is meant for professionals aged 18 or over. Results are estimates based on public sources; AI analyses may contain errors and are not legal, accounting or certification advice. Do not abuse usage limits or upload third-party personal data. Sillon shows no customer reviews or testimonials; pre-filled values are labelled samples. Code under the MIT licence. French law applies. Contact: ${mail}.</p>` },
     cookies: { title: "Cookie policy", updated: "Updated " + B.updated, html: `<p>The public area sets no cookies and uses no trackers. If the enterprise space is enabled, a strictly necessary refresh cookie named <code>sillon_refresh</code> is used (HttpOnly, Secure over HTTPS, SameSite=Strict, 30-day maximum). It is not used for analytics or advertising and is cleared on logout or expiry. Local browser storage keeps your local dossier on your device. Erase local data from the ${L("mes-donnees", "My data")} page.</p>` },
     mentions: { title: "Legal notice", updated: "Updated " + B.updated, html: `<p>Publisher: ${B.owner} (${B.status}) — ${mail}. Hosting: ${B.host}. AI providers: Mistral AI (Paris, France), Groq, Inc. (USA, backup).</p>` },
