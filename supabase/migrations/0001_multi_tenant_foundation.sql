@@ -1,0 +1,566 @@
+-- Sillon SaaS foundation — PostgreSQL / Supabase
+-- This migration is NOT wired to the current Netlify application.
+-- Apply only in a dedicated Supabase project after reviewing the security model.
+
+create extension if not exists pgcrypto;
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+grant usage on schema private to authenticated;
+
+create table if not exists public.organizations (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (length(trim(name)) between 2 and 160),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.organization_memberships (
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  role text not null check (role in ('admin', 'rse_lead', 'contributor', 'reader')),
+  created_at timestamptz not null default now(),
+  primary key (organization_id, user_id)
+);
+create index if not exists memberships_user_idx on public.organization_memberships(user_id);
+
+create table if not exists public.dossiers (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  name text not null default 'Dossier RSE' check (length(trim(name)) between 1 and 160),
+  payload jsonb not null default '{}'::jsonb,
+  version bigint not null default 1 check (version > 0),
+  created_by uuid not null references auth.users(id),
+  updated_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (organization_id, id)
+);
+create index if not exists dossiers_org_updated_idx on public.dossiers(organization_id, updated_at desc);
+
+-- Audit metadata only: never duplicate dossier contents, secrets or uploaded documents here.
+create table if not exists public.audit_events (
+  id bigint generated always as identity primary key,
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  dossier_id uuid,
+  actor_id uuid,
+  target_user_id uuid,
+  previous_role text,
+  new_role text,
+  event_type text not null check (event_type in (
+    'dossier.created', 'dossier.updated', 'dossier.deleted',
+    'membership.created', 'membership.role_changed', 'membership.removed'
+  )),
+  dossier_version bigint,
+  occurred_at timestamptz not null default now()
+);
+create index if not exists audit_org_time_idx on public.audit_events(organization_id, occurred_at desc);
+
+create or replace function private.has_org_role(p_org uuid, p_roles text[])
+returns boolean
+language sql stable security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.organization_memberships m
+    where m.organization_id = p_org
+      and m.user_id = auth.uid()
+      and m.role = any(p_roles)
+  );
+$$;
+
+revoke all on function private.has_org_role(uuid, text[]) from public, anon;
+grant execute on function private.has_org_role(uuid, text[]) to authenticated;
+
+-- Users cannot create an organization and then self-assign arbitrary membership rows.
+-- This RPC atomically creates the organization and its first admin membership.
+create or replace function public.create_organization(p_name text)
+returns uuid
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid;
+begin
+  if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
+  if p_name is null or length(trim(p_name)) < 2 or length(trim(p_name)) > 160 then
+    raise exception 'invalid_organization_name' using errcode = '22023';
+  end if;
+  insert into public.organizations(name) values (trim(p_name)) returning id into v_org;
+  insert into public.organization_memberships(organization_id, user_id, role)
+    values (v_org, auth.uid(), 'admin');
+  return v_org;
+end;
+$$;
+revoke all on function public.create_organization(text) from public, anon;
+grant execute on function public.create_organization(text) to authenticated;
+
+-- Prevent a client from forging ownership, timestamps or version history.
+-- Version and updated_at are maintained by the database, not by browser input.
+create or replace function private.guard_dossier_mutation()
+returns trigger
+language plpgsql
+set search_path = ''
+as $guard$
+begin
+  if tg_op = 'INSERT' then
+    if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
+    new.created_by := auth.uid();
+    new.updated_by := auth.uid();
+    new.version := 1;
+    new.created_at := now();
+    new.updated_at := now();
+    return new;
+  end if;
+
+  if new.organization_id is distinct from old.organization_id
+     or new.created_by is distinct from old.created_by
+     or new.created_at is distinct from old.created_at then
+    raise exception 'immutable_dossier_metadata' using errcode = '42501';
+  end if;
+  if auth.uid() is null then raise exception 'authentication_required' using errcode = '42501'; end if;
+  new.updated_by := auth.uid();
+  new.version := old.version + 1;
+  new.updated_at := now();
+  return new;
+end;
+$guard$;
+
+create trigger dossiers_guard_insert
+before insert on public.dossiers
+for each row execute function private.guard_dossier_mutation();
+create trigger dossiers_guard_update
+before update on public.dossiers
+for each row execute function private.guard_dossier_mutation();
+revoke all on function private.guard_dossier_mutation() from public, anon, authenticated;
+
+create or replace function private.audit_dossier_change()
+returns trigger
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid;
+  v_id uuid;
+  v_version bigint;
+  v_event text;
+begin
+  -- Les suppressions de membres déclenchées par une cascade (ex. suppression
+  -- de l'organisation) ne doivent pas créer un audit qui serait aussitôt orphelin.
+  if tg_op = 'DELETE' and pg_trigger_depth() > 1 then
+    return old;
+  end if;
+
+  if tg_op = 'DELETE' then
+    v_org := old.organization_id; v_id := old.id; v_version := old.version; v_event := 'dossier.deleted';
+  elsif tg_op = 'INSERT' then
+    v_org := new.organization_id; v_id := new.id; v_version := new.version; v_event := 'dossier.created';
+  else
+    v_org := new.organization_id; v_id := new.id; v_version := new.version; v_event := 'dossier.updated';
+  end if;
+  insert into public.audit_events(organization_id, dossier_id, actor_id, event_type, dossier_version)
+  values (v_org, v_id, auth.uid(), v_event, v_version);
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists dossiers_audit on public.dossiers;
+create trigger dossiers_audit
+after insert or update or delete on public.dossiers
+for each row execute function private.audit_dossier_change();
+revoke all on function private.audit_dossier_change() from public, anon, authenticated;
+
+-- Record membership lifecycle changes as metadata, including the actor and role transition.
+-- This trigger runs with table-owner privileges so client roles cannot forge audit entries.
+-- Journalise l'ajout d'un membre et les changements de rôle. La suppression
+-- d'un membre devra passer par une RPC dédiée qui écrit l'événement avant DELETE.
+create or replace function private.audit_membership_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $audit$
+begin
+  if tg_op = 'INSERT' then
+    insert into public.audit_events(
+      organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+    ) values (
+      new.organization_id, auth.uid(), new.user_id, null, new.role, 'membership.created'
+    );
+    return new;
+  end if;
+
+  if new.role is distinct from old.role then
+    insert into public.audit_events(
+      organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+    ) values (
+      new.organization_id, auth.uid(), new.user_id, old.role, new.role, 'membership.role_changed'
+    );
+  end if;
+  return new;
+end;
+$audit$;
+
+create trigger memberships_audit_insert
+after insert on public.organization_memberships
+for each row execute function private.audit_membership_change();
+create trigger memberships_audit_update
+after update of role on public.organization_memberships
+for each row execute function private.audit_membership_change();
+revoke all on function private.audit_membership_change() from public, anon, authenticated;
+
+alter table public.organizations enable row level security;
+alter table public.organization_memberships enable row level security;
+alter table public.dossiers enable row level security;
+alter table public.audit_events enable row level security;
+
+create policy organizations_read_member on public.organizations
+for select to authenticated
+using (private.has_org_role(id, array['admin','rse_lead','contributor','reader']));
+
+create policy memberships_read_member on public.organization_memberships
+for select to authenticated
+using (
+  user_id = auth.uid()
+  or private.has_org_role(organization_id, array['admin','rse_lead'])
+);
+
+create policy dossiers_read_member on public.dossiers
+for select to authenticated
+using (private.has_org_role(organization_id, array['admin','rse_lead','contributor','reader']));
+
+create policy dossiers_insert_editor on public.dossiers
+for insert to authenticated
+with check (
+  private.has_org_role(organization_id, array['admin','rse_lead','contributor'])
+  and created_by = auth.uid() and updated_by = auth.uid()
+);
+
+create policy dossiers_update_editor on public.dossiers
+for update to authenticated
+using (private.has_org_role(organization_id, array['admin','rse_lead','contributor']))
+with check (
+  private.has_org_role(organization_id, array['admin','rse_lead','contributor'])
+  and updated_by = auth.uid()
+);
+
+create policy dossiers_delete_admin_lead on public.dossiers
+for delete to authenticated
+using (private.has_org_role(organization_id, array['admin','rse_lead']));
+
+create policy audit_read_admin_lead on public.audit_events
+for select to authenticated
+using (private.has_org_role(organization_id, array['admin','rse_lead']));
+
+-- No client-side direct writes to organization membership or audit tables.
+revoke all on public.organizations, public.organization_memberships, public.dossiers, public.audit_events from anon;
+revoke insert, update, delete on public.organizations, public.organization_memberships, public.audit_events from authenticated;
+grant select on public.organizations, public.organization_memberships, public.audit_events to authenticated;
+grant select, insert, update, delete on public.dossiers to authenticated;
+
+
+-- Role management: only an organization admin may change an existing member's role.
+-- Locking the organization row serializes admin transfers and prevents removing the last admin.
+create or replace function public.set_organization_member_role(
+  p_org uuid,
+  p_user uuid,
+  p_role text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_current_role text;
+  v_admin_count integer;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if p_role is null or p_role not in ('admin', 'rse_lead', 'contributor', 'reader') then
+    raise exception 'invalid_member_role' using errcode = '22023';
+  end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  perform 1 from public.organizations where id = p_org for update;
+  if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  -- Recheck after the lock: a concurrent admin transfer may have changed the caller's role.
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  select role into v_current_role
+  from public.organization_memberships
+  where organization_id = p_org and user_id = p_user
+  for update;
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+
+  if v_current_role = 'admin' and p_role <> 'admin' then
+    select count(*) into v_admin_count
+    from public.organization_memberships
+    where organization_id = p_org and role = 'admin';
+    if v_admin_count <= 1 then
+      raise exception 'cannot_remove_last_admin' using errcode = '23514';
+    end if;
+  end if;
+
+  update public.organization_memberships
+  set role = p_role
+  where organization_id = p_org and user_id = p_user;
+end;
+$$;
+revoke all on function public.set_organization_member_role(uuid, uuid, text) from public, anon;
+grant execute on function public.set_organization_member_role(uuid, uuid, text) to authenticated;
+
+
+-- Suppression contrôlée d'une adhésion : journaliser avant DELETE, dans la même transaction.
+-- Aucun trigger DELETE générique n'est utilisé afin de préserver les suppressions en cascade d'organisation.
+create or replace function public.remove_organization_member(
+  p_org uuid,
+  p_user uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_current_role text;
+  v_admin_count integer;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  perform 1 from public.organizations where id = p_org for update;
+  if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  -- Sérialise la suppression et les transferts de rôle dans la même organisation.
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  select role into v_current_role
+  from public.organization_memberships
+  where organization_id = p_org and user_id = p_user
+  for update;
+  if not found then raise exception 'member_not_found' using errcode = 'P0002'; end if;
+
+  if v_current_role = 'admin' then
+    select count(*) into v_admin_count
+    from public.organization_memberships
+    where organization_id = p_org and role = 'admin';
+    if v_admin_count <= 1 then
+      raise exception 'cannot_remove_last_admin' using errcode = '23514';
+    end if;
+  end if;
+
+  insert into public.audit_events(
+    organization_id, actor_id, target_user_id, previous_role, new_role, event_type
+  ) values (
+    p_org, auth.uid(), p_user, v_current_role, null, 'membership.removed'
+  );
+
+  delete from public.organization_memberships
+  where organization_id = p_org and user_id = p_user;
+end;
+$$;
+revoke all on function public.remove_organization_member(uuid, uuid) from public, anon;
+grant execute on function public.remove_organization_member(uuid, uuid) to authenticated;
+
+
+-- Invitations à usage unique : le jeton brut n'est retourné qu'à l'administrateur
+-- lors de sa création ; seule son empreinte SHA-256 est conservée en base.
+create table if not exists public.organization_invitations (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  email text not null check (email = lower(trim(email)) and length(email) between 5 and 254),
+  role text not null check (role in ('admin', 'rse_lead', 'contributor', 'reader')),
+  token_hash text not null unique check (token_hash ~ '^[0-9a-f]{64}$'),
+  invited_by uuid not null references auth.users(id),
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  accepted_by uuid references auth.users(id),
+  revoked_at timestamptz,
+  check (expires_at > created_at),
+  check ((accepted_at is null) = (accepted_by is null)),
+  check (accepted_at is null or revoked_at is null)
+);
+create index if not exists invitations_org_pending_idx
+  on public.organization_invitations(organization_id, email, created_at desc)
+  where accepted_at is null and revoked_at is null;
+
+alter table public.organization_invitations enable row level security;
+create policy invitations_read_admin on public.organization_invitations
+for select to authenticated
+using (private.has_org_role(organization_id, array['admin']));
+revoke all on public.organization_invitations from anon;
+revoke insert, update, delete on public.organization_invitations from authenticated;
+grant select on public.organization_invitations to authenticated;
+
+alter table public.audit_events drop constraint if exists audit_events_event_type_check;
+alter table public.audit_events add constraint audit_events_event_type_check
+  check (event_type in (
+    'dossier.created', 'dossier.updated', 'dossier.deleted',
+    'membership.created', 'membership.role_changed', 'membership.removed',
+    'invitation.created', 'invitation.revoked'
+  ));
+
+-- Création réservée à un administrateur. Une nouvelle invitation pour la même
+-- adresse invalide atomiquement toute invitation précédente encore en attente.
+create or replace function public.create_organization_invitation(
+  p_org uuid,
+  p_email text,
+  p_role text
+)
+returns table(invitation_id uuid, token text, expires_at timestamptz)
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_email text;
+  v_token text;
+  v_id uuid;
+  v_expiry timestamptz;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  v_email := lower(trim(coalesce(p_email, '')));
+  if length(v_email) < 5 or length(v_email) > 254
+     or v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then
+    raise exception 'invalid_invitation_email' using errcode = '22023';
+  end if;
+  if p_role is null or p_role not in ('admin', 'rse_lead', 'contributor', 'reader') then
+    raise exception 'invalid_invitation_role' using errcode = '22023';
+  end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  perform 1 from public.organizations where id = p_org for update;
+  if not found then raise exception 'organization_not_found' using errcode = 'P0002'; end if;
+  if not private.has_org_role(p_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+
+  with revoked as (
+    update public.organization_invitations
+    set revoked_at = now()
+    where organization_id = p_org and email = v_email
+      and accepted_at is null and revoked_at is null
+    returning organization_id
+  )
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  select organization_id, auth.uid(), 'invitation.revoked' from revoked;
+
+  v_token := encode(public.gen_random_bytes(32), 'hex');
+  v_expiry := now() + interval '7 days';
+  insert into public.organization_invitations(
+    organization_id, email, role, token_hash, invited_by, expires_at
+  ) values (
+    p_org, v_email, p_role, encode(public.digest(v_token, 'sha256'), 'hex'), auth.uid(), v_expiry
+  ) returning id into v_id;
+
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  values (p_org, auth.uid(), 'invitation.created');
+
+  return query select v_id, v_token, v_expiry;
+end;
+$$;
+revoke all on function public.create_organization_invitation(uuid, text, text) from public, anon;
+grant execute on function public.create_organization_invitation(uuid, text, text) to authenticated;
+
+-- Acceptation par le compte connecté dont l'adresse Auth correspond à l'invitation.
+-- Le verrou sur l'invitation garantit l'usage unique en cas de clics concurrents.
+create or replace function public.accept_organization_invitation(p_token text)
+returns uuid
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_invitation public.organization_invitations%rowtype;
+  v_email text;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  if p_token is null or p_token !~ '^[0-9a-f]{64}$' then
+    raise exception 'invalid_or_expired_invitation' using errcode = '22023';
+  end if;
+
+  select lower(u.email) into v_email
+  from auth.users u
+  where u.id = auth.uid() and u.email_confirmed_at is not null;
+  if v_email is null then
+    raise exception 'authenticated_email_required' using errcode = '42501';
+  end if;
+
+  select * into v_invitation
+  from public.organization_invitations
+  where token_hash = encode(public.digest(p_token, 'sha256'), 'hex')
+  for update;
+  if not found or v_invitation.accepted_at is not null
+     or v_invitation.revoked_at is not null or v_invitation.expires_at <= now()
+     or v_invitation.email <> v_email then
+    raise exception 'invalid_or_expired_invitation' using errcode = '22023';
+  end if;
+
+  if exists (
+    select 1 from public.organization_memberships
+    where organization_id = v_invitation.organization_id and user_id = auth.uid()
+  ) then
+    raise exception 'already_organization_member' using errcode = '23505';
+  end if;
+
+  insert into public.organization_memberships(organization_id, user_id, role)
+  values (v_invitation.organization_id, auth.uid(), v_invitation.role);
+
+  update public.organization_invitations
+  set accepted_at = now(), accepted_by = auth.uid()
+  where id = v_invitation.id;
+
+  return v_invitation.organization_id;
+end;
+$$;
+revoke all on function public.accept_organization_invitation(text) from public, anon;
+grant execute on function public.accept_organization_invitation(text) to authenticated;
+
+
+-- Révocation explicite d'une invitation en attente, réservée à l'admin de l'organisation.
+create or replace function public.revoke_organization_invitation(p_invitation uuid)
+returns boolean
+language plpgsql security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required' using errcode = '42501';
+  end if;
+  select organization_id into v_org
+  from public.organization_invitations
+  where id = p_invitation and accepted_at is null and revoked_at is null
+  for update;
+  if v_org is null then
+    raise exception 'invitation_not_found' using errcode = 'P0002';
+  end if;
+  if not private.has_org_role(v_org, array['admin']) then
+    raise exception 'organization_admin_required' using errcode = '42501';
+  end if;
+  update public.organization_invitations set revoked_at = now()
+  where id = p_invitation and accepted_at is null and revoked_at is null;
+  if not found then return false; end if;
+  insert into public.audit_events(organization_id, actor_id, event_type)
+  values (v_org, auth.uid(), 'invitation.revoked');
+  return true;
+end;
+$$;
+revoke all on function public.revoke_organization_invitation(uuid) from public, anon;
+grant execute on function public.revoke_organization_invitation(uuid) to authenticated;
