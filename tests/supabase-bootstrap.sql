@@ -4,6 +4,9 @@ do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
 end $$;
 create schema if not exists auth;
+-- Comme sur Supabase : les tables créées dans public accordent par défaut tous les privilèges
+-- (y compris TRUNCATE) à anon et authenticated. Les migrations doivent les retirer.
+alter default privileges in schema public grant all on tables to anon, authenticated;
 -- Comme sur Supabase : pgcrypto vit dans le schéma `extensions`, jamais dans `public`.
 -- Sans cela, la CI masquait l'échec des invitations en production (fonctions public.digest absentes).
 create schema if not exists extensions;
