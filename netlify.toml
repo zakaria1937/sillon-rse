@@ -1,3 +1,66 @@
+# Bloquer l'accès HTTP aux éléments internes du dépôt publiés par erreur.
+# Les fonctions Netlify sont exécutées côté serveur et ne doivent jamais être servies comme fichiers statiques.
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/sillon-v5/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Archives, schémas SQL, secrets et fichiers de configuration internes.
+[[redirects]]
+  from = "/*.zip"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/**/*.zip"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/*.sql"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/**/*.sql"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/**/.env"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/sillon-v5/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
 # Sillon — configuration Netlify : site statique + fonction /api/claude + formulaires.
 [build]
   publish = "."
