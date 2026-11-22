@@ -164,8 +164,8 @@
       '<button class="chip-btn primary" type="submit">Se connecter</button>' +
       '<p class="saas-error" data-saas-error role="alert">' + esc(error) + '</p></form>' +
       '<p><button class="linkish" type="button" data-saas-recover>Mot de passe oublié ?</button></p>' +
-      '<p class="saas-note">Les comptes sont actuellement créés par l’administrateur du projet. La création publique de comptes et les invitations ne sont pas encore activées.</p>' +
-      '<p class="saas-note"><strong>Préversion technique :</strong> ne saisissez pas de données d’entreprise sensibles avant validation complète de la sécurité et configuration du projet Supabase.</p>'
+      '<p class="saas-note">Pas d’inscription publique : votre compte est créé par l’éditeur ou sur invitation d’un administrateur de votre organisation.</p>' +
+      '<p class="saas-note"><strong>Préversion :</strong> n’y saisissez pas encore d’informations confidentielles ni de données personnelles de tiers.</p>'
     );
     overlay.querySelector('input[name="email"]')?.focus();
   }
