@@ -43,10 +43,14 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/0002_supabase_parity_pgcrypto.sql
       - name: Revoke table privileges not filtered by RLS
         run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/0003_revoke_unfiltered_table_privileges.sql
+      - name: Allow account erasure and organization deletion
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migrations/0004_account_erasure.sql
       - name: Verify tenant isolation and role permissions in PostgreSQL
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-rls.integration.sql
       - name: Verify no table privilege bypasses RLS
         run: psql -v ON_ERROR_STOP=1 -f tests/supabase-privileges.integration.sql
+      - name: Verify account erasure and organization deletion
+        run: psql -v ON_ERROR_STOP=1 -f tests/supabase-erasure.integration.sql
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
       - name: Run end-to-end tests
