@@ -26,6 +26,8 @@ const fns = {
   "/api/claude": (await import("../netlify/functions/claude.mjs")).default,
   "/api/contact": (await import("../netlify/functions/contact.mjs")).default,
   "/api/dossier": (await import("../netlify/functions/dossier.mjs")).default,
+  "/api/auth": (await import("../netlify/functions/auth.mjs")).default,
+  "/api/tenant": (await import("../netlify/functions/tenant.mjs")).default,
 };
 // Même politique de sécurité (CSP) qu'en production, lue dans netlify.toml.
 const CSP = fs.readFileSync(path.join(root, "netlify.toml"), "utf8").match(/Content-Security-Policy = "([^"]+)"/)[1];
@@ -66,6 +68,180 @@ test("chaque page s'ouvre sans erreur et sans appel à un service tiers", async 
   }
   assert.deepEqual(errors, []);
   assert.deepEqual([...hosts], [`localhost:${PORT}`]);
+  await page.close();
+});
+
+test("l'espace entreprise s'ouvre et signale proprement que Supabase doit être configuré", async () => {
+  const { page, errors } = await open();
+  await page.click("[data-saas-open]");
+  await page.waitForSelector("#saas-login");
+  assert.match(await page.textContent("#saas-title"), /Connexion/);
+  await page.locator("[data-saas-close]").focus();
+  await page.keyboard.press("Shift+Tab");
+  assert.equal(await page.evaluate(() => document.activeElement.matches("[data-saas-recover]")), true);
+  await page.fill('#saas-login input[name="email"]', "test@example.fr");
+  await page.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await page.click('#saas-login button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("[data-saas-error]")?.textContent.includes("pas encore configuré"));
+  assert.deepEqual(errors, []);
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator(".saas-overlay").isVisible(), false);
+  await page.close();
+});
+
+test("l’utilisateur peut demander un lien de récupération sans révéler si le compte existe", async () => {
+  const { page, errors } = await open();
+  let sentEmail = "";
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "recover") {
+      sentEmail = route.request().postDataJSON().email;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.click("[data-saas-open]");
+  await page.click("[data-saas-recover]");
+  await page.fill('#saas-recover input[name="email"]', "test@example.fr");
+  await page.click('#saas-recover button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-content")?.textContent.includes("Vérifiez votre messagerie"));
+  assert.equal(sentEmail, "test@example.fr");
+  assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test("le lien de récupération ouvre le formulaire de nouveau mot de passe", async () => {
+  const page = await browser.newPage({ viewport: { width: 1300, height: 900 } });
+  const pageErrors = []; page.on("pageerror", (e) => pageErrors.push(e.message));
+  const recoveryToken = "recovery-access-token-long-enough-for-browser";
+  let updateBody = null;
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "update-password") {
+      updateBody = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.goto(BASE + "/#access_token=" + recoveryToken + "&token_type=bearer&type=recovery");
+  await page.waitForSelector("#saas-update-password");
+  await page.fill('#saas-update-password input[name="password"]', "NouVeauMotDePasse2026!");
+  await page.fill('#saas-update-password input[name="confirm"]', "NouVeauMotDePasse2026!");
+  await page.click('#saas-update-password button[type="submit"]');
+  await page.waitForSelector("#saas-login");
+  assert.equal(updateBody.access_token, recoveryToken);
+  assert.equal(updateBody.password, "NouVeauMotDePasse2026!");
+  assert.equal(await page.evaluate(() => location.hash), "");
+  assert.deepEqual(pageErrors, []);
+  await page.close();
+});
+test("parcours entreprise : connexion, création d'organisation et dossier cloud vierge", async () => {
+  const { page, errors } = await open();
+  const orgId = "50000000-0000-4000-8000-000000000005";
+  const dossierId = "60000000-0000-4000-8000-000000000006";
+  let orgCreated = false, dossierCreated = false, roleUpdated = false, localImported = false;
+  await page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "login") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        access_token: "mock-access-token-long-enough-for-e2e",
+        expires_in: 3600, user: { id: "70000000-0000-4000-8000-000000000007", email: "test@atelier.fr" }
+      }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await page.route("**/api/tenant**", async (route) => {
+    const request = route.request(), url = new URL(request.url());
+    assert.match(request.headers().authorization || "", /^Bearer mock-access-token/);
+    if (url.searchParams.get("resource") === "organizations" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(orgCreated ? [
+        { id: orgId, name: "Atelier Démo", created_at: "2026-11-17T10:00:00Z" }
+      ] : []) });
+    } else if (url.searchParams.get("resource") === "organizations" && request.method() === "POST") {
+      orgCreated = true;
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: orgId }) });
+    } else if (url.searchParams.get("resource") === "memberships" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+        { user_id: "70000000-0000-4000-8000-000000000007", role: "admin", created_at: "2026-11-17T10:00:00Z" },
+        { user_id: "80000000-0000-4000-8000-000000000008", role: roleUpdated ? "contributor" : "reader", created_at: "2026-11-17T10:00:00Z" }
+      ]) });
+    } else if (url.searchParams.get("resource") === "memberships" && request.method() === "PATCH") {
+      const body = request.postDataJSON();
+      assert.equal(body.user_id, "80000000-0000-4000-8000-000000000008");
+      assert.equal(body.role, "contributor");
+      roleUpdated = true;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ updated: true }) });
+    } else if (url.searchParams.get("resource") === "audits" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(roleUpdated ? [
+        { id: 1, event_type: "membership.role_changed", actor_id: "70000000-0000-4000-8000-000000000007", target_user_id: "80000000-0000-4000-8000-000000000008", previous_role: "reader", new_role: "contributor", occurred_at: "2026-11-17T10:00:00Z" }
+      ] : []) });
+    } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "GET") {
+      const rows = [];
+      if (dossierCreated) rows.push({ id: dossierId, name: "Diagnostic initial", version: 1, updated_at: "2026-11-17T10:00:00Z" });
+      if (localImported) rows.push({ id: "61000000-0000-4000-8000-000000000006", name: "Dossier test local", version: 1, updated_at: "2026-11-17T10:00:00Z" });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+    } else if (url.searchParams.get("resource") === "dossiers" && request.method() === "POST") {
+      const body = request.postDataJSON();
+      if (body.name === "Dossier test local") {
+        assert.ok(body.payload.inputs && Object.keys(body.payload.inputs).length);
+        assert.equal("chat" in body.payload, false);
+        assert.equal("contact" in body.payload, false);
+        assert.equal("cloud" in body.payload, false);
+        localImported = true;
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+          id: "61000000-0000-4000-8000-000000000006", organization_id: orgId, name: body.name, version: 1
+        }) });
+      } else {
+        dossierCreated = true;
+        await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+          id: dossierId, organization_id: orgId, name: "Diagnostic initial", version: 1
+        }) });
+      }
+    } else {
+      await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ code: "not_found" }) });
+    }
+  });
+  await page.click("[data-saas-open]");
+  await page.fill('#saas-login input[name="email"]', "test@atelier.fr");
+  await page.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await page.click('#saas-login button[type="submit"]');
+  await page.fill('#saas-create-org input[name="name"]', "Atelier Démo");
+  await page.click('#saas-create-org button[type="submit"]');
+  await page.waitForSelector('[data-saas-org="' + orgId + '"]');
+  await page.click('[data-saas-org="' + orgId + '"]');
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Administrateur"));
+  await page.fill('#saas-create-dossier input[name="name"]', "Diagnostic initial");
+  await page.click('#saas-create-dossier button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Diagnostic initial"));
+  await page.selectOption('form[data-saas-member="80000000-0000-4000-8000-000000000008"] select[name="role"]', "contributor");
+  await page.click('form[data-saas-member="80000000-0000-4000-8000-000000000008"] button[type="submit"]');
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Contributeur"));
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Rôle modifié"));
+  await page.evaluate(() => window.SX.setState({
+    ...window.SX.state(),
+    profile: { nom: "Dossier test local" },
+    inputs: { bilan: { energie: 120 } },
+    chat: ["conversation privée"],
+    contact: { email: "personne@example.test" },
+    cloud: { code: "secret-local" },
+  }));
+  page.once("dialog", dialog => dialog.accept());
+  await page.click("[data-saas-import-local]");
+  await page.waitForFunction(() => document.querySelector("#saas-dossiers")?.textContent.includes("Dossier test local"));
+  assert.equal(orgCreated, true);
+  assert.equal(dossierCreated, true);
+  assert.equal(roleUpdated, true);
+  assert.equal(localImported, true);
+  assert.deepEqual(errors, []);
   await page.close();
 });
 
@@ -305,3 +481,134 @@ for (const [nom, w, h] of [["téléphone", 390, 844], ["tablette", 820, 1180]]) 
     await page.close();
   });
 }
+
+
+test("invitation entreprise : création admin, lien à usage unique et acceptation après connexion", async () => {
+  const orgId = "51000000-0000-4000-8000-000000000005";
+  const adminId = "71000000-0000-4000-8000-000000000007";
+  const invitedId = "81000000-0000-4000-8000-000000000008";
+  const invitationId = "91000000-0000-4000-8000-000000000009";
+  const invitationSecret = "a".repeat(64);
+  let invitationCreated = false, invitationAccepted = false, createPayload = null, acceptPayload = null;
+
+  const admin = await open();
+  await admin.page.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "login") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        access_token: "admin-access-token-long-enough-for-e2e", expires_in: 3600,
+        user: { id: adminId, email: "admin@atelier.fr" }
+      }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await admin.page.route("**/api/tenant**", async (route) => {
+    const request = route.request(), url = new URL(request.url());
+    assert.match(request.headers().authorization || "", /^Bearer admin-access-token/);
+    const resource = url.searchParams.get("resource");
+    if (resource === "organizations" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+        { id: orgId, name: "Atelier Invitation", created_at: "2026-11-17T10:00:00Z" }
+      ]) });
+    } else if (resource === "memberships" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+        { user_id: adminId, role: "admin", created_at: "2026-11-17T10:00:00Z" }
+      ]) });
+    } else if (resource === "invitations" && request.method() === "GET") {
+      const rows = invitationCreated && !invitationAccepted ? [{
+        id: invitationId, email: "invite@atelier.fr", role: "reader",
+        expires_at: "2026-11-24T10:00:00Z"
+      }] : [];
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(rows) });
+    } else if (resource === "invitations" && request.method() === "POST") {
+      createPayload = request.postDataJSON();
+      assert.equal(createPayload.organization_id, orgId);
+      assert.equal(createPayload.email, "invite@atelier.fr");
+      assert.equal(createPayload.role, "reader");
+      invitationCreated = true;
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({
+        id: invitationId, token: invitationSecret, expires_at: "2026-11-24T10:00:00Z"
+      }) });
+    } else if (resource === "dossiers" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    } else if (resource === "audits" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    } else {
+      await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ code: "not_found" }) });
+    }
+  });
+
+  await admin.page.click("[data-saas-open]");
+  await admin.page.fill('#saas-login input[name="email"]', "admin@atelier.fr");
+  await admin.page.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await admin.page.click('#saas-login button[type="submit"]');
+  await admin.page.click('[data-saas-org="' + orgId + '"]');
+  await admin.page.waitForSelector("#saas-create-invitation");
+  await admin.page.fill('#saas-create-invitation input[name="email"]', "invite@atelier.fr");
+  await admin.page.selectOption('#saas-create-invitation select[name="role"]', "reader");
+  await admin.page.click('#saas-create-invitation button[type="submit"]');
+  await admin.page.waitForSelector("[data-invitation-link]");
+  const inviteLink = await admin.page.locator("[data-invitation-link]").evaluate(el => el.dataset.invitationLink);
+  assert.equal(new URL(inviteLink).hash, "#invitation=" + invitationSecret);
+  assert.equal(invitationCreated, true);
+  assert.deepEqual(createPayload, { organization_id: orgId, email: "invite@atelier.fr", role: "reader" });
+
+  const recipient = await browser.newPage({ viewport: { width: 1300, height: 900 } });
+  const pageErrors = [];
+  recipient.on("pageerror", e => pageErrors.push(e.message));
+  await recipient.route("**/api/auth**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("action") === "refresh") {
+      await route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ code: "session_expired" }) });
+    } else if (url.searchParams.get("action") === "login") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+        access_token: "recipient-access-token-long-enough-for-e2e", expires_in: 3600,
+        user: { id: invitedId, email: "invite@atelier.fr" }
+      }) });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    }
+  });
+  await recipient.route("**/api/tenant**", async (route) => {
+    const request = route.request(), url = new URL(request.url());
+    assert.match(request.headers().authorization || "", /^Bearer recipient-access-token/);
+    const resource = url.searchParams.get("resource");
+    if (resource === "invitations" && request.method() === "POST") {
+      acceptPayload = request.postDataJSON();
+      assert.deepEqual(acceptPayload, { action: "accept", token: invitationSecret });
+      invitationAccepted = true;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ organization_id: orgId }) });
+    } else if (resource === "organizations" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+        { id: orgId, name: "Atelier Invitation", created_at: "2026-11-17T10:00:00Z" }
+      ]) });
+    } else if (resource === "memberships" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([
+        { user_id: invitedId, role: "reader", created_at: "2026-11-17T10:00:00Z" }
+      ]) });
+    } else if (resource === "invitations" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    } else if (resource === "dossiers" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    } else if (resource === "audits" && request.method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    } else {
+      await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ code: "not_found" }) });
+    }
+  });
+  await recipient.goto(inviteLink);
+  await recipient.waitForSelector("#saas-login");
+  assert.equal(await recipient.evaluate(() => location.hash), "");
+  await recipient.fill('#saas-login input[name="email"]', "invite@atelier.fr");
+  await recipient.fill('#saas-login input[name="password"]', "motdepasse-test");
+  await recipient.click('#saas-login button[type="submit"]');
+  await recipient.waitForFunction(() => document.querySelector("#saas-content")?.textContent.includes("Invitation acceptée"));
+  assert.equal(invitationAccepted, true);
+  assert.deepEqual(acceptPayload, { action: "accept", token: invitationSecret });
+  assert.deepEqual(pageErrors, []);
+  await admin.page.close();
+  await recipient.close();
+});

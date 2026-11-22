@@ -1,6 +1,6 @@
 // Sillon — sauvegarde en ligne chiffrée côté navigateur (AES-GCM).
 // Le serveur ne reçoit que l'empreinte du code et un bloc chiffré : il ne peut pas lire le dossier.
-import { json, store, kv, bump, today, sha, ipKey, sameOrigin } from "../lib/shared.mjs";
+import { json, store, kv, bumpProtected, today, sha, ipKey, sameOrigin, readJsonLimited } from "../lib/shared.mjs";
 
 const MAX_BYTES = 400_000;
 const KEEP_DAYS = 365;
@@ -10,9 +10,17 @@ export default async (req, context) => {
   if (!sameOrigin(req) && req.method !== "GET") return json(403, { code: "origin" });
   const s = await store("sillon-dossiers");
   const limits = await store();
-  if (!(await bump(limits, `dossier/${today()}/${await ipKey(req, context)}`, Number(process.env.DOSSIER_LIMIT_PER_IP || 300)))) return json(429, { code: "rate_limited" });
+  let withinLimit;
+  try {
+    withinLimit = await bumpProtected(limits, `dossier/${today()}/${await ipKey(req, context)}`, Number(process.env.DOSSIER_LIMIT_PER_IP || 300));
+  } catch {
+    return json(503, { code: "rate_limit_unavailable" });
+  }
+  if (!withinLimit) return json(429, { code: "rate_limited" });
 
-  let b; try { b = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
+  const parsed = await readJsonLimited(req, MAX_BYTES + 16_384);
+  if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+  const b = parsed.value;
   if (!validCode(b?.code)) return json(400, { code: "invalid_code" });
   const key = await sha(b.code);
   if (req.method === "POST") {

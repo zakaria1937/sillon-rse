@@ -16,3 +16,140 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
     Strict-Transport-Security = "max-age=31536000"
     Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+
+# Le site est publié depuis la racine du dépôt (publish = ".") : sans ces règles, le code des
+# fonctions, le schéma SQL, les tests, la documentation interne et les anciennes archives
+# étaient téléchargeables publiquement (constaté le 18/11/2026 sur staging et en production).
+# Solution durable : publier un dossier dédié ne contenant que le site.
+[[redirects]]
+  from = "/netlify/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/supabase/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/sillon-v5/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/node_modules/*"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/claude.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/contact.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/dossier.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/shared.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/calculs.test.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/e2e.test.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/fonction.test.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/passerelles.test.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/relief.test.mjs"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests.yml"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/sillon-v4.zip"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/README.md"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/CHANGELOG.md"
+  to = "/introuvable"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/DEPLOIEMENT.md"
+  to = "/introuvable"
+  status = 404
+  force = true
+

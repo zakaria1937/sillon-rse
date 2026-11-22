@@ -1,7 +1,7 @@
 // Sillon — passerelle vers l'IA (Mistral, avec Groq en secours facultatif).
 // Les clés restent sur le serveur : les visiteurs n'ont rien à configurer.
 // Limites : par adresse IP et par jour, plus un plafond global quotidien.
-import { json, store as counters, kv, bump, today, ipKey, sameOrigin, alertOwner } from "../lib/shared.mjs";
+import { json, store as counters, kv, bumpProtected, today, ipKey, sameOrigin, alertOwner, readJsonLimited } from "../lib/shared.mjs";
 
 const PROVIDERS = {
   mistral: {
@@ -98,20 +98,30 @@ export default async (req, context) => {
 
   if (!sameOrigin(req)) return json(403, { code: "origin" });
 
-  let body;
-  try { body = await req.json(); } catch { return json(400, { code: "invalid_request" }); }
+  const parsed = await readJsonLimited(req, 5_000_000);
+  if (parsed.error) return json(parsed.error, { code: parsed.error === 413 ? "too_large" : "invalid_request" });
+  const body = parsed.value;
   const bad = validate(body);
   if (bad) return json(400, { code: "invalid_request", detail: bad });
 
   const day = today();
-  const ip = await ipKey(req, context);
+  let ip;
+  try { ip = await ipKey(req, context); }
+  catch { return json(503, { code: "rate_limit_not_configured" }); }
   const store = await counters();
   // Nettoyage occasionnel des compteurs des jours précédents (durée de conservation : 24 h).
   if (store && Math.random() < 0.05) {
     try { const { blobs } = await store.list(); await Promise.all(blobs.filter((x) => !x.key.includes(day)).slice(0, 200).map((x) => store.delete(x.key))); } catch { /* sans gravité */ }
   }
-  if (!(await bump(store, `global/${day}`, GLOBAL))) { await alertOwner(req, store, "plafond_global", `Le plafond de ${GLOBAL} analyses par jour est atteint.`); return json(429, { code: "global_limit" }); }
-  if (!(await bump(store, `ip/${day}/${ip}`, PER_IP))) return json(429, { code: "rate_limited" });
+  let globalAllowed, ipAllowed;
+  try {
+    globalAllowed = await bumpProtected(store, `global/${day}`, GLOBAL);
+    if (globalAllowed) ipAllowed = await bumpProtected(store, `ip/${day}/${ip}`, PER_IP);
+  } catch {
+    return json(503, { code: "rate_limit_unavailable" });
+  }
+  if (!globalAllowed) { await alertOwner(req, store, "plafond_global", `Le plafond de ${GLOBAL} analyses par jour est atteint.`); return json(429, { code: "global_limit" }); }
+  if (!ipAllowed) return json(429, { code: "rate_limited" });
 
   const r = await callAI(body.kind, body.messages, body.images || []);
   if (!r.res) {

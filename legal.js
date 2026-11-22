@@ -8,7 +8,7 @@
     address: "", // adresse postale de l'éditeur, à renseigner si une entreprise est créée
     email: "zakariaghannam7@gmail.com",
     host: "Netlify, Inc., 512 2nd Street, Suite 200, San Francisco, CA 94107, États-Unis — netlify.com",
-    updated: "12 novembre 2026",
+    updated: "22 novembre 2026",
   };
   const B = BUSINESS;
   const mail = `<a href="mailto:${B.email}">${B.email}</a>`;
@@ -37,6 +37,18 @@
 <h2>Sauvegarde en ligne (facultative)</h2>
 <p>Si vous activez la sauvegarde en ligne depuis la page ${L("mes-donnees", "Mes données")}, votre dossier (réponses, profil, plan d'action, historique, coordonnées) est enregistré chez notre hébergeur Netlify sous un code secret créé dans votre navigateur. Le serveur ne conserve que l'empreinte de ce code : sans lui, le dossier ne peut pas être retrouvé par le site. Le dossier n'est pas chiffré : l'éditeur, qui administre l'hébergement, pourrait techniquement y accéder, mais s'interdit de le consulter. Toute personne à qui vous donnez le code ou le lien peut lire et modifier le dossier. Vous pouvez supprimer la copie en ligne à tout moment ; elle est effacée 12 mois après la dernière sauvegarde. Base légale : l'exécution du service que vous demandez.</p>
 
+<h2>Espace entreprise (préversion sur invitation)</h2>
+<p>L'espace entreprise permet à une organisation de partager ses dossiers RSE entre plusieurs personnes. Il n'y a pas d'inscription publique : les comptes sont créés par l'éditeur ou sur invitation d'un administrateur de l'organisation.</p>
+<table class="ltable"><thead><tr><th scope="col">Données</th><th scope="col">Pourquoi</th><th scope="col">Base légale</th></tr></thead><tbody>
+<tr><td>Adresse e-mail et mot de passe</td><td>Créer le compte, vous authentifier, vous envoyer les e-mails de connexion, d'invitation et de réinitialisation du mot de passe</td><td>Exécution du service demandé</td></tr>
+<tr><td>Organisation, rôle (administrateur, responsable RSE, contributeur, lecteur), invitations</td><td>Donner à chacun les bons droits et limiter l'accès aux seuls membres de l'organisation</td><td>Exécution du service demandé</td></tr>
+<tr><td>Dossiers RSE saisis par l'organisation</td><td>Enregistrer et partager le travail de l'équipe</td><td>Exécution du service demandé</td></tr>
+<tr><td>Journal d'audit : type d'action, date, identifiant technique de l'auteur</td><td>Sécurité et traçabilité des modifications (sans copie du contenu des dossiers)</td><td>Intérêt légitime</td></tr>
+</tbody></table>
+<p>Le mot de passe est transmis à Supabase via la passerelle serveur de Sillon et stocké sous forme hachée par Supabase ; Sillon ne le conserve pas. La session est maintenue par un cookie strictement nécessaire (HttpOnly, Secure, SameSite=Strict) ; le jeton d'accès reste en mémoire dans le navigateur. Les données sont hébergées par Supabase dans l'Union européenne (région Paris, France), avec des règles d'accès par organisation appliquées par la base de données elle-même : une organisation ne peut ni lire ni modifier les données d'une autre.</p>
+<p>Pour les dossiers que vous y saisissez, votre organisation décide de ce qui est enregistré et qui y accède : elle est responsable de traitement, et l'éditeur agit comme sous-traitant (article 28 du RGPD), selon l'article 13 des ${L("cgu", "conditions générales d'utilisation")}.</p>
+<p>Pendant la préversion, n'y saisissez pas d'informations confidentielles ou de données personnelles de tiers.</p>
+
 <h2>Analyses par l'IA</h2>
 <p>Quand vous lancez une analyse, posez une question à l'assistant ou importez un document, le contenu nécessaire (vos réponses, les résultats calculés, le texte ou l'image du document) est transmis à Mistral AI (Paris, France) ou, en secours, à Groq, Inc. (États-Unis), pour produire la réponse. L'éditeur a désactivé l'utilisation de ces données pour l'entraînement des modèles chez Mistral AI. Ces prestataires conservent les données le temps nécessaire au traitement et selon leurs propres conditions. N'importez pas de documents contenant des données personnelles de tiers (bulletins de paie, listes de salariés…).</p>
 
@@ -58,10 +70,14 @@
 <li>Après une désinscription ou une demande de suppression : suppression sous un mois. L'éditeur peut garder l'adresse e-mail dans une liste d'opposition, uniquement pour ne plus vous contacter.</li>
 <li>Compteurs d'usage : 24 heures.</li>
 <li>Données dans votre navigateur : jusqu'à ce que vous les effaciez.</li>
+<li>Espace entreprise — compte : tant qu'il existe. Supprimé sous un mois sur simple demande à ${mail}. Un compte sans connexion pendant 24 mois est supprimé, après un e-mail de préavis d'un mois.</li>
+<li>Espace entreprise — organisation et dossiers : tant que l'organisation existe. Supprimés, avec les invitations et le journal d'audit, sous un mois à la demande d'un administrateur de l'organisation.</li>
+<li>Après suppression d'un compte, les dossiers restent à l'organisation sans mention de l'auteur, et le journal d'audit ne garde qu'un identifiant technique qui ne permet plus de retrouver la personne.</li>
+<li>Les sauvegardes techniques de l'hébergeur sont écrasées au fil de leur rotation.</li>
 </ul>
 
 <h2>Destinataires</h2>
-<p>L'éditeur uniquement, et ses prestataires techniques : Netlify, Inc. (hébergement et formulaires, États-Unis), Mistral AI (IA, France) et Groq, Inc. (IA de secours, États-Unis). Les transferts hors de l'Union européenne reposent sur les garanties prévues par ces prestataires (clauses contractuelles types de la Commission européenne ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue, louée ou utilisée à des fins publicitaires.</p>
+<p>L'éditeur et ses prestataires techniques : Netlify, Inc. (hébergement et formulaires, États-Unis), Mistral AI (IA, France), Groq, Inc. (IA de secours, États-Unis) et, pour l'espace entreprise, Supabase, Inc. (authentification et base de données, hébergées dans l'Union européenne, région Paris). Les e-mails de l'espace entreprise (invitation, connexion, mot de passe) sont envoyés par Supabase ou par le prestataire d'envoi d'e-mails configuré par l'éditeur. Les transferts hors de l'Union européenne reposent sur les garanties prévues par ces prestataires (clauses contractuelles types de la Commission européenne ou cadre de protection des données UE–États-Unis). Aucune donnée n'est vendue, louée ou utilisée à des fins publicitaires.</p>
 
 <h2>Mineurs</h2>
 <p>Sillon est réservé aux personnes majeures agissant pour le compte d'une entreprise ou d'une organisation. Une case à cocher le confirme avant tout envoi de coordonnées. Si vous apprenez qu'un mineur nous a transmis des données, écrivez à ${mail} : elles seront supprimées.</p>
@@ -70,7 +86,7 @@
 <p>Vous disposez des droits d'accès, de rectification, d'effacement, de limitation, d'opposition, de portabilité et du droit de retirer votre consentement. Le plus simple : la page ${L("mes-donnees", "Mes données")} (désinscription, demande de suppression, export). Vous pouvez aussi écrire à ${mail}. Réponse sous un mois. En cas de désaccord, vous pouvez saisir la CNIL (<a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener">cnil.fr</a>).</p>
 
 <h2>Cookies et traceurs</h2>
-<p>Sillon ne dépose aucun cookie et n'utilise aucun traceur. Voir la ${L("cookies", "politique cookies")}.</p>`,
+<p>L'espace public ne dépose aucun cookie et n'utilise aucun traceur. Si vous utilisez l'espace entreprise, un cookie de session strictement nécessaire maintient votre connexion. Voir la ${L("cookies", "politique cookies")}.</p>`,
     },
 
     cgu: {
@@ -86,7 +102,7 @@
 <p>Sillon s'adresse aux professionnels : dirigeants, salariés, consultants agissant pour une entreprise ou une organisation. Il est réservé aux personnes âgées de 18 ans ou plus.</p>
 
 <h2>4. Accès et coordonnées</h2>
-<p>Les calculs sont accessibles sans inscription. Les exports PDF et Excel aussi. L'analyse par l'IA, l'assistant et l'import de documents demandent une fiche contact (prénom, nom, e-mail professionnel, entreprise), avec votre consentement ; l'accord pour être recontacté est séparé et facultatif. Il n'y a pas de compte ni de mot de passe.</p>
+<p>Les calculs locaux sont accessibles sans inscription. Les exports PDF et Excel aussi. L'analyse par l'IA, l'assistant et l'import de documents demandent une fiche contact (prénom, nom, e-mail professionnel, entreprise), avec votre consentement ; l'accord pour être recontacté est séparé et facultatif. L'espace entreprise, en préversion, nécessite un compte nominatif, créé par l'éditeur ou sur invitation d'un administrateur de l'organisation ; il n'y a pas d'inscription publique. Vous gardez votre mot de passe confidentiel et prévenez l'éditeur de tout accès non autorisé. L'administrateur d'une organisation choisit qui il invite et avec quel rôle.</p>
 
 <h2>5. Nature des résultats</h2>
 <p>Les résultats sont des estimations calculées à partir de vos réponses et de sources publiques citées dans chaque copilote. Ils ne remplacent ni un bilan d'émissions de gaz à effet de serre réglementaire, ni un audit de certification, ni une notation officielle (EcoVadis ou autre), ni un conseil juridique, comptable ou financier. Les analyses rédigées par l'IA peuvent contenir des erreurs : vérifiez-les avant toute décision ou communication.</p>
@@ -113,7 +129,24 @@
 <h2>11. Données personnelles</h2>
 <p>Voir la ${L("confidentialite", "politique de confidentialité")} et la page ${L("mes-donnees", "Mes données")}.</p>
 
-<h2>12. Modification et droit applicable</h2>
+<h2>12. Suppression de compte et d'organisation</h2>
+<p>Vous pouvez demander la suppression de votre compte à tout moment à ${mail}. Un administrateur peut retirer un membre depuis l'espace entreprise et demander la suppression de l'organisation et de tous ses dossiers. Les suppressions sont faites sous un mois et sont définitives : exportez vos dossiers avant si vous souhaitez les conserver.</p>
+
+<h2>13. Données saisies par une organisation (sous-traitance)</h2>
+<p>Pour les données que votre organisation enregistre dans l'espace entreprise, l'organisation est responsable de traitement et l'éditeur agit comme sous-traitant au sens de l'article 28 du RGPD. L'éditeur s'engage à :</p>
+<ul>
+<li>ne traiter ces données que pour fournir le service, sur instruction de l'organisation telle qu'exprimée par l'utilisation du service ;</li>
+<li>en garantir la confidentialité et ne pas les consulter, sauf demande de l'organisation ou obligation légale ;</li>
+<li>mettre en œuvre des mesures de sécurité adaptées : chiffrement des échanges (HTTPS), mots de passe hachés, isolation des organisations par la base de données, droits par rôle, journal d'audit ;</li>
+<li>ne recourir qu'aux sous-traitants listés dans la ${L("confidentialite", "politique de confidentialité")} (hébergement Netlify, base et authentification Supabase dans l'Union européenne, envoi d'e-mails), et prévenir l'organisation avant tout changement ;</li>
+<li>aider l'organisation à répondre aux demandes d'exercice des droits des personnes concernées ;</li>
+<li>notifier l'organisation dans les meilleurs délais, et au plus tard 48 heures après en avoir eu connaissance, de toute violation de données la concernant ;</li>
+<li>supprimer les données de l'organisation à sa demande ou à la fin du service, après lui avoir permis de les exporter ;</li>
+<li>mettre à disposition les informations nécessaires pour démontrer le respect de ces obligations.</li>
+</ul>
+<p>L'organisation s'engage à n'enregistrer que des données utiles à sa démarche RSE et dont elle a le droit de disposer.</p>
+
+<h2>14. Modification et droit applicable</h2>
 <p>Ces conditions peuvent évoluer ; la date de mise à jour figure en haut de la page. Elles sont soumises au droit français. Contact : ${mail}.</p>`,
     },
 
@@ -121,16 +154,17 @@
       title: "Politique cookies", updated: UPD,
       html: `
 <h2>En résumé</h2>
-<p><b>Sillon ne dépose aucun cookie et n'utilise aucun traceur</b> : pas de mesure d'audience, pas de publicité, pas de réseau social, pas de contenu tiers. Les polices et les bibliothèques sont hébergées sur le site lui-même ; votre navigateur ne contacte aucun autre service pendant votre visite.</p>
+<p><b>L'espace public ne dépose aucun cookie et n'utilise aucun traceur</b> : pas de mesure d'audience, pas de publicité, pas de réseau social, pas de contenu tiers. Les polices et les bibliothèques sont hébergées sur le site lui-même. Si vous utilisez l'espace entreprise, un cookie strictement nécessaire à l'authentification est déposé, sans mesure d'audience ni publicité.</p>
 
 <h2>Stockage local du navigateur</h2>
 <p>Sillon utilise le stockage local (<code>localStorage</code>) de votre navigateur, uniquement pour faire fonctionner le service que vous utilisez. Ce stockage ne quitte pas votre appareil.</p>
-<table class="ltable"><thead><tr><th scope="col">Clé</th><th scope="col">Contenu</th><th scope="col">Durée</th></tr></thead><tbody>
+<table class="ltable"><thead><tr><th scope="col">Clé / cookie</th><th scope="col">Contenu</th><th scope="col">Durée</th></tr></thead><tbody>
 <tr><td><code>sillon.v2</code></td><td>Vos réponses, profil, plan d'action, historique, coordonnées, langue</td><td>Jusqu'à effacement par vous</td></tr>
 <tr><td><code>sillon.v2</code> (champ <code>cloud</code>)</td><td>Le code de votre sauvegarde en ligne, si vous l'avez activée</td><td>Jusqu'à effacement par vous</td></tr>
 <tr><td><code>sillon.notice</code></td><td>Le fait que vous avez fermé le bandeau d'information</td><td>Jusqu'à effacement par vous</td></tr>
+<tr><td><code>sillon_refresh</code> (cookie HttpOnly, uniquement si vous vous connectez à l'espace entreprise)</td><td>Jeton de renouvellement de session ; inaccessible au JavaScript de la page</td><td>30 jours après le dernier renouvellement, ou suppression à la déconnexion / expiration du compte</td></tr>
 </tbody></table>
-<p>Ce stockage est strictement nécessaire au service que vous demandez : la réglementation (article 82 de la loi Informatique et Libertés, lignes directrices de la CNIL) ne le soumet pas à consentement. C'est pourquoi Sillon affiche un simple bandeau d'information, sans demande d'acceptation.</p>
+<p>Le stockage local et le cookie de session, lorsqu'il est utilisé, sont strictement nécessaires au service demandé : ils ne servent ni à la publicité ni à la mesure d'audience. Le cookie de session est HttpOnly, Secure en HTTPS et SameSite=Strict. Il est supprimé à la déconnexion ou à l'expiration.</p>
 
 <h2>Effacer ces données</h2>
 <p>Depuis la page ${L("mes-donnees", "Mes données")} (bouton « Effacer les données de ce navigateur »), ou dans les réglages de votre navigateur (données de site).</p>
@@ -146,6 +180,8 @@
 <p>${B.owner}<br>Statut : ${B.status}${B.siret ? `<br>SIRET : ${B.siret}` : ""}${B.address ? `<br>Adresse : ${B.address}` : ""}<br>Contact : ${mail}<br>Directeur de la publication : ${B.owner}</p>
 <h2>Hébergement</h2>
 <p>${B.host}</p>
+<h2>Authentification et base de données (espace entreprise)</h2>
+<p>Supabase, Inc. — supabase.com. Données hébergées dans l'Union européenne (région AWS eu-west-3, Paris, France).</p>
 <h2>Prestataires d'intelligence artificielle</h2>
 <p>Mistral AI, Paris, France — mistral.ai. Groq, Inc., Mountain View, Californie, États-Unis — groq.com (secours).</p>
 <h2>Nature des résultats</h2>
@@ -206,10 +242,10 @@
   };
 
   const en = {
-    confidentialite: { title: "Privacy policy", updated: "Updated " + B.updated, html: `<p>The French version is the reference. In short: your answers stay in your browser. Your contact details (and, when you download a report or request support, a summary of your results) are sent to the publisher through Netlify Forms. AI analyses send the necessary content to Mistral AI (France, training switched off) or Groq (USA, backup). Your IP address is only used as a salted hash to count daily analyses and is erased after 24 hours. No cookies, no trackers. The service is for adults acting for a business. Contacts are kept for 3 years after the last exchange. Unsubscribe, export or request deletion from the ${L("mes-donnees", "My data")} page, or write to ${mail}.</p>` },
-    cgu: { title: "Terms of use", updated: "Updated " + B.updated, html: `<p>The French version is the reference. Sillon is free, with no subscription, paid option or hidden fees. It is meant for professionals aged 18 or over. Results are estimates based on public sources; AI analyses may contain errors and are not legal, accounting or certification advice. Do not abuse usage limits or upload third-party personal data. Sillon shows no customer reviews or testimonials; pre-filled values are labelled samples. Code under the MIT licence. French law applies. Contact: ${mail}.</p>` },
-    cookies: { title: "Cookie policy", updated: "Updated " + B.updated, html: `<p>Sillon sets no cookies and uses no trackers: no analytics, no ads, no third-party content. Fonts and libraries are hosted on the site itself. Your browser's local storage (keys <code>sillon.v2</code> and <code>sillon.notice</code>) keeps your answers on your device only; it is strictly necessary for the service and therefore not subject to consent. Erase it from the ${L("mes-donnees", "My data")} page.</p>` },
-    mentions: { title: "Legal notice", updated: "Updated " + B.updated, html: `<p>Publisher: ${B.owner} (${B.status}) — ${mail}. Hosting: ${B.host}. AI providers: Mistral AI (Paris, France), Groq, Inc. (USA, backup).</p>` },
+    confidentialite: { title: "Privacy policy", updated: "Updated " + B.updated, html: `<p>The French version is the reference. The public area uses local browser storage and no tracking cookies. The enterprise space (invitation-only preview, no public sign-up) uses Supabase, hosted in the EU (Paris region): Supabase Auth processes your email and password (stored hashed), and the database stores organizations, roles, invitations, RSE dossiers and audit metadata, isolated per organization. A strictly necessary HttpOnly, Secure, SameSite=Strict refresh cookie keeps you signed in. For dossiers it records, your organization is the controller and the publisher acts as processor (GDPR art. 28, see Terms). Accounts are kept while they exist, deleted within one month on request, and after 24 months without sign-in (with one month's notice); an organization and all its dossiers are deleted within one month at an administrator's request. During the preview, do not enter confidential or third-party personal data. Contact details submitted through forms are sent via Netlify Forms. AI analyses send necessary content to Mistral AI (France) or Groq (USA, backup). Contact the publisher for data requests: ${mail}.</p>` },
+    cgu: { title: "Terms of use", updated: "Updated " + B.updated, html: `<p>The French version is the reference. Sillon is free, with no subscription, paid option or hidden fees. It is meant for professionals aged 18 or over. Results are estimates based on public sources; AI analyses may contain errors and are not legal, accounting or certification advice. Do not abuse usage limits or upload third-party personal data. Enterprise accounts are created by the publisher or by invitation; keep your password confidential. You may ask for your account or your organization to be deleted at any time; deletions are final within one month. For data an organization stores, it is the controller and the publisher is its processor under GDPR art. 28 (confidentiality, security measures, listed sub-processors, breach notice within 48 hours, deletion on request). Sillon shows no customer reviews or testimonials; pre-filled values are labelled samples. Code under the MIT licence. French law applies. Contact: ${mail}.</p>` },
+    cookies: { title: "Cookie policy", updated: "Updated " + B.updated, html: `<p>The public area sets no cookies and uses no trackers. If you sign in to the enterprise space, a strictly necessary refresh cookie named <code>sillon_refresh</code> is used (HttpOnly, Secure over HTTPS, SameSite=Strict, up to 30 days after the last refresh). It is not used for analytics or advertising and is cleared on logout or expiry. Local browser storage keeps your local dossier on your device. Erase local data from the ${L("mes-donnees", "My data")} page.</p>` },
+    mentions: { title: "Legal notice", updated: "Updated " + B.updated, html: `<p>Publisher: ${B.owner} (${B.status}) — ${mail}. Hosting: ${B.host}. Enterprise space: Supabase, Inc. (authentication and database, EU — Paris region). AI providers: Mistral AI (Paris, France), Groq, Inc. (USA, backup).</p>` },
     credits: { title: "Credits and licences", updated: "Updated " + B.updated, html: `<p>Fonts: Gloock, Newsreader, Atkinson Hyperlegible Next and Martian Mono (SIL Open Font License 1.1). Relief map: © IGN RGE ALTI, Licence Ouverte 2.0, self-hosted. Libraries: three.js r128 and jsPDF 2.5.1 (MIT), SheetJS CE 0.18.5 and PDF.js 3.11.174 (Apache 2.0). No stock images; icons and logo drawn for Sillon. Data: ADEME, EFRAG, EcoVadis, EU and French law. Sillon code: MIT licence.</p>` },
     accessibilite: { title: "Accessibility", updated: "Updated " + B.updated, html: `<p>Sillon aims for WCAG 2.1 level AA: full keyboard navigation, skip link, visible focus, focus kept inside dialogs (Esc closes), checked colour contrast in both themes, labelled fields, text alternatives for charts, reduced motion respected. Known limits: exported PDFs are not tagged yet (use the Excel export). Report issues to ${mail}.</p>` },
   };
